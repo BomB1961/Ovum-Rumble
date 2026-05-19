@@ -48,6 +48,9 @@ namespace DinoAlkkagi.Core
             GameEvents.OnGameEnded -= HandleOnGameEnded;
             GameEvents.OnTurnStarted -= HandleOnTurnStarted;
             GameEvents.OnEggLaunched -= HandleOnEggLaunched;
+
+            if (flickInputController != null)
+                flickInputController.EggLaunched -= OnFlickEggLaunched;
         }
 
         private void Awake()
@@ -80,6 +83,10 @@ namespace DinoAlkkagi.Core
 
         private void Start()
         {
+            // FlickInputController 직접 구독 (GameEvents 체인 우회, 확실한 발사 감지)
+            if (flickInputController != null)
+                flickInputController.EggLaunched += OnFlickEggLaunched;
+
             BeginGame();
         }
 
@@ -153,11 +160,29 @@ namespace DinoAlkkagi.Core
         }
 
         /// <summary>
-        /// 발사 즉시 입력을 잠근다.
+        /// 발사 즉시 입력을 잠근다 (GameEvents 체인).
         /// </summary>
         private void HandleOnEggLaunched(EggController egg)
         {
             LockAllInput();
+        }
+
+        /// <summary>
+        /// FlickInputController 직접 구독 — 발사 감지 확실하게.
+        /// </summary>
+        private void OnFlickEggLaunched(EggController egg)
+        {
+            LockAllInput();
+        }
+
+        /// <summary>
+        /// 안전장치: isInputLocked 상태와 FlickInputController를 강제 동기화.
+        /// </summary>
+        private void Update()
+        {
+            if (turnController == null || flickInputController == null) return;
+
+            flickInputController.SetInputEnabled(!turnController.IsInputLocked);
         }
 
         /// <summary>
