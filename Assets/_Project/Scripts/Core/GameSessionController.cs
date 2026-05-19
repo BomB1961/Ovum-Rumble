@@ -132,7 +132,14 @@ namespace DinoAlkkagi.Core
             EggController egg = eggObj.GetComponent<EggController>();
             if (egg != null)
             {
-                egg.Initialize(playerId, spawnPoint.position);
+                egg.Initialize(playerId);
+                egg.transform.position = spawnPoint.position;
+                egg.transform.rotation = spawnPoint.rotation;
+
+                // Person A EggController의 인스턴스 이벤트 → GameEvents 브릿지
+                egg.Launched += (e) => GameEvents.TriggerEggLaunched(e);
+                egg.Fallen += (e) => GameEvents.TriggerEggFell(e);
+
                 allEggs.Add(egg);
                 motionResolver?.RegisterEgg(egg);
                 winConditionChecker?.RegisterEgg(egg);

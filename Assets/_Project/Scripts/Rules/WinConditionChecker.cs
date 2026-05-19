@@ -94,7 +94,7 @@ namespace DinoAlkkagi.Rules
 
         public int GetAliveCount(int playerId)
         {
-            return trackedEggs.Count(e => e != null && e.OwnerPlayerId == playerId && !e.IsFallen);
+            return trackedEggs.Count(e => e != null && e.OwnerPlayerId == playerId && e.IsAlive);
         }
 
         public void RegisterEgg(EggController egg)

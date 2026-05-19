@@ -92,7 +92,7 @@ namespace DinoAlkkagi.Rules
                     trackedEggs.RemoveAt(i);
                     continue;
                 }
-                if (trackedEggs[i].IsFallen) continue;
+                if (!trackedEggs[i].IsAlive) continue;
                 if (trackedEggs[i].Rigidbody.linearVelocity.magnitude > settings.stopVelocity)
                     return false;
             }
@@ -108,7 +108,7 @@ namespace DinoAlkkagi.Rules
                     trackedEggs.RemoveAt(i);
                     continue;
                 }
-                if (trackedEggs[i].IsFallen) continue;
+                if (!trackedEggs[i].IsAlive) continue;
                 trackedEggs[i].Rigidbody.linearVelocity = Vector3.zero;
                 trackedEggs[i].Rigidbody.angularVelocity = Vector3.zero;
             }

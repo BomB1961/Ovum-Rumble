@@ -22,7 +22,7 @@ namespace DinoAlkkagi.Rules
         private void OnTriggerEnter(Collider other)
         {
             EggController egg = other.GetComponent<EggController>();
-            if (egg != null && !egg.IsFallen)
+            if (egg != null && egg.IsAlive)
             {
                 Debug.Log($"[BoardFallZone] Egg fell: {other.gameObject.name} (Player {egg.OwnerPlayerId})");
                 egg.MarkFallen();
