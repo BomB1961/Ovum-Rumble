@@ -28,6 +28,11 @@ namespace DinoAlkkagi.Rules
             {
                 Debug.Log($"[BoardFallZone] -> MarkFallen: {other.gameObject.name} (P{egg.OwnerPlayerId})");
                 egg.MarkFallen();
+
+                // Person A EggController는 MarkFallen()에서 SetActive(false)를 안 함.
+                // 여기서 직접 비활성화해서 계속 떨어지는 문제 해결.
+                egg.Rigidbody.isKinematic = true;
+                egg.gameObject.SetActive(false);
             }
         }
 
@@ -39,6 +44,8 @@ namespace DinoAlkkagi.Rules
             {
                 Debug.Log($"[BoardFallZone] CollisionEnter fallback: {collision.collider.name}");
                 egg.MarkFallen();
+                egg.Rigidbody.isKinematic = true;
+                egg.gameObject.SetActive(false);
             }
         }
 
