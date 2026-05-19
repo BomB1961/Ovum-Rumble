@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using DinoAlkkagi.Core;
+using Unity.Cinemachine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -45,6 +46,13 @@ public class CameraController : MonoBehaviour
     [Header("Transition")]
     [SerializeField] private float transitionDuration = 0.5f;
 
+    [Header("Shake (Cinemachine Impulse)")]
+    [SerializeField] private CinemachineImpulseSource impulseSource;
+    [SerializeField] private float minImpactForShake = 2f;
+    [SerializeField] private float maxImpactForShake = 15f;
+    [SerializeField] private float minShakeVelocity = 0.1f;
+    [SerializeField] private float maxShakeVelocity = 1.0f;
+
     private const float TopDownPitch = 90f;
     private const float TopDownYaw = 0f;
 
@@ -63,6 +71,9 @@ public class CameraController : MonoBehaviour
     {
         if (inputCamera == null)
             inputCamera = Camera.main;
+
+        if (impulseSource == null)
+            impulseSource = GetComponent<CinemachineImpulseSource>();
 
         Vector3 offset = inputCamera.transform.position - pivotPoint;
         float initDist = offset.magnitude;
@@ -85,11 +96,13 @@ public class CameraController : MonoBehaviour
     private void OnEnable()
     {
         GameEvents.OnTurnStarted += HandleTurnStarted;
+        GameEvents.OnEggCollision += HandleEggCollision;
     }
 
     private void OnDisable()
     {
         GameEvents.OnTurnStarted -= HandleTurnStarted;
+        GameEvents.OnEggCollision -= HandleEggCollision;
     }
 
     private void Start()
@@ -142,6 +155,17 @@ public class CameraController : MonoBehaviour
         currentViewerId = playerId;
         StopAllCoroutines();
         StartCoroutine(TransitionToFreeCoroutine(playerId));
+    }
+
+    private void HandleEggCollision(float impact)
+    {
+        if (impulseSource == null) return;
+        if (impact < minImpactForShake) return;
+
+        float t = Mathf.Clamp01((impact - minImpactForShake) / (maxImpactForShake - minImpactForShake));
+        float velocity = Mathf.Lerp(minShakeVelocity, maxShakeVelocity, t);
+
+        impulseSource.GenerateImpulseWithVelocity(UnityEngine.Random.insideUnitSphere.normalized * velocity);
     }
 
     private void SaveCurrentState(int playerId)
