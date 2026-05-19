@@ -10,10 +10,19 @@ public class EggSpawner : MonoBehaviour
     [SerializeField] private float spacing = 1.1f;
     [SerializeField] private Vector3 player1StartCenter = new Vector3(0f, 0.5f, -3f);
     [SerializeField] private Vector3 player2StartCenter = new Vector3(0f, 0.5f, 3f);
+    [SerializeField] private bool spawnOnStart;
 
     private readonly List<EggController> spawnedEggs = new List<EggController>();
 
     public IReadOnlyList<EggController> SpawnedEggs => spawnedEggs;
+
+    private void Start()
+    {
+        if (spawnOnStart)
+        {
+            SpawnAll();
+        }
+    }
 
     public void SpawnAll()
     {
