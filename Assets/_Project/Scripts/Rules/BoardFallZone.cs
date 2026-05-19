@@ -22,9 +22,22 @@ namespace DinoAlkkagi.Rules
         private void OnTriggerEnter(Collider other)
         {
             EggController egg = other.GetComponent<EggController>();
+            Debug.Log($"[BoardFallZone] TriggerEnter: {other.gameObject.name} | Layer={other.gameObject.layer} | HasEgg={egg != null}");
+
             if (egg != null && egg.IsAlive)
             {
-                Debug.Log($"[BoardFallZone] Egg fell: {other.gameObject.name} (Player {egg.OwnerPlayerId})");
+                Debug.Log($"[BoardFallZone] -> MarkFallen: {other.gameObject.name} (P{egg.OwnerPlayerId})");
+                egg.MarkFallen();
+            }
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            // FallZone Trigger보다 알이 빨라서 충돌로 감지되는 경우 대비
+            EggController egg = collision.collider.GetComponent<EggController>();
+            if (egg != null && egg.IsAlive)
+            {
+                Debug.Log($"[BoardFallZone] CollisionEnter fallback: {collision.collider.name}");
                 egg.MarkFallen();
             }
         }
