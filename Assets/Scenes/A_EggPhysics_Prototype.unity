@@ -377,7 +377,7 @@ MonoBehaviour:
   inputCamera: {fileID: 151661329}
   eggLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 256
   minForce: 1.5
   maxForce: 12
   forceMultiplier: 8

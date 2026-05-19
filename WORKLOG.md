@@ -9,3 +9,4 @@
 - `Egg.prefab`과 `Egg_PhysicMaterial.physicMaterial`을 구성했다. Rigidbody, SphereCollider, EggController, 물리 마찰/탄성 기본값 연결을 Unity에서 검증했다.
 - `A_EggPhysics_Prototype.unity` 테스트 Scene을 조립했다. Camera, Light, 임시 보드, EggSpawner, FlickInputController, Player Root를 배치하고 Play Mode에서 P1/P2 알 6개씩 총 12개 생성을 확인했다.
 - Unity 컴파일, Console Error 확인, Play Mode 생성 검증을 통과했다. 사용자 Unity Editor 시각 테스트에서 선택, 드래그 발사, 충돌 동작에 문제가 없음을 승인받았다.
+- 마감 품질 보강으로 `Egg` Layer를 추가하고 `Egg.prefab`과 `FlickInputController.eggLayerMask`를 해당 Layer로 제한했다. Unity 컴파일, Console Error 확인, Play Mode 알 12개 생성 및 Layer 적용 검증을 통과했다.
