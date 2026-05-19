@@ -136,6 +136,8 @@ namespace DinoAlkkagi.Core
                 egg.Launched += OnEggLaunchedBridge;
                 egg.Fallen -= OnEggFellBridge;
                 egg.Fallen += OnEggFellBridge;
+                egg.CollisionOccurred -= OnEggCollisionBridge;
+                egg.CollisionOccurred += OnEggCollisionBridge;
             }
 
             Debug.Log($"[GameSessionController] Registered {allEggs.Count} eggs.");
@@ -149,6 +151,11 @@ namespace DinoAlkkagi.Core
         private void OnEggFellBridge(EggController egg)
         {
             GameEvents.TriggerEggFell(egg);
+        }
+
+        private void OnEggCollisionBridge(EggController egg, float impact)
+        {
+            GameEvents.TriggerEggCollision(impact);
         }
 
         /// <summary>
