@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d56bfcbc57b9f8b49996487b7545080a, type: 3}
   m_Name: AudioSettings_Default
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Data.AudioSettings
-  bgmVolume: 0.4
+  bgmVolume: 0.369
   sfxVolume: 0.7
   maxImpactForVolume: 10
   launchVolume: 0.6
-  fallVolume: 0.8
-  winVolume: 0.7
+  fallVolume: 1
+  winVolume: 0.5
   loseVolume: 0.5
   turnStartVolume: 0.4
   sfxPoolSize: 8
