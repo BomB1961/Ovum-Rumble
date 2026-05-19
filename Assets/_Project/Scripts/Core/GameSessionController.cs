@@ -1,29 +1,34 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using DinoAlkkagi.Data;
 using DinoAlkkagi.Rules;
 
 namespace DinoAlkkagi.Core
 {
     /// <summary>
-    /// 게임 전체 흐름을 관리하는 최상위 컨트롤러.
-    /// Person C가 확장할 메인 진입점. Person B의 룰 시스템을 오케스트레이션한다.
-    /// 기획서 4. 게임 상태 머신과 6-2 턴 진행을 구현한다.
+    /// 게임 전체 흐름을 관리하는 컨트롤러.
+    /// - EggSpawner: 알 생성 위임
+    /// - FlickInputController: 입력 제어 연동
+    /// - TurnController / MotionResolver / WinConditionChecker: Rules 시스템 오케스트레이션
+    /// - BoardFallZone: 낙하 감지
     /// </summary>
     public class GameSessionController : MonoBehaviour
     {
         [Header("--- 설정 ---")]
         [SerializeField] private GameSettings settings;
 
-        [Header("--- 시스템 참조 ---")]
+        [Header("--- Rules 시스템 ---")]
         [SerializeField] private TurnController turnController;
         [SerializeField] private MotionResolver motionResolver;
         [SerializeField] private WinConditionChecker winConditionChecker;
 
-        [Header("--- 스폰 설정 ---")]
-        [SerializeField] private Transform player1SpawnRoot;
-        [SerializeField] private Transform player2SpawnRoot;
-        [SerializeField] private GameObject eggPrefab;
+        [Header("--- Person A 시스템 (자동 연결) ---")]
+        [SerializeField] private EggSpawner eggSpawner;
+        [SerializeField] private FlickInputController flickInputController;
+
+        [Header("--- Person B 추가 (씬에 배치 필요) ---")]
+        [SerializeField] private BoardFallZone boardFallZone;
 
         private List<EggController> allEggs = new List<EggController>();
         private GameState currentState = GameState.Setup;
@@ -34,36 +39,43 @@ namespace DinoAlkkagi.Core
         private void OnEnable()
         {
             GameEvents.OnGameEnded += HandleOnGameEnded;
+            GameEvents.OnTurnStarted += HandleOnTurnStarted;
+            GameEvents.OnEggLaunched += HandleOnEggLaunched;
         }
 
         private void OnDisable()
         {
             GameEvents.OnGameEnded -= HandleOnGameEnded;
+            GameEvents.OnTurnStarted -= HandleOnTurnStarted;
+            GameEvents.OnEggLaunched -= HandleOnEggLaunched;
         }
 
         private void Awake()
         {
-            // 자동 탐색 — 다른 팀원이 인스펙터 연결을 빼먹어도 null 방지
+            // 자동 탐색
             settings ??= FindFirstObjectByType<GameSettings>();
             turnController ??= FindFirstObjectByType<TurnController>();
             motionResolver ??= FindFirstObjectByType<MotionResolver>();
             winConditionChecker ??= FindFirstObjectByType<WinConditionChecker>();
+            eggSpawner ??= FindFirstObjectByType<EggSpawner>();
+            flickInputController ??= FindFirstObjectByType<FlickInputController>();
+            boardFallZone ??= FindFirstObjectByType<BoardFallZone>();
 
-            // 누락 체크 — 명확한 에러 로그로 즉시 발견 가능
+            // 누락 체크
             if (settings == null)
-                Debug.LogError("[GameSessionController] GameSettings not found! Create a GameSettings asset and assign it.");
+                Debug.LogError("[GameSessionController] GameSettings not found!");
             if (turnController == null)
-                Debug.LogError("[GameSessionController] TurnController not found! Add it to the scene.");
+                Debug.LogError("[GameSessionController] TurnController not found!");
             if (motionResolver == null)
-                Debug.LogError("[GameSessionController] MotionResolver not found! Add it to the scene.");
+                Debug.LogError("[GameSessionController] MotionResolver not found!");
             if (winConditionChecker == null)
-                Debug.LogError("[GameSessionController] WinConditionChecker not found! Add it to the scene.");
-            if (eggPrefab == null)
-                Debug.LogWarning("[GameSessionController] EggPrefab not assigned! Set it in the inspector before playing.");
-            if (player1SpawnRoot == null)
-                Debug.LogWarning("[GameSessionController] Player1SpawnRoot not assigned!");
-            if (player2SpawnRoot == null)
-                Debug.LogWarning("[GameSessionController] Player2SpawnRoot not assigned!");
+                Debug.LogError("[GameSessionController] WinConditionChecker not found!");
+            if (eggSpawner == null)
+                Debug.LogError("[GameSessionController] EggSpawner not found!");
+            if (flickInputController == null)
+                Debug.LogError("[GameSessionController] FlickInputController not found!");
+            if (boardFallZone == null)
+                Debug.LogWarning("[GameSessionController] BoardFallZone not found! Add it below the board.");
         }
 
         private void Start()
@@ -72,107 +84,117 @@ namespace DinoAlkkagi.Core
         }
 
         /// <summary>
-        /// 게임을 처음부터 시작한다.
-        /// Setup -> Aiming 상태 전환 + GameStarted 이벤트.
+        /// 게임 시작: EggSpawner가 생성한 알을 Rules 시스템에 등록하고 게임을 시작한다.
         /// </summary>
         public void BeginGame()
         {
             SetState(GameState.Setup);
-            ClearAllEggs();
-            SpawnAllEggs();
+            CollectAndRegisterEggs();
             SetState(GameState.Aiming);
             Debug.Log("[GameSessionController] Game setup complete. Starting match.");
             GameEvents.TriggerGameStarted();
         }
 
         /// <summary>
-        /// 게임을 재시작한다 (결과 화면에서 호출).
+        /// EggSpawner가 생성한 알들을 수집하여 Rules 시스템에 등록한다.
         /// </summary>
+        private void CollectAndRegisterEggs()
+        {
+            // 기존 알 목록 초기화
+            allEggs.Clear();
+            motionResolver?.ClearEggs();
+            winConditionChecker?.ClearEggs();
+
+            if (eggSpawner == null) return;
+
+            // EggSpawner가 아직 알을 생성하지 않았다면 직접 요청
+            if (eggSpawner.SpawnedEggs.Count == 0)
+            {
+                eggSpawner.SpawnAll();
+            }
+
+            // 생성된 알 수집 및 등록
+            foreach (var egg in eggSpawner.SpawnedEggs)
+            {
+                if (egg == null) continue;
+                allEggs.Add(egg);
+                motionResolver?.RegisterEgg(egg);
+                winConditionChecker?.RegisterEgg(egg);
+
+                // 이벤트 브릿지: Person A EggController → GameEvents
+                egg.Launched -= OnEggLaunchedBridge; // 중복 방지
+                egg.Launched += OnEggLaunchedBridge;
+                egg.Fallen -= OnEggFellBridge;
+                egg.Fallen += OnEggFellBridge;
+            }
+
+            Debug.Log($"[GameSessionController] Registered {allEggs.Count} eggs.");
+        }
+
+        private void OnEggLaunchedBridge(EggController egg)
+        {
+            GameEvents.TriggerEggLaunched(egg);
+        }
+
+        private void OnEggFellBridge(EggController egg)
+        {
+            GameEvents.TriggerEggFell(egg);
+        }
+
+        /// <summary>
+        /// 턴 시작 시 FlickInputController와 동기화한다.
+        /// </summary>
+        private void HandleOnTurnStarted(int playerId)
+        {
+            if (flickInputController == null) return;
+
+            flickInputController.SetActivePlayer(playerId);
+            flickInputController.SetInputEnabled(true);
+        }
+
+        /// <summary>
+        /// 발사 즉시 입력을 잠근다.
+        /// </summary>
+        private void HandleOnEggLaunched(EggController egg)
+        {
+            LockAllInput();
+        }
+
+        /// <summary>
+        /// 입력을 잠근다 (발사 후 MotionResolver가 해제할 때까지).
+        /// TurnController가 이벤트를 받아 IsInputLocked를 설정하고,
+        /// 여기서 FlickInputController를 비활성화한다.
+        /// </summary>
+        public void LockAllInput()
+        {
+            turnController?.LockInput();
+            flickInputController?.SetInputEnabled(false);
+        }
+
+        /// <summary>
+        /// 입력을 해제한다.
+        /// </summary>
+        public void UnlockAllInput()
+        {
+            turnController?.UnlockInput();
+        }
+
         public void RestartGame()
         {
             Debug.Log("[GameSessionController] Restarting game...");
             BeginGame();
         }
 
-        private void SpawnAllEggs()
-        {
-            if (eggPrefab == null)
-            {
-                Debug.LogError("[GameSessionController] EggPrefab is not assigned!");
-                return;
-            }
-
-            for (int i = 0; i < settings.eggsPerPlayer; i++)
-            {
-                SpawnEggForPlayer(1, player1SpawnRoot, i);
-                SpawnEggForPlayer(2, player2SpawnRoot, i);
-            }
-
-            Debug.Log($"[GameSessionController] Spawned {settings.eggsPerPlayer * 2} eggs ({settings.eggsPerPlayer} per player).");
-        }
-
-        private void SpawnEggForPlayer(int playerId, Transform spawnRoot, int index)
-        {
-            if (spawnRoot == null)
-            {
-                Debug.LogError($"[GameSessionController] SpawnRoot for Player {playerId} is not assigned!");
-                return;
-            }
-
-            if (index >= spawnRoot.childCount)
-            {
-                Debug.LogWarning($"[GameSessionController] SpawnRoot for Player {playerId} has only {spawnRoot.childCount} children, but index {index} requested.");
-                return;
-            }
-
-            Transform spawnPoint = spawnRoot.GetChild(index);
-            GameObject eggObj = Instantiate(eggPrefab, spawnPoint.position, spawnPoint.rotation);
-            eggObj.name = $"Egg_P{playerId}_{index + 1}";
-
-            EggController egg = eggObj.GetComponent<EggController>();
-            if (egg != null)
-            {
-                egg.Initialize(playerId);
-                egg.transform.position = spawnPoint.position;
-                egg.transform.rotation = spawnPoint.rotation;
-
-                // Person A EggController의 인스턴스 이벤트 → GameEvents 브릿지
-                egg.Launched += (e) => GameEvents.TriggerEggLaunched(e);
-                egg.Fallen += (e) => GameEvents.TriggerEggFell(e);
-
-                allEggs.Add(egg);
-                motionResolver?.RegisterEgg(egg);
-                winConditionChecker?.RegisterEgg(egg);
-            }
-            else
-            {
-                Debug.LogError($"[GameSessionController] EggPrefab missing EggController component!");
-                Destroy(eggObj);
-            }
-        }
-
-        private void ClearAllEggs()
-        {
-            for (int i = allEggs.Count - 1; i >= 0; i--)
-            {
-                if (allEggs[i] != null)
-                    Destroy(allEggs[i].gameObject);
-            }
-            allEggs.Clear();
-            motionResolver?.ClearEggs();
-            winConditionChecker?.ClearEggs();
-        }
-
         private void HandleOnGameEnded(GameResult result)
         {
             SetState(GameState.Result);
+            flickInputController?.SetInputEnabled(false);
             Debug.Log($"[GameSessionController] === Game Over: {result} ===");
         }
 
         private void SetState(GameState newState)
         {
             currentState = newState;
-            // Person C: 여기서 UI 업데이트 이벤트를 추가할 수 있음
         }
 
 #if UNITY_EDITOR
