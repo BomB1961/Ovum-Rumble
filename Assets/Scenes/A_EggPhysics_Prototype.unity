@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 151661330}
   - component: {fileID: 151661329}
+  - component: {fileID: 151661331}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -202,6 +203,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &151661331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 151661328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a2c5b1e3d4f0a8b9c6e1f2d3a4b5c6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputCamera: {fileID: 151661329}
+  orbitPivotLayerMask:
+    serializedVersion: 2
+    m_Bits: 257
+  pivotPoint: {x: 0, y: 0, z: 0}
+  distance: 10
+  minDistance: 3
+  maxDistance: 20
+  orbitSensitivity: 200
+  zoomSensitivity: 5
+  pitchMin: -89
+  pitchMax: 89
+  topDownDistance: 15
+  topDownPivot: {x: 0, y: 0, z: 0}
+  transitionDuration: 0.5
 --- !u!1 &250049753
 GameObject:
   m_ObjectHideFlags: 0
