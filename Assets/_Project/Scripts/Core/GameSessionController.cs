@@ -96,6 +96,9 @@ namespace DinoAlkkagi.Core
         public void BeginGame()
         {
             SetState(GameState.Setup);
+
+            // 이전 알 제거 후 새로 생성 (Restart 대응)
+            eggSpawner?.ClearSpawnedEggs();
             CollectAndRegisterEggs();
             SetState(GameState.Aiming);
             Debug.Log("[GameSessionController] Game setup complete. Starting match.");
@@ -241,18 +244,18 @@ namespace DinoAlkkagi.Core
             {
                 debugLabelStyle = new GUIStyle(GUI.skin.label)
                 {
-                    fontSize = 20,
+                    fontSize = 40,
                     normal = { textColor = Color.white }
                 };
                 debugButtonStyle = new GUIStyle(GUI.skin.button)
                 {
-                    fontSize = 20,
-                    fixedHeight = 50,
-                    fixedWidth = 180
+                    fontSize = 40,
+                    fixedHeight = 80,
+                    fixedWidth = 300
                 };
             }
 
-            GUILayout.BeginArea(new Rect(15, 15, 250, 300));
+            GUILayout.BeginArea(new Rect(20, 20, 500, 500));
             GUILayout.Label($"State: {currentState}", debugLabelStyle);
             GUILayout.Label($"Turn: Player {turnController?.CurrentPlayerId}", debugLabelStyle);
             GUILayout.Label($"Input Locked: {turnController?.IsInputLocked}", debugLabelStyle);
