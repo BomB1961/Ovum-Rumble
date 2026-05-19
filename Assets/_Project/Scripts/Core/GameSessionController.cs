@@ -229,24 +229,50 @@ namespace DinoAlkkagi.Core
             RestartGame();
         }
 
+        private GUIStyle debugLabelStyle;
+        private GUIStyle debugButtonStyle;
+
         private void OnGUI()
         {
             if (!Application.isPlaying) return;
-            GUILayout.Label($"State: {currentState}");
-            GUILayout.Label($"Turn: Player {turnController?.CurrentPlayerId}");
-            GUILayout.Label($"Input Locked: {turnController?.IsInputLocked}");
-            GUILayout.Label($"Resolving: {motionResolver?.IsResolving} ({motionResolver?.ResolveTime:F1}s)");
+
+            // 스타일 캐싱 (매 프레임 new 안 하게)
+            if (debugLabelStyle == null)
+            {
+                debugLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 20,
+                    normal = { textColor = Color.white }
+                };
+                debugButtonStyle = new GUIStyle(GUI.skin.button)
+                {
+                    fontSize = 20,
+                    fixedHeight = 50,
+                    fixedWidth = 180
+                };
+            }
+
+            GUILayout.BeginArea(new Rect(15, 15, 250, 300));
+            GUILayout.Label($"State: {currentState}", debugLabelStyle);
+            GUILayout.Label($"Turn: Player {turnController?.CurrentPlayerId}", debugLabelStyle);
+            GUILayout.Label($"Input Locked: {turnController?.IsInputLocked}", debugLabelStyle);
+            GUILayout.Label($"Resolving: {motionResolver?.IsResolving} ({motionResolver?.ResolveTime:F1}s)", debugLabelStyle);
 
             if (winConditionChecker != null)
             {
-                GUILayout.Label($"P1 Alive: {winConditionChecker.GetAliveCount(1)}");
-                GUILayout.Label($"P2 Alive: {winConditionChecker.GetAliveCount(2)}");
+                GUILayout.Label($"P1 Alive: {winConditionChecker.GetAliveCount(1)}", debugLabelStyle);
+                GUILayout.Label($"P2 Alive: {winConditionChecker.GetAliveCount(2)}", debugLabelStyle);
             }
 
-            if (currentState == GameState.Result && GUILayout.Button("Restart"))
+            if (currentState == GameState.Result)
             {
-                RestartGame();
+                GUILayout.Space(10);
+                if (GUILayout.Button("Restart", debugButtonStyle))
+                {
+                    RestartGame();
+                }
             }
+            GUILayout.EndArea();
         }
 #endif
     }
