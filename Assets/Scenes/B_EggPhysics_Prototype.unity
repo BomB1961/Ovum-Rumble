@@ -820,7 +820,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf3af7b2d1506fe4fa6c1baa63995553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EggSpawner
-  eggPrefab: {fileID: 2482833451267554298, guid: 4966227ea33d7f44ba54e0077a901439, type: 3}
+  eggPrefab: {fileID: 4136872941776282192, guid: c6bac60838cd6404dbcea1dec5cbbe40, type: 3}
   player1Root: {fileID: 1876930049}
   player2Root: {fileID: 250049754}
   eggsPerPlayer: 6
