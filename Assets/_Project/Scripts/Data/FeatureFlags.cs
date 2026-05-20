@@ -22,6 +22,9 @@ namespace DinoAlkkagi.Data
         public bool enableHatching = false;
         public bool enable4PlayerMode = false;
 
+        [Header("--- AI ---")]
+        public bool enableAI = false;
+
         [Header("--- v0.4 네트워크 ---")]
         public bool enableLanMultiplayer = false;
         public bool enableLobby = false;

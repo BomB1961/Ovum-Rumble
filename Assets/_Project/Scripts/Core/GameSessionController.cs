@@ -29,6 +29,7 @@ namespace DinoAlkkagi.Core
 
         [Header("--- Person B 추가 (씬에 배치 필요) ---")]
         [SerializeField] private BoardFallZone boardFallZone;
+        [SerializeField] private AIInputController aiInputController;
 
         private List<EggController> allEggs = new List<EggController>();
         private GameState currentState = GameState.Setup;
@@ -63,6 +64,7 @@ namespace DinoAlkkagi.Core
             eggSpawner ??= FindFirstObjectByType<EggSpawner>();
             flickInputController ??= FindFirstObjectByType<FlickInputController>();
             boardFallZone ??= FindFirstObjectByType<BoardFallZone>();
+            aiInputController ??= FindFirstObjectByType<AIInputController>();
 
             // 누락 체크
             if (settings == null)
@@ -79,6 +81,8 @@ namespace DinoAlkkagi.Core
                 Debug.LogError("[GameSessionController] FlickInputController not found!");
             if (boardFallZone == null)
                 Debug.LogWarning("[GameSessionController] BoardFallZone not found! Add it below the board.");
+            if (aiInputController == null)
+                Debug.Log("[GameSessionController] AIInputController not found. AI opponent disabled.");
         }
 
         private void Start()
@@ -137,6 +141,9 @@ namespace DinoAlkkagi.Core
                 egg.Fallen -= OnEggFellBridge;
                 egg.Fallen += OnEggFellBridge;
             }
+
+            // AIInputController에 알 등록 (AI 발사용)
+            aiInputController?.RegisterEggs(allEggs);
 
             Debug.Log($"[GameSessionController] Registered {allEggs.Count} eggs.");
         }
