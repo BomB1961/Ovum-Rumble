@@ -166,5 +166,21 @@ namespace DinoAlkkagi.Presentation
                     break;
             }
         }
+
+        public void SetBGMVolume(float normalizedVolume)
+        {
+            float db = normalizedVolume > 0.0001f
+                ? 20f * Mathf.Log10(normalizedVolume)
+                : -80f;
+            bgmGroup.audioMixer.SetFloat("BGMVolume", db);
+        }
+
+        public void SetSFXVolume(float normalizedVolume)
+        {
+            float db = normalizedVolume > 0.0001f
+                ? 20f * Mathf.Log10(normalizedVolume)
+                : -80f;
+            sfxGroup.audioMixer.SetFloat("SFXVolume", db);
+        }
     }
 }

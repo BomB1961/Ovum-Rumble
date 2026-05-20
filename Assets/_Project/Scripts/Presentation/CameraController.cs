@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using DinoAlkkagi.Core;
-using Unity.Cinemachine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -46,12 +45,12 @@ public class CameraController : MonoBehaviour
     [Header("Transition")]
     [SerializeField] private float transitionDuration = 0.5f;
 
-    [Header("Shake (Cinemachine Impulse)")]
-    [SerializeField] private CinemachineImpulseSource impulseSource;
+    [Header("Shake")]
     [SerializeField] private float minImpactForShake = 2f;
     [SerializeField] private float maxImpactForShake = 15f;
-    [SerializeField] private float minShakeVelocity = 0.1f;
-    [SerializeField] private float maxShakeVelocity = 1.0f;
+    [SerializeField] private float minShakeIntensity = 0.05f;
+    [SerializeField] private float maxShakeIntensity = 0.4f;
+    [SerializeField] private float shakeDuration = 0.3f;
 
     private const float TopDownPitch = 90f;
     private const float TopDownYaw = 0f;
@@ -67,13 +66,14 @@ public class CameraController : MonoBehaviour
     private readonly PlayerCameraState[] savedStates = new PlayerCameraState[3];
     private int currentViewerId;
 
+    private Vector3 shakeOffset;
+    private float shakeTimer;
+    private float currentShakeIntensity;
+
     private void Awake()
     {
         if (inputCamera == null)
             inputCamera = Camera.main;
-
-        if (impulseSource == null)
-            impulseSource = GetComponent<CinemachineImpulseSource>();
 
         Vector3 offset = inputCamera.transform.position - pivotPoint;
         float initDist = offset.magnitude;
@@ -144,7 +144,22 @@ public class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateShake();
         ApplyCameraTransform();
+    }
+
+    private void UpdateShake()
+    {
+        if (shakeTimer > 0f)
+        {
+            shakeTimer -= Time.deltaTime;
+            float decay = Mathf.Clamp01(shakeTimer / shakeDuration);
+            shakeOffset = UnityEngine.Random.insideUnitSphere * currentShakeIntensity * decay;
+        }
+        else
+        {
+            shakeOffset = Vector3.zero;
+        }
     }
 
     private void HandleTurnStarted(int playerId)
@@ -159,13 +174,11 @@ public class CameraController : MonoBehaviour
 
     private void HandleEggCollision(float impact)
     {
-        if (impulseSource == null) return;
         if (impact < minImpactForShake) return;
 
         float t = Mathf.Clamp01((impact - minImpactForShake) / (maxImpactForShake - minImpactForShake));
-        float velocity = Mathf.Lerp(minShakeVelocity, maxShakeVelocity, t);
-
-        impulseSource.GenerateImpulseWithVelocity(UnityEngine.Random.insideUnitSphere.normalized * velocity);
+        currentShakeIntensity = Mathf.Lerp(minShakeIntensity, maxShakeIntensity, t);
+        shakeTimer = shakeDuration;
     }
 
     private void SaveCurrentState(int playerId)
@@ -333,7 +346,7 @@ public class CameraController : MonoBehaviour
             -Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
         );
 
-        inputCamera.transform.position = pivotPoint + direction * distance;
+        inputCamera.transform.position = pivotPoint + direction * distance + shakeOffset;
         inputCamera.transform.LookAt(pivotPoint);
     }
 
