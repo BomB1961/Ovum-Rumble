@@ -20,6 +20,6 @@ MonoBehaviour:
   enableAbilityEggs: 0
   enableHatching: 0
   enable4PlayerMode: 0
-  enableAI: 1
+  enableAI: 0
   enableLanMultiplayer: 0
   enableLobby: 0

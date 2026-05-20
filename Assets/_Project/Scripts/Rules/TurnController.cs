@@ -14,6 +14,7 @@ namespace DinoAlkkagi.Rules
 
         private int currentPlayerId;
         private bool isInputLocked = false;
+        private bool isGameEnded = false;
 
         public int CurrentPlayerId => currentPlayerId;
         public bool IsInputLocked => isInputLocked;
@@ -24,6 +25,7 @@ namespace DinoAlkkagi.Rules
             GameEvents.OnGameStarted += HandleOnGameStarted;
             GameEvents.OnEggLaunched += HandleOnEggLaunched;
             GameEvents.OnAllEggsStopped += HandleOnAllEggsStopped;
+            GameEvents.OnGameEnded += HandleOnGameEnded;
         }
 
         private void OnDisable()
@@ -31,12 +33,14 @@ namespace DinoAlkkagi.Rules
             GameEvents.OnGameStarted -= HandleOnGameStarted;
             GameEvents.OnEggLaunched -= HandleOnEggLaunched;
             GameEvents.OnAllEggsStopped -= HandleOnAllEggsStopped;
+            GameEvents.OnGameEnded -= HandleOnGameEnded;
         }
 
         private void HandleOnGameStarted()
         {
             currentPlayerId = startingPlayerId;
             isInputLocked = false;
+            isGameEnded = false;
             Debug.Log($"[TurnController] Game started. First turn: Player {currentPlayerId}");
             GameEvents.TriggerTurnStarted(currentPlayerId);
         }
@@ -50,7 +54,13 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnAllEggsStopped()
         {
+            if (isGameEnded) return;
             AdvanceTurn();
+        }
+
+        private void HandleOnGameEnded(GameResult result)
+        {
+            isGameEnded = true;
         }
 
         /// <summary>
