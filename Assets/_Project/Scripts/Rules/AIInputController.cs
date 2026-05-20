@@ -76,9 +76,9 @@ namespace DinoAlkkagi.Rules
             // 살아있는 적 알
             var targetEggs = trackedEggs.Where(e => e != null && e.IsAlive && e.OwnerPlayerId != aiPlayerId).ToList();
 
-            // 1. 알 선택: 중앙에서 가장 먼 알 우선 (공격적으로)
+            // 1. 알 선택: 중앙에 가까운 알 우선 (가장자리 알 자살 방지)
             EggController selectedEgg = myEggs
-                .OrderByDescending(e => e.transform.position.magnitude)
+                .OrderBy(e => e.transform.position.magnitude)
                 .First();
 
             // 2. 타겟: 가장 가까운 적 알
@@ -95,27 +95,28 @@ namespace DinoAlkkagi.Rules
                 targetPos = Vector3.zero;
             }
 
-            // 3. 발사 방향 (드래그 반대 방향 모방)
-            Vector3 direction = selectedEgg.transform.position - targetPos;
+            // 3. 발사 방향 = 내 알 → 적 알 방향 (FlickInput 드래그 역방향 모방)
+            Vector3 direction = targetPos - selectedEgg.transform.position;
             direction.y = 0f;
             if (direction.magnitude < 0.01f)
                 direction = Random.insideUnitSphere;
             direction.Normalize();
 
             // 4. 노이즈 (완벽 조준 방지)
-            direction += Random.insideUnitSphere * aimNoise;
+            direction += (Vector3)Random.insideUnitCircle * aimNoise;
             direction.y = 0f;
             direction.Normalize();
 
-            // 5. 힘 (거리 비례 + 랜덤)
+            // 5. 힘: 거리 비례 + 랜덤 계수 (0.8~1.2배)
             float dist = Vector3.Distance(selectedEgg.transform.position, targetPos);
-            float force = Mathf.Clamp(dist * 1.5f, minForce, maxForce);
+            float force = Mathf.Clamp(dist * 1.5f * Random.Range(0.8f, 1.2f), minForce, maxForce);
 
-            // 6. 발사 — FlickInputController와 동일한 이벤트 사용
+            // 6. 발사 — EggController.Launch() 내부에서 Launched 이벤트 발생,
+            //    GameSessionController의 브릿지가 GameEvents.TriggerEggLaunched로 연결함.
+            //    따로 Trigger 할 필요 없음 (중복 방지).
             selectedEgg.Launch(direction * force);
-            GameEvents.TriggerEggLaunched(selectedEgg);
 
-            Debug.Log($"[AI] P{aiPlayerId} fired at {targetPos} (force: {force:F1})");
+            Debug.Log($"[AI] P{aiPlayerId} fired toward {targetPos} (force: {force:F1})");
         }
 
         public void RegisterEggs(IEnumerable<EggController> eggs)
