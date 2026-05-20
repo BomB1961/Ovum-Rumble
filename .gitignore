@@ -1,50 +1,23 @@
-# Unity generated folders
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-[Ll]ogs/
-[Uu]ser[Ss]ettings/
-[Mm]emoryCaptures/
+# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Mm]emoryCaptures/
+/[Uu]ser[Ss]ettings/
+/[Uu]ser[Ll]ocal[Ss]ettings/
 
-# Unity generated files
+# IDE
 *.csproj
 *.sln
 *.slnx
+*.suo
 *.user
+*.userosscache
 *.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
 
-# Unity crash reports
-sysinfo.txt
-
-# Asset Store tools
-[Aa]ssets/AssetStoreTools*
-
-# Visual Studio / Rider / VS Code local state
-.vs/
-.idea/
-.vscode/
-*.DotSettings.user
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
-Desktop.ini
-
-# Codex/global tooling sync folders accidentally created in project root
-.codex-global-config-sync/
-.unity-cli-sync/
-.codex-global-config-source/
-
-# Local environment files
-.env
-.env.*
-
