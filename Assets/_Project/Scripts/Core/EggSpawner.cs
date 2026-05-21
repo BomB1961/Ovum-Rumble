@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DinoAlkkagi.Environment;
 
 public class EggSpawner : MonoBehaviour
 {
@@ -13,8 +14,14 @@ public class EggSpawner : MonoBehaviour
     [SerializeField] private bool spawnOnStart;
 
     private readonly List<EggController> spawnedEggs = new List<EggController>();
+    private IBoardSurface boardSurface;
 
     public IReadOnlyList<EggController> SpawnedEggs => spawnedEggs;
+
+    public void SetBoardSurface(IBoardSurface surface)
+    {
+        boardSurface = surface;
+    }
 
     private void Start()
     {
@@ -62,10 +69,27 @@ public class EggSpawner : MonoBehaviour
 
     private void SpawnPlayerEggs(int ownerPlayerId, Transform parent, Vector3 center)
     {
+        if (boardSurface != null)
+        {
+            SpawnFromBoardSurface(ownerPlayerId, parent);
+            return;
+        }
+
         for (int i = 0; i < eggsPerPlayer; i++)
         {
             Vector3 position = GetGridPosition(center, i);
             EggController egg = Instantiate(eggPrefab, position, Quaternion.identity, parent);
+            egg.Initialize(ownerPlayerId);
+            spawnedEggs.Add(egg);
+        }
+    }
+
+    private void SpawnFromBoardSurface(int ownerPlayerId, Transform parent)
+    {
+        IReadOnlyList<Vector3> points = boardSurface.GetSpawnPoints(ownerPlayerId);
+        for (int i = 0; i < eggsPerPlayer && i < points.Count; i++)
+        {
+            EggController egg = Instantiate(eggPrefab, points[i], Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
             spawnedEggs.Add(egg);
         }

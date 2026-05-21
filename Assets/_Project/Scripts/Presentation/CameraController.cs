@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Environment;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -52,7 +53,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float maxShakeIntensity = 0.4f;
     [SerializeField] private float shakeDuration = 0.3f;
 
-    private const float TopDownPitch = 90f;
+    private const float TopDownPitch = 89f;
     private const float TopDownYaw = 0f;
 
     private float yaw;
@@ -69,28 +70,22 @@ public class CameraController : MonoBehaviour
     private Vector3 shakeOffset;
     private float shakeTimer;
     private float currentShakeIntensity;
+    private IBoardSurface boardSurface;
+
+    public void SetBoardSurface(IBoardSurface surface)
+    {
+        boardSurface = surface;
+        ApplyBoardCameraBounds();
+    }
 
     private void Awake()
     {
         if (inputCamera == null)
             inputCamera = Camera.main;
 
-        Vector3 offset = inputCamera.transform.position - pivotPoint;
-        float initDist = offset.magnitude;
-        Vector3 initDir = offset.normalized;
-        float initPitch = Mathf.Asin(initDir.y) * Mathf.Rad2Deg;
-        float initYaw = Mathf.Atan2(initDir.x, initDir.z) * Mathf.Rad2Deg;
-
-        var defaultState = new PlayerCameraState
-        {
-            pivot = pivotPoint,
-            yaw = initYaw,
-            pitch = initPitch,
-            distance = initDist
-        };
-
-        for (int i = 1; i <= 2; i++)
-            savedStates[i] = defaultState;
+        InitializeFromCurrentCamera();
+        ApplyBoardCameraBounds();
+        SaveStateForAllPlayers();
     }
 
     private void OnEnable()
@@ -107,11 +102,8 @@ public class CameraController : MonoBehaviour
 
     private void Start()
     {
-        Vector3 offset = inputCamera.transform.position - pivotPoint;
-        distance = offset.magnitude;
-        Vector3 direction = offset.normalized;
-        pitch = Mathf.Asin(direction.y) * Mathf.Rad2Deg;
-        yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+        ClampCameraState();
+        SaveStateForAllPlayers();
     }
 
     private void Update()
@@ -183,7 +175,7 @@ public class CameraController : MonoBehaviour
 
     private void SaveCurrentState(int playerId)
     {
-        if (playerId <= 0) return;
+        if (!IsValidPlayerId(playerId)) return;
 
         savedStates[playerId] = new PlayerCameraState
         {
@@ -228,7 +220,7 @@ public class CameraController : MonoBehaviour
     private IEnumerator TransitionToFreeCoroutine(int playerId)
     {
         cameraMode = CameraMode.Transitioning;
-        PlayerCameraState target = savedStates[playerId];
+        PlayerCameraState target = IsValidPlayerId(playerId) ? savedStates[playerId] : GetCurrentState();
 
         Vector3 startPivot = pivotPoint;
         float startYaw = yaw;
@@ -332,7 +324,7 @@ public class CameraController : MonoBehaviour
         if (Mathf.Approximately(scroll, 0f)) return;
 
         distance -= scroll * zoomSensitivity;
-        distance = Mathf.Clamp(distance, minDistance, maxDistance);
+        ClampCameraState();
     }
 
     private void ApplyCameraTransform()
@@ -346,8 +338,77 @@ public class CameraController : MonoBehaviour
             -Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
         );
 
-        inputCamera.transform.position = pivotPoint + direction * distance + shakeOffset;
-        inputCamera.transform.LookAt(pivotPoint);
+        Vector3 cameraPosition = pivotPoint + direction * distance + shakeOffset;
+        Vector3 lookDirection = pivotPoint - cameraPosition;
+        if (lookDirection.sqrMagnitude < 0.0001f)
+            lookDirection = Vector3.down;
+
+        inputCamera.transform.SetPositionAndRotation(
+            cameraPosition,
+            Quaternion.LookRotation(lookDirection.normalized, Vector3.up));
+    }
+
+    private void InitializeFromCurrentCamera()
+    {
+        Vector3 offset = inputCamera.transform.position - pivotPoint;
+        if (offset.sqrMagnitude < 0.0001f)
+        {
+            yaw = TopDownYaw;
+            pitch = pitchMax;
+        }
+        else
+        {
+            Vector3 direction = offset.normalized;
+            pitch = Mathf.Asin(direction.y) * Mathf.Rad2Deg;
+            yaw = Mathf.Atan2(direction.x, -direction.z) * Mathf.Rad2Deg;
+            distance = offset.magnitude;
+        }
+
+        ClampCameraState();
+    }
+
+    private void ApplyBoardCameraBounds()
+    {
+        if (boardSurface == null) return;
+
+        Bounds bounds = boardSurface.GetCameraBounds();
+        pivotPoint = bounds.center;
+
+        float fitDistance = Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.5f;
+        distance = Mathf.Clamp(fitDistance, minDistance, maxDistance);
+        topDownPivot = bounds.center;
+        topDownDistance = Mathf.Clamp(Mathf.Max(topDownDistance, fitDistance), minDistance, maxDistance);
+
+        SaveStateForAllPlayers();
+    }
+
+    private void ClampCameraState()
+    {
+        distance = Mathf.Clamp(distance, minDistance, maxDistance);
+        pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+    }
+
+    private PlayerCameraState GetCurrentState()
+    {
+        return new PlayerCameraState
+        {
+            pivot = pivotPoint,
+            yaw = yaw,
+            pitch = pitch,
+            distance = distance
+        };
+    }
+
+    private void SaveStateForAllPlayers()
+    {
+        PlayerCameraState state = GetCurrentState();
+        for (int i = 1; i < savedStates.Length; i++)
+            savedStates[i] = state;
+    }
+
+    private bool IsValidPlayerId(int playerId)
+    {
+        return playerId > 0 && playerId < savedStates.Length;
     }
 
     private bool WasSecondaryButtonPressedThisFrame()

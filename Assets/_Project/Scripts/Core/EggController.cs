@@ -76,6 +76,11 @@ public class EggController : MonoBehaviour
             return;
         }
 
+        if (collision.collider.GetComponentInParent<EggController>() == null)
+        {
+            return;
+        }
+
         float impact = collision.relativeVelocity.magnitude;
         CollisionOccurred?.Invoke(this, impact);
     }

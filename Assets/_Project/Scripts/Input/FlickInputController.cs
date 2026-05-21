@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using DinoAlkkagi.Environment;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -18,9 +19,15 @@ public class FlickInputController : MonoBehaviour
     private EggController selectedEgg;
     private Vector3 dragStartWorld;
     private bool isDragging;
+    private IBoardSurface boardSurface;
 
     public event Action<EggController> EggSelected;
     public event Action<EggController> EggLaunched;
+
+    public void SetBoardSurface(IBoardSurface surface)
+    {
+        boardSurface = surface;
+    }
 
     private void Awake()
     {
@@ -148,6 +155,17 @@ public class FlickInputController : MonoBehaviour
 
     private Vector3 GetBoardPoint(Ray ray, Vector3 fallback)
     {
+        if (boardSurface != null)
+        {
+            if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float planeEnter))
+            {
+                Vector3 planePoint = ray.GetPoint(planeEnter);
+                float height = boardSurface.GetHeight(planePoint);
+                return new Vector3(planePoint.x, height, planePoint.z);
+            }
+            return fallback;
+        }
+
         Plane boardPlane = new Plane(Vector3.up, Vector3.zero);
         if (boardPlane.Raycast(ray, out float enter))
         {
