@@ -6,6 +6,14 @@
 
 이번 작업은 UI 기능 연결과 테스트 가능한 화면 구성을 목표로 했습니다. 별도의 최종 디자인, 고급 UI 애니메이션, 세부 비주얼 polish는 추가하지 않았습니다.
 
+origin/feature/C-ui-flow
+= UI 구조/뼈대만 잡은 브랜치
+
+add-ui-features
+= C-ui-flow 뼈대 + 실제 기능 추가한 브랜치
+
+add-ui-features가 C-ui-flow 내용을 포함하고 있습니다.
+
 ## 클래스명 - 기능 내용
 
 | 클래스명 | 기능 내용 |
