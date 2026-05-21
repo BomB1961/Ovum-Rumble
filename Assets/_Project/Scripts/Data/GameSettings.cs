@@ -34,5 +34,23 @@ namespace DinoAlkkagi.Data
         [Header("--- 보드 크기 (참조용) ---")]
         public float boardSize = 10f;
         public float fallZoneDepth = 2f;
+
+        [Header("--- 절차 맵 생성 ---")]
+        [Tooltip("heightfield 해상도 (N x N)")]
+        public int mapResolution = 64;
+        [Tooltip("펄린 노이즈 스케일 — 작을수록 넓고 완만한 언덕")]
+        public float noiseScale = 2f;
+        [Tooltip("높이 배율 — PS1 숲 스타일 (1.0~2.0 추천)")]
+        public float heightMultiplier = 1.2f;
+        [Tooltip("노이즈 옥타브 수 — 낮을수록 매끄러움")]
+        public int noiseOctaves = 2;
+        [Tooltip("스폰 존 평탄화 반경")]
+        public float spawnFlattenRadius = 2.5f;
+        [Tooltip("최대 허용 경사 기울기")]
+        public float maxSlopeGradient = 0.5f;
+        [Tooltip("맵 검증 실패 시 최대 재시도 횟수")]
+        public int maxRetryCount = 10;
+        [Tooltip("보드 두께 (옆면/밑면 생성용)")]
+        public float boardThickness = 1f;
     }
 }

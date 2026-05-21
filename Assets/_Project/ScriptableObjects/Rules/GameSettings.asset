@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb761a1cdd83dd142a8edd8281fbf64f, type: 3}
+  m_Name: GameSettings
+  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Data.GameSettings
+  totalPlayers: 2
+  eggsPerPlayer: 6
+  stopVelocity: 0.08
+  stopHoldTime: 1
+  maxResolveTime: 8
+  launchPowerMultiplier: 1.5
+  minLaunchForce: 2
+  maxLaunchForce: 20
+  defaultBounciness: 0.3
+  defaultFriction: 0.4
+  boardSize: 30
+  fallZoneDepth: 10
+  mapResolution: 256
+  noiseScale: 2
+  heightMultiplier: 10
+  noiseOctaves: 2
+  spawnFlattenRadius: 2.5
+  maxSlopeGradient: 0.5
+  maxRetryCount: 10
+  boardThickness: 1
