@@ -68,7 +68,7 @@ namespace DinoAlkkagi.Environment
 
         private void ApplyMesh(int seed)
         {
-            Mesh mesh = MeshFromHeightfield.Create(heightfield, settings.boardSize, settings.boardThickness);
+            Mesh mesh = MeshFromHeightfield.Create(heightfield, settings.boardSize);
             meshFilter.mesh = mesh;
             meshCollider.sharedMesh = mesh;
 
