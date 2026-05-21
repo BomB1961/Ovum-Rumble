@@ -4,7 +4,8 @@ using DinoAlkkagi.Environment;
 
 public class EggSpawner : MonoBehaviour
 {
-    [SerializeField] private EggController eggPrefab;
+    [SerializeField] private EggController player1EggPrefab;
+    [SerializeField] private EggController player2EggPrefab;
     [SerializeField] private Transform player1Root;
     [SerializeField] private Transform player2Root;
     [SerializeField] private int eggsPerPlayer = 6;
@@ -33,9 +34,9 @@ public class EggSpawner : MonoBehaviour
 
     public void SpawnAll()
     {
-        if (eggPrefab == null)
+        if (player1EggPrefab == null || player2EggPrefab == null)
         {
-            Debug.LogError($"{nameof(EggSpawner)} requires an egg prefab.", this);
+            Debug.LogError($"{nameof(EggSpawner)} requires both player egg prefabs.", this);
             return;
         }
 
@@ -67,6 +68,11 @@ public class EggSpawner : MonoBehaviour
         spawnedEggs.Clear();
     }
 
+    private EggController GetPrefabForPlayer(int playerId)
+    {
+        return playerId == 2 ? player2EggPrefab : player1EggPrefab;
+    }
+
     private void SpawnPlayerEggs(int ownerPlayerId, Transform parent, Vector3 center)
     {
         if (boardSurface != null)
@@ -75,10 +81,11 @@ public class EggSpawner : MonoBehaviour
             return;
         }
 
+        EggController prefab = GetPrefabForPlayer(ownerPlayerId);
         for (int i = 0; i < eggsPerPlayer; i++)
         {
             Vector3 position = GetGridPosition(center, i);
-            EggController egg = Instantiate(eggPrefab, position, Quaternion.identity, parent);
+            EggController egg = Instantiate(prefab, position, Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
             spawnedEggs.Add(egg);
         }
@@ -87,9 +94,10 @@ public class EggSpawner : MonoBehaviour
     private void SpawnFromBoardSurface(int ownerPlayerId, Transform parent)
     {
         IReadOnlyList<Vector3> points = boardSurface.GetSpawnPoints(ownerPlayerId);
+        EggController prefab = GetPrefabForPlayer(ownerPlayerId);
         for (int i = 0; i < eggsPerPlayer && i < points.Count; i++)
         {
-            EggController egg = Instantiate(eggPrefab, points[i], Quaternion.identity, parent);
+            EggController egg = Instantiate(prefab, points[i], Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
             spawnedEggs.Add(egg);
         }
