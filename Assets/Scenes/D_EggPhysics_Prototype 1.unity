@@ -1144,6 +1144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Rules.TurnController
   totalPlayers: 2
   startingPlayerId: 1
+  winConditionChecker: {fileID: 0}
 --- !u!114 &1847179133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1163,6 +1164,7 @@ MonoBehaviour:
   eggSpawner: {fileID: 1401538238}
   flickInputController: {fileID: 996057604}
   boardFallZone: {fileID: 960822259}
+  aiInputController: {fileID: 0}
   proceduralBoardGenerator: {fileID: 0}
 --- !u!4 &1847179134
 Transform:
