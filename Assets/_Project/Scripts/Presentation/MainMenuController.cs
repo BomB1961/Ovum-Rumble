@@ -34,17 +34,20 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Slider bgmSlider;
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Button closeSettingsButton;
+    [SerializeField] private AudioManager audioManager;
 
     private void Awake()
     {
         ResolveMissingReferences();
+        audioManager ??= FindFirstObjectByType<AudioManager>();
+        InitializeVolumeSliders();
         RegisterButtonListeners();
         ShowMainMenu();
     }
 
     public void OnClickHostGame()
     {
-        OnClickCreateRoom();
+        SceneManager.LoadScene(GameSceneName);
     }
 
     public void OnClickStartGame()
@@ -95,12 +98,18 @@ public class MainMenuController : MonoBehaviour
 
     public void OnBgmVolumeChanged(float value)
     {
-        Debug.Log($"TODO: AudioMixer BGM 볼륨 연결. Value: {value:0.00}");
+        PlayerPrefs.SetFloat(AudioManager.BgmVolumePrefsKey, value);
+        PlayerPrefs.Save();
+        audioManager ??= FindFirstObjectByType<AudioManager>();
+        audioManager?.SetBGMVolume(value);
     }
 
     public void OnSfxVolumeChanged(float value)
     {
-        Debug.Log($"TODO: AudioMixer SFX 볼륨 연결. Value: {value:0.00}");
+        PlayerPrefs.SetFloat(AudioManager.SfxVolumePrefsKey, value);
+        PlayerPrefs.Save();
+        audioManager ??= FindFirstObjectByType<AudioManager>();
+        audioManager?.SetSFXVolume(value);
     }
 
     public void OnClickQuitGame()
@@ -195,6 +204,19 @@ public class MainMenuController : MonoBehaviour
         bgmSlider ??= FindInactiveComponent<Slider>("Slider_BGM");
         sfxSlider ??= FindInactiveComponent<Slider>("Slider_SFX");
         closeSettingsButton ??= FindInactiveComponent<Button>("Button_CloseSettings");
+    }
+
+    private void InitializeVolumeSliders()
+    {
+        if (bgmSlider != null)
+        {
+            bgmSlider.SetValueWithoutNotify(PlayerPrefs.GetFloat(AudioManager.BgmVolumePrefsKey, 1f));
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.SetValueWithoutNotify(PlayerPrefs.GetFloat(AudioManager.SfxVolumePrefsKey, 1f));
+        }
     }
 
     private static GameObject FindInactiveGameObject(params string[] names)

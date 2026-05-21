@@ -7,6 +7,9 @@ namespace DinoAlkkagi.Presentation
 {
     public class AudioManager : MonoBehaviour
     {
+        public const string BgmVolumePrefsKey = "BGMVolume";
+        public const string SfxVolumePrefsKey = "SFXVolume";
+
         [Header("Settings")]
         [SerializeField] private Data.AudioSettings settings;
 
@@ -34,6 +37,7 @@ namespace DinoAlkkagi.Presentation
         {
             SetupBgmSource();
             SetupSfxPool();
+            ApplySavedVolumes();
         }
 
         private void OnEnable()
@@ -169,6 +173,20 @@ namespace DinoAlkkagi.Presentation
 
         public void SetBGMVolume(float normalizedVolume)
         {
+            normalizedVolume = Mathf.Clamp01(normalizedVolume);
+            PlayerPrefs.SetFloat(BgmVolumePrefsKey, normalizedVolume);
+            PlayerPrefs.Save();
+
+            if (bgmSource != null)
+            {
+                bgmSource.volume = normalizedVolume;
+            }
+
+            if (bgmGroup == null || bgmGroup.audioMixer == null)
+            {
+                return;
+            }
+
             float db = normalizedVolume > 0.0001f
                 ? 20f * Mathf.Log10(normalizedVolume)
                 : -80f;
@@ -177,10 +195,33 @@ namespace DinoAlkkagi.Presentation
 
         public void SetSFXVolume(float normalizedVolume)
         {
+            normalizedVolume = Mathf.Clamp01(normalizedVolume);
+            PlayerPrefs.SetFloat(SfxVolumePrefsKey, normalizedVolume);
+            PlayerPrefs.Save();
+
+            foreach (AudioSource source in sfxPool)
+            {
+                if (source != null)
+                {
+                    source.volume = normalizedVolume;
+                }
+            }
+
+            if (sfxGroup == null || sfxGroup.audioMixer == null)
+            {
+                return;
+            }
+
             float db = normalizedVolume > 0.0001f
                 ? 20f * Mathf.Log10(normalizedVolume)
                 : -80f;
             sfxGroup.audioMixer.SetFloat("SFXVolume", db);
+        }
+
+        private void ApplySavedVolumes()
+        {
+            SetBGMVolume(PlayerPrefs.GetFloat(BgmVolumePrefsKey, 1f));
+            SetSFXVolume(PlayerPrefs.GetFloat(SfxVolumePrefsKey, 1f));
         }
     }
 }

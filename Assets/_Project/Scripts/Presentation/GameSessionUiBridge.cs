@@ -33,6 +33,7 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted += HandleGameStarted;
         GameEvents.OnTurnStarted += HandleTurnStarted;
+        GameEvents.OnEggLaunched += HandleEggLaunched;
         GameEvents.OnEggFell += HandleEggFell;
         GameEvents.OnGameEnded += HandleGameEnded;
     }
@@ -41,6 +42,7 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted -= HandleGameStarted;
         GameEvents.OnTurnStarted -= HandleTurnStarted;
+        GameEvents.OnEggLaunched -= HandleEggLaunched;
         GameEvents.OnEggFell -= HandleEggFell;
         GameEvents.OnGameEnded -= HandleGameEnded;
     }
@@ -67,6 +69,17 @@ public class GameSessionUiBridge : MonoBehaviour
         RefreshHud();
     }
 
+    private void HandleEggLaunched(EggController egg)
+    {
+        if (!isPlaying)
+        {
+            return;
+        }
+
+        currentPlayerId = currentPlayerId == 1 ? 2 : 1;
+        RefreshHud();
+    }
+
     private void HandleGameEnded(GameResult result)
     {
         isPlaying = false;
@@ -81,6 +94,7 @@ public class GameSessionUiBridge : MonoBehaviour
 
         int p1EggCount = GetAliveCount(1);
         int p2EggCount = GetAliveCount(2);
+        hudPresenter?.ShowGuide("\uac8c\uc784 \uc885\ub8cc\n\ud55c \ud310 \ub354 \ud558\uac70\ub098 \uba54\uc778 \uba54\ub274\ub85c \ub3cc\uc544\uac00\uc138\uc694.");
 
         switch (result)
         {
