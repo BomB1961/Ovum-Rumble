@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: ca0a52a9b35e5b74693de5079fc0f73c
+timeCreated: 1545638017
+licenseType: Store
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 37105
+  packageName: RPG BGM - Lobby
+  packageVersion: 3.0
+  assetPath: Assets/RpgBgmLobby/ReadMe.txt
+  uploadId: 284978

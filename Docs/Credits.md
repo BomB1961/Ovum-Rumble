@@ -19,7 +19,23 @@
 
 ## Audio
 
-*아직 없음*
+- RPG BGM Lobby:
+  - Author: B. G. M
+  - Source URL: https://assetstore.unity.com/packages/audio/music/rpg-bgm-lobby-37105
+  - License: Unity Asset Store EULA (Free)
+  - Used For: BGM
+
+- Free Casual Game SFX Pack (Launch, Collision, Win, Lose, Turn Start):
+  - Author: Dustyroom
+  - Source URL: https://assetstore.unity.com/packages/audio/sound-fx/free-casual-game-sfx-pack-54116
+  - License: Unity Asset Store EULA (Free)
+  - Used For: SFX (launch, collision, win, lose, turn start)
+
+- Film Special Effects - Egg Crack (Fall):
+  - Author: u_xg7ssi08yr
+  - Source URL: https://pixabay.com/sound-effects/film-special-effects-egg-crack-362042/
+  - License: Pixabay License (Free)
+  - Used For: SFX (egg fall)
 
 ---
 

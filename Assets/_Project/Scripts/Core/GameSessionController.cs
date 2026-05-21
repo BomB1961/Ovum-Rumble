@@ -140,6 +140,8 @@ namespace DinoAlkkagi.Core
                 egg.Launched += OnEggLaunchedBridge;
                 egg.Fallen -= OnEggFellBridge;
                 egg.Fallen += OnEggFellBridge;
+                egg.CollisionOccurred -= OnEggCollisionBridge;
+                egg.CollisionOccurred += OnEggCollisionBridge;
             }
 
             // AIInputController에 알 등록 (AI 발사용)
@@ -156,6 +158,11 @@ namespace DinoAlkkagi.Core
         private void OnEggFellBridge(EggController egg)
         {
             GameEvents.TriggerEggFell(egg);
+        }
+
+        private void OnEggCollisionBridge(EggController egg, float impact)
+        {
+            GameEvents.TriggerEggCollision(impact);
         }
 
         /// <summary>
