@@ -1,22 +1,22 @@
+using DinoAlkkagi.Core;
+using DinoAlkkagi.Rules;
 using UnityEngine;
 
 namespace DinoAlkkagi.Presentation
 {
 public class GameSessionUiBridge : MonoBehaviour
 {
-    private const float DefaultGameDurationSeconds = 300f;
     private const float DefaultTurnDurationSeconds = 25f;
-    private const int DefaultStartingEggCount = 4;
 
     [SerializeField] private HudPresenter hudPresenter;
     [SerializeField] private ResultScreen resultScreen;
-    [SerializeField] private float gameDurationSeconds = DefaultGameDurationSeconds;
+    [SerializeField] private GameSessionController gameSessionController;
+    [SerializeField] private WinConditionChecker winConditionChecker;
     [SerializeField] private float turnDurationSeconds = DefaultTurnDurationSeconds;
-    [SerializeField] private int startingEggCount = DefaultStartingEggCount;
 
-    private int currentPlayerIndex;
-    private int p1EggCount;
-    private int p2EggCount;
+    private int currentPlayerId = 1;
+    private int p1WinCount;
+    private int p2WinCount;
     private float gameStartedAt;
     private float turnStartedAt;
     private bool isPlaying;
@@ -25,97 +25,128 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         hudPresenter ??= FindFirstObjectByType<HudPresenter>();
         resultScreen ??= FindFirstObjectByType<ResultScreen>();
+        gameSessionController ??= FindFirstObjectByType<GameSessionController>();
+        winConditionChecker ??= FindFirstObjectByType<WinConditionChecker>();
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        StartGame();
+        GameEvents.OnGameStarted += HandleGameStarted;
+        GameEvents.OnTurnStarted += HandleTurnStarted;
+        GameEvents.OnEggFell += HandleEggFell;
+        GameEvents.OnGameEnded += HandleGameEnded;
     }
 
-    private void Update()
+    private void OnDisable()
     {
-        if (!isPlaying)
-        {
-            return;
-        }
-
-        float gameElapsedSeconds = Time.time - gameStartedAt;
-        float turnRemainingSeconds = Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt));
-
-        hudPresenter?.ShowHud(GetCurrentPlayerName(), p1EggCount, p2EggCount, turnRemainingSeconds, gameElapsedSeconds);
-
-        if (gameElapsedSeconds >= gameDurationSeconds)
-        {
-            HandleGameTimeExpired();
-        }
+        GameEvents.OnGameStarted -= HandleGameStarted;
+        GameEvents.OnTurnStarted -= HandleTurnStarted;
+        GameEvents.OnEggFell -= HandleEggFell;
+        GameEvents.OnGameEnded -= HandleGameEnded;
     }
 
-    public void StartGame()
+    private void HandleGameStarted()
     {
-        currentPlayerIndex = 0;
-        p1EggCount = startingEggCount;
-        p2EggCount = startingEggCount;
         gameStartedAt = Time.time;
         turnStartedAt = Time.time;
         isPlaying = true;
-
         resultScreen?.Hide();
         hudPresenter?.ShowGuide("\uc54c\uc744 \uc870\uc900\ud558\uc138\uc694.");
-        hudPresenter?.ShowHud(GetCurrentPlayerName(), p1EggCount, p2EggCount, turnDurationSeconds, 0f);
+        RefreshHud();
+    }
+
+    private void HandleTurnStarted(int playerId)
+    {
+        currentPlayerId = playerId;
+        turnStartedAt = Time.time;
+        RefreshHud();
+    }
+
+    private void HandleEggFell(EggController egg)
+    {
+        RefreshHud();
+    }
+
+    private void HandleGameEnded(GameResult result)
+    {
+        isPlaying = false;
+        if (result == GameResult.Player1Win)
+        {
+            p1WinCount++;
+        }
+        else if (result == GameResult.Player2Win)
+        {
+            p2WinCount++;
+        }
+
+        int p1EggCount = GetAliveCount(1);
+        int p2EggCount = GetAliveCount(2);
+
+        switch (result)
+        {
+            case GameResult.Player1Win:
+                resultScreen?.ShowWin("P1", p1EggCount, p2EggCount, p1WinCount, p2WinCount);
+                break;
+            case GameResult.Player2Win:
+                resultScreen?.ShowWin("P2", p1EggCount, p2EggCount, p1WinCount, p2WinCount);
+                break;
+            case GameResult.Draw:
+                resultScreen?.ShowDraw(p1EggCount, p2EggCount, p1WinCount, p2WinCount);
+                break;
+        }
     }
 
     public void RestartGame()
     {
-        StartGame();
+        gameSessionController ??= FindFirstObjectByType<GameSessionController>();
+        gameSessionController?.RestartGame();
     }
 
-    public void RequestTurnAdvance()
+    private void RefreshHud()
     {
-        currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
-        turnStartedAt = Time.time;
-        hudPresenter?.ShowHud(GetCurrentPlayerName(), p1EggCount, p2EggCount, turnDurationSeconds, Time.time - gameStartedAt);
+        float gameElapsedSeconds = isPlaying ? Time.time - gameStartedAt : 0f;
+        float turnRemainingSeconds = isPlaying
+            ? Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt))
+            : turnDurationSeconds;
+
+        hudPresenter?.ShowHud(GetCurrentPlayerName(), GetAliveCount(1), GetAliveCount(2), turnRemainingSeconds, gameElapsedSeconds);
     }
 
-    public void SetEggCount(int playerIndex, int eggCount)
+    private void Update()
     {
-        if (playerIndex == 0)
+        if (isPlaying)
         {
-            p1EggCount = Mathf.Max(0, eggCount);
+            RefreshHud();
         }
-        else if (playerIndex == 1)
+    }
+
+    private int GetAliveCount(int playerId)
+    {
+        if (winConditionChecker != null)
         {
-            p2EggCount = Mathf.Max(0, eggCount);
+            return winConditionChecker.GetAliveCount(playerId);
         }
 
-        hudPresenter?.ShowHud(GetCurrentPlayerName(), p1EggCount, p2EggCount, GetTurnRemainingSeconds(), Time.time - gameStartedAt);
-    }
+        if (gameSessionController == null)
+        {
+            return 0;
+        }
 
-    public void ShowWinResult(string winnerName)
-    {
-        isPlaying = false;
-        resultScreen?.ShowWin(winnerName, p1EggCount, p2EggCount, 0, 0);
-    }
+        int count = 0;
+        foreach (EggController egg in gameSessionController.AllEggs)
+        {
+            if (egg != null && egg.OwnerPlayerId == playerId && egg.IsAlive)
+            {
+                count++;
+            }
+        }
 
-    public void ShowDrawResult()
-    {
-        isPlaying = false;
-        resultScreen?.ShowDraw(p1EggCount, p2EggCount, 0, 0);
-    }
-
-    private void HandleGameTimeExpired()
-    {
-        isPlaying = false;
-        hudPresenter?.ShowGuide("\uc804\uccb4 \uac8c\uc784 \uc2dc\uac04\uc774 \uc885\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4.");
-    }
-
-    private float GetTurnRemainingSeconds()
-    {
-        return Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt));
+        return count;
     }
 
     private string GetCurrentPlayerName()
     {
-        return currentPlayerIndex == 0 ? "P1" : "P2";
+        return $"P{currentPlayerId}";
     }
 }
 }

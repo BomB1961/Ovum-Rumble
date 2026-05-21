@@ -11,6 +11,7 @@ namespace DinoAlkkagi.Rules
     {
         [SerializeField] private int totalPlayers = 2;
         [SerializeField] private int startingPlayerId = 1;
+        [SerializeField] private WinConditionChecker winConditionChecker;
 
         private int currentPlayerId;
         private bool isInputLocked = false;
@@ -19,6 +20,11 @@ namespace DinoAlkkagi.Rules
         public int CurrentPlayerId => currentPlayerId;
         public bool IsInputLocked => isInputLocked;
         public int TotalPlayers => totalPlayers;
+
+        private void Awake()
+        {
+            winConditionChecker ??= FindFirstObjectByType<WinConditionChecker>();
+        }
 
         private void OnEnable()
         {
@@ -55,6 +61,8 @@ namespace DinoAlkkagi.Rules
         private void HandleOnAllEggsStopped()
         {
             if (isGameEnded) return;
+            if (HasPlayerBeenEliminated()) return;
+
             AdvanceTurn();
         }
 
@@ -80,6 +88,16 @@ namespace DinoAlkkagi.Rules
         public bool IsPlayerTurn(int playerId)
         {
             return currentPlayerId == playerId && !isInputLocked;
+        }
+
+        private bool HasPlayerBeenEliminated()
+        {
+            if (winConditionChecker == null)
+            {
+                return false;
+            }
+
+            return winConditionChecker.GetAliveCount(1) == 0 || winConditionChecker.GetAliveCount(2) == 0;
         }
 
         public void LockInput()

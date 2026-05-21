@@ -1,4 +1,5 @@
 using TMPro;
+using DinoAlkkagi.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -48,9 +49,13 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private Button settingsMainMenuButton;
     [SerializeField] private Button settingsExitButton;
 
+    [Header("Gameplay")]
+    [SerializeField] private GameSessionController gameSessionController;
+
     private void Awake()
     {
         EnsureUiReferences();
+        gameSessionController ??= FindFirstObjectByType<GameSessionController>();
         RegisterListeners();
         ResetGameUI();
     }
@@ -107,6 +112,7 @@ public class GameUIController : MonoBehaviour
     public void ShowResult(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetPanelState(resultPanel, true);
+        ConfigureResultButtons();
         SetText(resultTitleText, $"{winnerName} \uc2b9\ub9ac!");
         SetResultDetail(p1EggCount, p2EggCount, p1WinCount, p2WinCount);
     }
@@ -114,6 +120,7 @@ public class GameUIController : MonoBehaviour
     public void ShowDrawResult(int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetPanelState(resultPanel, true);
+        ConfigureResultButtons();
         SetText(resultTitleText, "\ubb34\uc2b9\ubd80!");
         SetResultDetail(p1EggCount, p2EggCount, p1WinCount, p2WinCount);
     }
@@ -126,8 +133,9 @@ public class GameUIController : MonoBehaviour
     public void OnClickRetry()
     {
         Debug.Log("Result Retry button clicked.");
-        ResetGameState();
-        SceneManager.LoadScene(GameSceneName);
+        ResetGameUI();
+        gameSessionController ??= FindFirstObjectByType<GameSessionController>();
+        gameSessionController?.RestartGame();
     }
 
     public void OnClickMainMenu()
@@ -175,12 +183,6 @@ public class GameUIController : MonoBehaviour
         HideResult();
         UpdateHUD("P1", 0, 0, 25f, 0f);
         SetGuideText("\uc54c\uc744 \uc870\uc900\ud558\uc138\uc694.");
-    }
-
-    public void ResetGameState()
-    {
-        // TODO: Reset actual egg positions, turn owner, and score state when gameplay logic is ready.
-        ResetGameUI();
     }
 
     private void RegisterListeners()
@@ -236,14 +238,74 @@ public class GameUIController : MonoBehaviour
         gameTimeText ??= CreateHudText("Text_GameTime", "\uc804\uccb4 \uac8c\uc784 \uc2dc\uac04: 00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
         exitButton ??= CreateResultExitButton();
         settingsExitButton ??= CreateSettingsExitButton();
+        ConfigureResultButtons();
     }
 
     private void SetResultDetail(int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetText(
             resultDetailText,
-            $"P1 \ub0a8\uc740 \uc54c: {p1EggCount}\uac1c / P2 \ub0a8\uc740 \uc54c: {p2EggCount}\uac1c\n" +
-            $"P1 \uc2b9\ub9ac \ud69f\uc218: {p1WinCount}\ud68c / P2 \uc2b9\ub9ac \ud69f\uc218: {p2WinCount}\ud68c");
+            $"P1 \ub0a8\uc740 \uc54c: {p1EggCount}\uac1c\n" +
+            $"P2 \ub0a8\uc740 \uc54c: {p2EggCount}\uac1c\n\n" +
+            $"P1 \uc2b9\ub9ac \ud69f\uc218: {p1WinCount}\ud68c\n" +
+            $"P2 \uc2b9\ub9ac \ud69f\uc218: {p2WinCount}\ud68c");
+    }
+
+    private void ConfigureResultButtons()
+    {
+        SetPanelState(retryButton != null ? retryButton.gameObject : null, true);
+        SetPanelState(mainMenuButton != null ? mainMenuButton.gameObject : null, false);
+        SetPanelState(exitButton != null ? exitButton.gameObject : null, false);
+        ConfigureButtonLabel(retryButton, "\ub2e4\uc2dc \uc2dc\uc791");
+    }
+
+    private void ConfigureButtonLabel(Button button, string label)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        TMP_Text tmpLabel = button.GetComponentInChildren<TMP_Text>(true);
+        if (tmpLabel != null)
+        {
+            tmpLabel.gameObject.SetActive(true);
+            tmpLabel.text = label;
+            tmpLabel.color = Color.black;
+            tmpLabel.alpha = 1f;
+            tmpLabel.alignment = TextAlignmentOptions.Center;
+            if (currentTurnText != null)
+            {
+                tmpLabel.font = currentTurnText.font;
+                tmpLabel.fontSharedMaterial = currentTurnText.fontSharedMaterial;
+            }
+
+            RectTransform rectTransform = tmpLabel.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                rectTransform.anchorMin = Vector2.zero;
+                rectTransform.anchorMax = Vector2.one;
+                rectTransform.offsetMin = Vector2.zero;
+                rectTransform.offsetMax = Vector2.zero;
+            }
+            return;
+        }
+
+        Text legacyLabel = button.GetComponentInChildren<Text>(true);
+        if (legacyLabel != null)
+        {
+            legacyLabel.gameObject.SetActive(true);
+            legacyLabel.text = label;
+            legacyLabel.color = Color.black;
+            RectTransform rectTransform = legacyLabel.GetComponent<RectTransform>();
+            if (rectTransform != null)
+            {
+                rectTransform.anchorMin = Vector2.zero;
+                rectTransform.anchorMax = Vector2.one;
+                rectTransform.offsetMin = Vector2.zero;
+                rectTransform.offsetMax = Vector2.zero;
+            }
+        }
     }
 
     private static void SetText(TMP_Text target, string text)
