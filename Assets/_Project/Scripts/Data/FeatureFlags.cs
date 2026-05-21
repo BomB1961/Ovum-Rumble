@@ -42,6 +42,7 @@ namespace DinoAlkkagi.Data
             enableAbilityEggs = false;
             enableHatching = false;
             enable4PlayerMode = false;
+            enableAI = false;
             enableLanMultiplayer = false;
             enableLobby = false;
         }
