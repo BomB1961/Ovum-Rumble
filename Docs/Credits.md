@@ -7,7 +7,54 @@
 
 ## 3D Assets
 
-*아직 없음*
+- Desert:
+  - Author: rajpriyadarshi
+  - Source URL: https://sketchfab.com/3d-models/desert-29dfbc6436484061ba94690407c5f8fd/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Board map (Desert theme)
+  - Modified: No
+
+- Terrain:
+  - Author: makeitcleanapp
+  - Source URL: https://sketchfab.com/3d-models/terrain-2c30e112d63e417ab67676ff696f18c0/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Board map (Grassland theme)
+  - Modified: No
+
+- Stylized Ice Plane:
+  - Author: sucholudek
+  - Source URL: https://sketchfab.com/3d-models/stylized-ice-plane-870b761ca2dd40e7997cd533b9715367/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Board map (Ice theme)
+  - Modified: No
+
+- Realtime Grass:
+  - Author: mfhscoobydoo
+  - Source URL: https://sketchfab.com/3d-models/realtime-grass-07d38555cae844f7abdeace9d19c4777/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Board material (grass texture)
+  - Modified: No
+
+- Razorbill Egg:
+  - Author: Scarborough Museums and Galleries
+  - Source URL: https://sketchfab.com/3d-models/razorbill-egg-da21d5007d2149f6b558ed53ca430783/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Egg model reference
+  - Modified: No
+
+- Yoshi Egg:
+  - Author: graphics hunter
+  - Source URL: https://sketchfab.com/3d-models/yoshi-egg-2125c39434ed4b3696bdff0a0bdb6fb2/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Player egg prefab
+  - Modified: No
+
+- Forest (Generated in Blender PS1):
+  - Author: Hora Timer
+  - Source URL: https://sketchfab.com/3d-models/forest-generated-in-the-blender-ps1-36a60ca3a96b4121bd40d3c5e1866769/
+  - License: CC Attribution (CC-BY 4.0)
+  - Used For: Environment decoration
+  - Modified: No
 
 ---
 
@@ -41,7 +88,17 @@
 
 ## Fonts
 
-*아직 없음*
+- LiberationSans:
+  - Author: Google Corporation / Red Hat, Inc.
+  - Source: Bundled with TextMesh Pro
+  - License: SIL Open Font License (OFL) 1.1
+  - Used For: UI text (TMP default)
+
+- BlackHanSans-Regular:
+  - Author: [Unknown]
+  - License: [Unknown]
+  - Used For: UI text (Korean)
+  - Note: 출처 확인 필요. 사용 전 라이선스 검토 권장.
 
 ---
 
