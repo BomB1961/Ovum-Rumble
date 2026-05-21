@@ -42,8 +42,8 @@ namespace DinoAlkkagi.Editor
             if (temp.GetComponent<SphereCollider>() == null)
             {
                 var col = temp.AddComponent<SphereCollider>();
-                col.radius = 0.5f;
-                col.center = Vector3.zero;
+                col.radius = 1.8f;
+                col.center = new Vector3(0f, 0.3f, -0.075f);
                 // PhysicMaterial이 있다면 적용 (기존 Egg와 동일)
                 string physMatPath = "Assets/_Project/Physics/Egg_PhysicMaterial.physicMaterial";
                 PhysicsMaterial physMat = AssetDatabase.LoadAssetAtPath<PhysicsMaterial>(physMatPath);

@@ -1561,9 +1561,9 @@ MonoBehaviour:
   player1Root: {fileID: 1876930049}
   player2Root: {fileID: 250049754}
   eggsPerPlayer: 6
-  spacing: 1.1
-  player1StartCenter: {x: 0, y: 0.5, z: -3}
-  player2StartCenter: {x: 0, y: 0.5, z: 3}
+  spacing: 1.6
+  player1StartCenter: {x: 0, y: 0.75, z: -3}
+  player2StartCenter: {x: 0, y: 0.75, z: 3}
   spawnOnStart: 0
 --- !u!4 &1401538239
 Transform:

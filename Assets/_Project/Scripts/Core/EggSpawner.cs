@@ -9,9 +9,9 @@ public class EggSpawner : MonoBehaviour
     [SerializeField] private Transform player1Root;
     [SerializeField] private Transform player2Root;
     [SerializeField] private int eggsPerPlayer = 6;
-    [SerializeField] private float spacing = 1.1f;
-    [SerializeField] private Vector3 player1StartCenter = new Vector3(0f, 0.5f, -3f);
-    [SerializeField] private Vector3 player2StartCenter = new Vector3(0f, 0.5f, 3f);
+    [SerializeField] private float spacing = 1.6f;
+    [SerializeField] private Vector3 player1StartCenter = new Vector3(0f, 0.75f, -3f);
+    [SerializeField] private Vector3 player2StartCenter = new Vector3(0f, 0.75f, 3f);
     [SerializeField] private bool spawnOnStart;
 
     private readonly List<EggController> spawnedEggs = new List<EggController>();
