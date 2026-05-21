@@ -1,17 +1,19 @@
 using UnityEngine;
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Environment;
 
 namespace DinoAlkkagi.Rules
 {
-    /// <summary>
-    /// Person B 전용 — 보드 아래/외곽의 Trigger 영역.
-    /// 알이 떨어지면 EggController.MarkFallen()을 호출한다.
-    /// 기획서 6-4 낙하 판정 알고리즘을 구현한다.
-    /// </summary>
     [RequireComponent(typeof(Collider))]
     public class BoardFallZone : MonoBehaviour
     {
         private Collider fallCollider;
+        private IBoardSurface boardSurface;
+
+        public void SetBoardSurface(IBoardSurface surface)
+        {
+            boardSurface = surface;
+        }
 
         private void Awake()
         {
@@ -26,11 +28,14 @@ namespace DinoAlkkagi.Rules
 
             if (egg != null && egg.IsAlive)
             {
+                if (boardSurface != null && boardSurface.IsInsidePlayableArea(egg.transform.position))
+                {
+                    return;
+                }
+
                 Debug.Log($"[BoardFallZone] -> MarkFallen: {other.gameObject.name} (P{egg.OwnerPlayerId})");
                 egg.MarkFallen();
 
-                // Person A EggController는 MarkFallen()에서 SetActive(false)를 안 함.
-                // 여기서 직접 비활성화해서 계속 떨어지는 문제 해결.
                 egg.Rigidbody.isKinematic = true;
                 egg.gameObject.SetActive(false);
             }

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using DinoAlkkagi.Data;
+using DinoAlkkagi.Environment;
 using DinoAlkkagi.Rules;
 
 namespace DinoAlkkagi.Core
@@ -29,6 +30,9 @@ namespace DinoAlkkagi.Core
 
         [Header("--- Person B 추가 (씬에 배치 필요) ---")]
         [SerializeField] private BoardFallZone boardFallZone;
+
+        [Header("--- 절차 맵 (선택) ---")]
+        [SerializeField] private ProceduralBoardGenerator proceduralBoardGenerator;
 
         private List<EggController> allEggs = new List<EggController>();
         private GameState currentState = GameState.Setup;
@@ -63,6 +67,7 @@ namespace DinoAlkkagi.Core
             eggSpawner ??= FindFirstObjectByType<EggSpawner>();
             flickInputController ??= FindFirstObjectByType<FlickInputController>();
             boardFallZone ??= FindFirstObjectByType<BoardFallZone>();
+            proceduralBoardGenerator ??= FindFirstObjectByType<ProceduralBoardGenerator>();
 
             // 누락 체크
             if (settings == null)
@@ -87,7 +92,24 @@ namespace DinoAlkkagi.Core
             if (flickInputController != null)
                 flickInputController.EggLaunched += OnFlickEggLaunched;
 
+            DistributeBoardSurface();
             BeginGame();
+        }
+
+        private void DistributeBoardSurface()
+        {
+            if (proceduralBoardGenerator == null) return;
+
+            IBoardSurface surface = proceduralBoardGenerator.BoardSurface;
+            if (surface == null) return;
+
+            eggSpawner?.SetBoardSurface(surface);
+            flickInputController?.SetBoardSurface(surface);
+            var cam = FindFirstObjectByType<CameraController>();
+            if (cam != null) cam.SetBoardSurface(surface);
+            boardFallZone?.SetBoardSurface(surface);
+
+            Debug.Log("[GameSessionController] Distributed IBoardSurface to subsystems.");
         }
 
         /// <summary>

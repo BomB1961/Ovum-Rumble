@@ -11,6 +11,7 @@ namespace DinoAlkkagi.Data
     public class FeatureFlags : ScriptableObject
     {
         [Header("--- v0.2 환경 모듈 ---")]
+        public bool enableProceduralMap = false;
         public bool enableBomb = false;
         public bool enableWind = false;
         public bool enableEarthquake = false;
@@ -31,6 +32,7 @@ namespace DinoAlkkagi.Data
         /// </summary>
         public void DisableAllExtensions()
         {
+            enableProceduralMap = false;
             enableBomb = false;
             enableWind = false;
             enableEarthquake = false;
