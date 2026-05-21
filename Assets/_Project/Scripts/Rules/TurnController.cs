@@ -53,17 +53,13 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnEggLaunched(EggController egg)
         {
-            // 발사 즉시 입력 잠금 — Resolving 상태로 전환
-            isInputLocked = true;
-            Debug.Log($"[TurnController] Input locked. Player {currentPlayerId} launched.");
+            AdvanceTurn();
         }
 
         private void HandleOnAllEggsStopped()
         {
             if (isGameEnded) return;
             if (HasPlayerBeenEliminated()) return;
-
-            AdvanceTurn();
         }
 
         private void HandleOnGameEnded(GameResult result)

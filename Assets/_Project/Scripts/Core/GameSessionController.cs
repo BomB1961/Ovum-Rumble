@@ -181,7 +181,7 @@ namespace DinoAlkkagi.Core
         /// </summary>
         private void HandleOnEggLaunched(EggController egg)
         {
-            LockAllInput();
+            flickInputController?.SetInputEnabled(true);
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace DinoAlkkagi.Core
         /// </summary>
         private void OnFlickEggLaunched(EggController egg)
         {
-            LockAllInput();
+            flickInputController?.SetInputEnabled(true);
         }
 
         /// <summary>

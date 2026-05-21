@@ -33,7 +33,6 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted += HandleGameStarted;
         GameEvents.OnTurnStarted += HandleTurnStarted;
-        GameEvents.OnEggLaunched += HandleEggLaunched;
         GameEvents.OnEggFell += HandleEggFell;
         GameEvents.OnGameEnded += HandleGameEnded;
     }
@@ -42,7 +41,6 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted -= HandleGameStarted;
         GameEvents.OnTurnStarted -= HandleTurnStarted;
-        GameEvents.OnEggLaunched -= HandleEggLaunched;
         GameEvents.OnEggFell -= HandleEggFell;
         GameEvents.OnGameEnded -= HandleGameEnded;
     }
@@ -66,17 +64,6 @@ public class GameSessionUiBridge : MonoBehaviour
 
     private void HandleEggFell(EggController egg)
     {
-        RefreshHud();
-    }
-
-    private void HandleEggLaunched(EggController egg)
-    {
-        if (!isPlaying)
-        {
-            return;
-        }
-
-        currentPlayerId = currentPlayerId == 1 ? 2 : 1;
         RefreshHud();
     }
 
