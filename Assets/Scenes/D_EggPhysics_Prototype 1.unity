@@ -441,7 +441,7 @@ GameObject:
   - component: {fileID: 280611857}
   - component: {fileID: 280611861}
   m_Layer: 0
-  m_Name: ProceduralBoardGenerator
+  m_Name: StaticBoardLoader
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -458,7 +458,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 387302d09e6e3184791bfa967eaca0ca, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Environment.ProceduralBoardGenerator
+  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Environment.StaticBoardLoader
   settings: {fileID: 11400000, guid: 5ecf7b4c1e64cf74db25541fe3e6721e, type: 2}
   featureFlags: {fileID: 11400000, guid: acb5c2df706f6be4ead4e311d8c00038, type: 2}
   manualSeed: -1
@@ -1166,7 +1166,7 @@ MonoBehaviour:
   flickInputController: {fileID: 996057604}
   boardFallZone: {fileID: 960822259}
   aiInputController: {fileID: 0}
-  proceduralBoardGenerator: {fileID: 0}
+  staticBoardLoader: {fileID: 0}
 --- !u!4 &1847179134
 Transform:
   m_ObjectHideFlags: 0

@@ -24,11 +24,3 @@ MonoBehaviour:
   defaultFriction: 0.4
   boardSize: 30
   fallZoneDepth: 10
-  mapResolution: 256
-  noiseScale: 2
-  heightMultiplier: 10
-  noiseOctaves: 2
-  spawnFlattenRadius: 2.5
-  maxSlopeGradient: 0.5
-  maxRetryCount: 10
-  boardThickness: 1

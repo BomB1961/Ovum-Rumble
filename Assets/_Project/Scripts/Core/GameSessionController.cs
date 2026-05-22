@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DinoAlkkagi.Data;
@@ -32,8 +33,8 @@ namespace DinoAlkkagi.Core
         [SerializeField] private BoardFallZone boardFallZone;
         [SerializeField] private AIInputController aiInputController;
 
-        [Header("--- 절차 맵 (선택) ---")]
-        [SerializeField] private ProceduralBoardGenerator proceduralBoardGenerator;
+        [Header("--- 정적 맵 ---")]
+        [SerializeField] private StaticBoardLoader staticBoardLoader;
 
         private List<EggController> allEggs = new List<EggController>();
         private GameState currentState = GameState.Setup;
@@ -69,7 +70,7 @@ namespace DinoAlkkagi.Core
             flickInputController ??= FindFirstObjectByType<FlickInputController>();
             boardFallZone ??= FindFirstObjectByType<BoardFallZone>();
             aiInputController ??= FindFirstObjectByType<AIInputController>();
-            proceduralBoardGenerator ??= FindFirstObjectByType<ProceduralBoardGenerator>();
+            staticBoardLoader ??= FindFirstObjectByType<StaticBoardLoader>();
 
             // 누락 체크
             if (settings == null)
@@ -92,19 +93,26 @@ namespace DinoAlkkagi.Core
 
         private void Start()
         {
-            // FlickInputController 직접 구독 (GameEvents 체인 우회, 확실한 발사 감지)
             if (flickInputController != null)
                 flickInputController.EggLaunched += OnFlickEggLaunched;
 
             DistributeBoardSurface();
+            StartCoroutine(InitializePhysicsNextFrame());
             BeginGame();
+        }
+
+        private IEnumerator InitializePhysicsNextFrame()
+        {
+            yield return null;
+            Physics.SyncTransforms();
+            Debug.Log("[GameSessionController] Physics synced after scene load");
         }
 
         private void DistributeBoardSurface()
         {
-            if (proceduralBoardGenerator == null) return;
+            if (staticBoardLoader == null) return;
 
-            IBoardSurface surface = proceduralBoardGenerator.BoardSurface;
+            IBoardSurface surface = staticBoardLoader.BoardSurface;
             if (surface == null) return;
 
             eggSpawner?.SetBoardSurface(surface);
