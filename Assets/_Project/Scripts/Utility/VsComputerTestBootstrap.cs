@@ -12,6 +12,9 @@ namespace DinoAlkkagi.Utility
         [SerializeField] private Vector3 temporaryBoardCenter = new Vector3(0f, -0.25f, 0f);
         [SerializeField] private Vector3 temporaryBoardSize = new Vector3(14f, 0.5f, 14f);
         [SerializeField] private bool disableFallZonesForTest = true;
+        [SerializeField] private bool createTemporaryFallZoneForTest = true;
+        [SerializeField] private Vector3 temporaryFallZoneCenter = new Vector3(0f, -3f, 0f);
+        [SerializeField] private Vector3 temporaryFallZoneSize = new Vector3(24f, 1f, 24f);
 
         private void Awake()
         {
@@ -46,6 +49,11 @@ namespace DinoAlkkagi.Utility
             if (disableFallZonesForTest)
             {
                 DisableFallZones();
+            }
+
+            if (createTemporaryFallZoneForTest)
+            {
+                EnsureTemporaryFallZone();
             }
         }
 
@@ -89,6 +97,33 @@ namespace DinoAlkkagi.Utility
             {
                 fallZone.gameObject.SetActive(false);
             }
+        }
+
+        private void EnsureTemporaryFallZone()
+        {
+            if (GameObject.Find("TemporaryVsComputerFallZone") != null)
+            {
+                return;
+            }
+
+            GameObject fallZone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            fallZone.name = "TemporaryVsComputerFallZone";
+            fallZone.transform.position = temporaryFallZoneCenter;
+            fallZone.transform.localScale = temporaryFallZoneSize;
+
+            Renderer renderer = fallZone.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.enabled = false;
+            }
+
+            Collider collider = fallZone.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.isTrigger = true;
+            }
+
+            fallZone.AddComponent<BoardFallZone>();
         }
     }
 }

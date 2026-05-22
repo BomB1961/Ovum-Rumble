@@ -242,6 +242,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Utility.VsComputerTestBootstrap
   gameSceneName: 01_Game
   loadOnStart: 1
+  temporaryBoardCenter: {x: 0, y: -0.25, z: 0}
+  temporaryBoardSize: {x: 14, y: 0.5, z: 14}
+  disableFallZonesForTest: 1
 --- !u!4 &709463449
 Transform:
   m_ObjectHideFlags: 0
