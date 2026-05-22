@@ -67,6 +67,12 @@ public class MainMenuController : MonoBehaviour
         OnClickHostGame();
     }
 
+    public void OnClickCreateAiRoom()
+    {
+        GameLaunchContext.SetMode(GameMode.VsComputer);
+        SceneManager.LoadScene(MapSelectSceneName);
+    }
+
     public void OnClickShowJoinPanel()
     {
         ShowControlsPanel();
