@@ -9,6 +9,7 @@ public class EggController : MonoBehaviour
 
     public event Action<EggController> Launched;
     public event Action<EggController, float> CollisionOccurred;
+    public event Action<EggController, float, Vector3, Vector3> CollisionDetailedOccurred;
     public event Action<EggController> Fallen;
 
     public int OwnerPlayerId => ownerPlayerId;
@@ -82,6 +83,22 @@ public class EggController : MonoBehaviour
         }
 
         float impact = collision.relativeVelocity.magnitude;
+        Vector3 contactPoint = transform.position;
+        Vector3 contactNormal = (collision.transform.position - transform.position).normalized;
+
+        if (collision.contactCount > 0)
+        {
+            ContactPoint contact = collision.GetContact(0);
+            contactPoint = contact.point;
+            contactNormal = (contact.point - transform.position).normalized;
+        }
+
+        if (contactNormal.sqrMagnitude <= 0.0001f)
+        {
+            contactNormal = transform.forward;
+        }
+
         CollisionOccurred?.Invoke(this, impact);
+        CollisionDetailedOccurred?.Invoke(this, impact, contactPoint, contactNormal.normalized);
     }
 }
