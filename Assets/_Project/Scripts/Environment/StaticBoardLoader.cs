@@ -14,6 +14,7 @@ namespace DinoAlkkagi.Environment
         [SerializeField] private GameObject terrianMapPrefab;
         [SerializeField] private GameObject iceMapPrefab;
         [SerializeField] private GameObject desertMapPrefab;
+        [SerializeField] private SkyboxManager skyboxManager;
 
         private StaticBoardSurface boardSurface;
         private MapId selectedMap = MapId.Terrian;
@@ -83,6 +84,9 @@ namespace DinoAlkkagi.Environment
 
             Physics.SyncTransforms();
             Debug.Log($"[{nameof(StaticBoardLoader)}] Loaded {selectedMap} board with {activeColliderCount} colliders.");
+
+            if (skyboxManager != null)
+                skyboxManager.ConfigureForMap(selectedMap);
         }
 
         private GameObject GetSelectedMapPrefab()
