@@ -11,6 +11,7 @@ namespace DinoAlkkagi.Presentation
         [SerializeField] private EggSpawner eggSpawner;
         [SerializeField] private GameObject embercoreImpactFxPrefab;
         [SerializeField] private GameObject prismhornImpactFxPrefab;
+        [SerializeField] private GameObject tidecrestImpactFxPrefab;
 
         [Header("Impact Thresholds")]
         [SerializeField] private float minImpactForEffect = 1.25f;
@@ -124,6 +125,8 @@ namespace DinoAlkkagi.Presentation
             {
                 case EggSkinFxTheme.Prismhorn:
                     return prismhornImpactFxPrefab != null ? prismhornImpactFxPrefab : embercoreImpactFxPrefab;
+                case EggSkinFxTheme.Tidecrest:
+                    return tidecrestImpactFxPrefab != null ? tidecrestImpactFxPrefab : embercoreImpactFxPrefab;
                 case EggSkinFxTheme.Embercore:
                 default:
                     return embercoreImpactFxPrefab;
@@ -138,7 +141,15 @@ namespace DinoAlkkagi.Presentation
 
         private static Quaternion GetRotationOffset(EggSkinFxTheme fxTheme)
         {
-            return fxTheme == EggSkinFxTheme.Prismhorn ? Quaternion.Euler(90f, 0f, 0f) : Quaternion.identity;
+            switch (fxTheme)
+            {
+                case EggSkinFxTheme.Prismhorn:
+                    return Quaternion.Euler(90f, 0f, 0f);
+                case EggSkinFxTheme.Tidecrest:
+                case EggSkinFxTheme.Embercore:
+                default:
+                    return Quaternion.identity;
+            }
         }
     }
 }

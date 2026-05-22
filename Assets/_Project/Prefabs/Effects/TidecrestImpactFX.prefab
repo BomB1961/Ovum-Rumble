@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &4517941318183582754
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -3578493243619621679, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_Name
+      value: TidecrestImpactFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 200986319337180766, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -3578493243619621679, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5436422219289738052}
+  m_SourcePrefab: {fileID: 8054494223508602334, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+--- !u!1 &8134715800885836019 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -3578493243619621679, guid: 09bf51d259a276241b19456277c64a4d, type: 3}
+  m_PrefabInstance: {fileID: 4517941318183582754}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5436422219289738052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8134715800885836019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e43815eae88264438e34f25994ea1fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Presentation.ThemedImpactFxInstance
+  duration: 1.1
+  shardTravel: 0.82
+  sparkTravel: 1.2
+  destroyOnComplete: 1

@@ -5,7 +5,8 @@ namespace DinoAlkkagi.Presentation
     public enum EggSkinFxTheme
     {
         Embercore,
-        Prismhorn
+        Prismhorn,
+        Tidecrest
     }
 
     public class EggSkinTheme : MonoBehaviour
