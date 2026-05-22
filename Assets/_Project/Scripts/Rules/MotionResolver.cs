@@ -111,6 +111,7 @@ namespace DinoAlkkagi.Rules
                 if (!trackedEggs[i].IsAlive) continue;
                 trackedEggs[i].Rigidbody.linearVelocity = Vector3.zero;
                 trackedEggs[i].Rigidbody.angularVelocity = Vector3.zero;
+                trackedEggs[i].Rigidbody.isKinematic = true; // 경사면/구덩이에서 중력에 의한 재굴름 방지
             }
             isResolving = false;
             GameEvents.TriggerAllEggsStopped();
