@@ -185,8 +185,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fd51262f349768488f87b9cfe63e52e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Presentation.ThemedImpactFxController
+  enableThemedImpactFx: 1
   eggSpawner: {fileID: 1401538238}
   embercoreImpactFxPrefab: {fileID: 206707043951001261, guid: 708df44668290c9489fef188ec84413d, type: 3}
+  prismhornImpactFxPrefab: {fileID: 8350990510994010187, guid: 578752aecb84a3f438d56e6efadcb81a, type: 3}
   minImpactForEffect: 1.25
   maxImpactForScale: 12
   minEffectScale: 0.7
@@ -853,9 +855,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Environment.StaticBoardLoader
   settings: {fileID: 11400000, guid: 5ecf7b4c1e64cf74db25541fe3e6721e, type: 2}
-  featureFlags: {fileID: 11400000, guid: acb5c2df706f6be4ead4e311d8c00038, type: 2}
-  manualSeed: -1
-  boardMaterial: {fileID: -2317110199934127957, guid: 14eb7f8492c2dc14abecec75d44e27d8, type: 3}
   terrianMapPrefab: {fileID: 3258265017178192629, guid: fdc6b13af1080d64a8456f859dbdd8c3, type: 3}
   iceMapPrefab: {fileID: 1000000000000000000, guid: b36d34a0db5a41b4a9df42df7f41f801, type: 3}
   desertMapPrefab: {fileID: 2000000000000000000, guid: 8ddf705e6b6df284baa1a864501ee7b9, type: 3}

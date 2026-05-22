@@ -111,6 +111,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2381923102862184747}
+    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3052325306315098218}
   m_SourcePrefab: {fileID: -5645937942226959685, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
 --- !u!1 &2262202603394153123 stripped
 GameObject:
@@ -237,3 +240,16 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.36
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3052325306315098218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2262202603394153123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b871576240538034790d65edde9c0c09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Presentation.EggSkinTheme
+  theme: 1
