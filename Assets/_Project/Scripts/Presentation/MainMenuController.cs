@@ -12,6 +12,7 @@ namespace DinoAlkkagi.Presentation
 public class MainMenuController : MonoBehaviour
 {
     private const string GameSceneName = "01_Game";
+    private const string MapSelectSceneName = "02_MapSelect";
 
     [Header("Panels")]
     [SerializeField] private GameObject mainMenuPanel;
@@ -27,6 +28,7 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Join")]
     [SerializeField] private TMP_InputField hostIpInput;
+    [SerializeField] private TMP_Text controlsGuideText;
     [SerializeField] private Button joinGameButton;
     [SerializeField] private Button cancelJoinButton;
 
@@ -47,7 +49,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickHostGame()
     {
-        SceneManager.LoadScene(GameSceneName);
+        SceneManager.LoadScene(MapSelectSceneName);
     }
 
     public void OnClickStartGame()
@@ -57,17 +59,17 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickCreateRoom()
     {
-        Debug.Log("TODO: Mirror 설치 후 StartHost 연결");
+        OnClickHostGame();
     }
 
     public void OnClickShowJoinPanel()
     {
-        OnClickJoinRoom();
+        ShowControlsPanel();
     }
 
     public void OnClickJoinRoom()
     {
-        ShowJoinPanel();
+        ShowControlsPanel();
     }
 
     public void OnClickTestJoin()
@@ -77,8 +79,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
-        string hostIp = hostIpInput != null ? hostIpInput.text.Trim() : string.Empty;
-        Debug.Log($"TODO: Mirror 설치 후 StartClient 연결. Host IP: {hostIp}");
+        ShowMainMenu();
     }
 
     public void OnClickCancelJoin()
@@ -135,6 +136,24 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(settingsPanel, false);
     }
 
+    private void ShowControlsPanel()
+    {
+        SetPanelState(hostIpInput != null ? hostIpInput.gameObject : null, false);
+        SetPanelState(joinGameButton != null ? joinGameButton.gameObject : null, false);
+        SetPanelState(controlsGuideText != null ? controlsGuideText.gameObject : null, true);
+
+        if (controlsGuideText != null)
+        {
+            controlsGuideText.text = "1. \uB0B4 \uC54C\uC744 \uC120\uD0DD\uD569\uB2C8\uB2E4.\n"
+                + "2. \uB9C8\uC6B0\uC2A4\uB85C \uB4DC\uB798\uADF8\uD574 \uBC29\uD5A5\uACFC \uD798\uC744 \uC815\uD569\uB2C8\uB2E4.\n"
+                + "3. \uB9C8\uC6B0\uC2A4\uB97C \uB193\uC73C\uBA74 \uC54C\uC774 \uBC1C\uC0AC\uB429\uB2C8\uB2E4.\n"
+                + "4. \uC54C\uC774 \uC6C0\uC9C1\uC774\uB294 \uB3D9\uC548\uC5D0\uB294 \uAE30\uB2E4\uB9BD\uB2C8\uB2E4.\n"
+                + "5. \uC0C1\uB300 \uC54C\uC744 \uBAA8\uB450 \uB5A8\uC5B4\uB728\uB9AC\uBA74 \uC2B9\uB9AC\uD569\uB2C8\uB2E4.";
+        }
+
+        ShowJoinPanel();
+    }
+
     private void ShowSettingsPanel()
     {
         SetPanelState(mainMenuPanel, false);
@@ -153,7 +172,7 @@ public class MainMenuController : MonoBehaviour
     private void RegisterButtonListeners()
     {
         AddClickListener(hostGameButton, OnClickHostGame);
-        AddClickListener(showJoinPanelButton, OnClickShowJoinPanel);
+        AddClickListener(showJoinPanelButton, OnClickJoinRoom);
         AddClickListener(testJoinButton, OnClickTestJoin);
         AddClickListener(settingsButton, OnClickSettings);
         AddClickListener(quitGameButton, OnClickQuitGame);
@@ -198,6 +217,7 @@ public class MainMenuController : MonoBehaviour
         quitGameButton ??= FindInactiveComponent<Button>("Button_QuitGame");
 
         hostIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_HostIP");
+        controlsGuideText ??= FindInactiveComponent<TMP_Text>("Text_InputField_IP");
         joinGameButton ??= FindInactiveComponent<Button>("Button_JoinGame", "Button_JoinRoom (1)");
         cancelJoinButton ??= FindInactiveComponent<Button>("Button_CancelJoin", "Button_JoinRoom (2)");
 

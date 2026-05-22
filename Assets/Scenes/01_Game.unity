@@ -593,8 +593,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC54C\uC744 \uC870\uC900\uD558\uC138\uC694."
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 3ae166bb1e5d3674fa305cb4ca5ed96a, type: 2}
-  m_sharedMaterial: {fileID: -6197286578116338757, guid: 3ae166bb1e5d3674fa305cb4ca5ed96a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: fd2bb6a535440b9468c2c32c68f487fd, type: 2}
+  m_sharedMaterial: {fileID: -1497215462148027083, guid: fd2bb6a535440b9468c2c32c68f487fd, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -836,6 +836,9 @@ MonoBehaviour:
   featureFlags: {fileID: 11400000, guid: acb5c2df706f6be4ead4e311d8c00038, type: 2}
   manualSeed: -1
   boardMaterial: {fileID: -2317110199934127957, guid: 14eb7f8492c2dc14abecec75d44e27d8, type: 3}
+  terrianMapPrefab: {fileID: 0}
+  iceMapPrefab: {fileID: 0}
+  desertMapPrefab: {fileID: 0}
 --- !u!64 &639607065
 MeshCollider:
   m_ObjectHideFlags: 0

@@ -95,8 +95,9 @@
   - Used For: UI text (TMP default)
 
 - BlackHanSans-Regular:
-  - Author: [Unknown]
-  - License: [Unknown]
+  - Author/Provider: Zess Type / Google Fonts
+  - Source URL: https://fonts.google.com/specimen/Black+Han+Sans
+  - License: SIL Open Font License 1.1
   - Used For: UI text (Korean)
   - Note: 출처 확인 필요. 사용 전 라이선스 검토 권장.
 
