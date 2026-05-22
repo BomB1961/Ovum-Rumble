@@ -7,6 +7,8 @@ namespace DinoAlkkagi.Rules
 {
     /// <summary>
     /// Person B 전용 — 모든 알의 정지 상태를 감시하고 턴 종료를 판정한다.
+    /// Resolving 중 Time.timeScale을 높여 물리를 빠르게 시뮬레이션하고
+    /// 알이 자연스럽게 멈출 때까지 기다린다.
     /// 기획서 6-2 정지 판정 및 강제 턴 종료 알고리즘(6-2, 6-3)을 구현한다.
     /// </summary>
     public class MotionResolver : MonoBehaviour
@@ -31,6 +33,7 @@ namespace DinoAlkkagi.Rules
         {
             GameEvents.OnGameStarted -= HandleOnGameStarted;
             GameEvents.OnEggLaunched -= HandleOnEggLaunched;
+            Time.timeScale = 1f; // 안전장치
         }
 
         private void HandleOnGameStarted()
@@ -38,7 +41,7 @@ namespace DinoAlkkagi.Rules
             isResolving = false;
             stopTimer = 0f;
             resolveTimer = 0f;
-            ResetEggDamping();
+            Time.timeScale = 1f;
         }
 
         private void HandleOnEggLaunched(EggController egg)
@@ -46,7 +49,8 @@ namespace DinoAlkkagi.Rules
             isResolving = true;
             stopTimer = 0f;
             resolveTimer = 0f;
-            Debug.Log("[MotionResolver] Resolving started.");
+            Time.timeScale = settings.resolveTimeScale;
+            Debug.Log($"[MotionResolver] Resolving started. Time scale: {settings.resolveTimeScale}x");
         }
 
         private void Update()
@@ -54,9 +58,6 @@ namespace DinoAlkkagi.Rules
             if (!isResolving) return;
 
             resolveTimer += Time.deltaTime;
-
-            // 느린 알에 동적 댐핑 적용 (구덩이/계곡 진동 빠르게 감쇠)
-            ApplyDynamicDamping();
 
             // [6-3] 강제 턴 종료: 최대 해석 시간 초과 시 모든 알 강제 정지
             if (resolveTimer >= settings.maxResolveTime)
@@ -75,62 +76,13 @@ namespace DinoAlkkagi.Rules
                 {
                     Debug.Log("[MotionResolver] All eggs stopped. Ending resolve.");
                     isResolving = false;
-                    ResetEggDamping();
+                    Time.timeScale = 1f;
                     GameEvents.TriggerAllEggsStopped();
                 }
             }
             else
             {
                 stopTimer = 0f;
-            }
-        }
-
-        /// <summary>
-        /// 느리게 움직이는 알의 댐핑을 높여 진동을 빠르게 감쇠시킨다.
-        /// 빠른 알(발사 직후)은 정상 물리 유지.
-        /// </summary>
-        private void ApplyDynamicDamping()
-        {
-            for (int i = trackedEggs.Count - 1; i >= 0; i--)
-            {
-                if (trackedEggs[i] == null)
-                {
-                    trackedEggs.RemoveAt(i);
-                    continue;
-                }
-                if (!trackedEggs[i].IsAlive) continue;
-
-                float speed = trackedEggs[i].Rigidbody.linearVelocity.magnitude;
-                if (speed < settings.dampingSpeedThreshold)
-                {
-                    float t = Mathf.Clamp01(speed / settings.dampingSpeedThreshold);
-                    float damping = Mathf.Lerp(settings.highDamping, 0f, t);
-                    trackedEggs[i].Rigidbody.linearDamping = damping;
-                    trackedEggs[i].Rigidbody.angularDamping = damping * 0.5f;
-                }
-                else
-                {
-                    trackedEggs[i].Rigidbody.linearDamping = 0f;
-                    trackedEggs[i].Rigidbody.angularDamping = 0f;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 모든 알의 댐핑을 기본값(0)으로 복원.
-        /// </summary>
-        private void ResetEggDamping()
-        {
-            for (int i = trackedEggs.Count - 1; i >= 0; i--)
-            {
-                if (trackedEggs[i] == null)
-                {
-                    trackedEggs.RemoveAt(i);
-                    continue;
-                }
-                if (!trackedEggs[i].IsAlive) continue;
-                trackedEggs[i].Rigidbody.linearDamping = 0f;
-                trackedEggs[i].Rigidbody.angularDamping = 0f;
             }
         }
 
@@ -167,6 +119,7 @@ namespace DinoAlkkagi.Rules
                 trackedEggs[i].Rigidbody.angularVelocity = Vector3.zero;
             }
             isResolving = false;
+            Time.timeScale = 1f;
             GameEvents.TriggerAllEggsStopped();
         }
 

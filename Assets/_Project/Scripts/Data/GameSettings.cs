@@ -31,11 +31,9 @@ namespace DinoAlkkagi.Data
         public float defaultBounciness = 0.3f;
         public float defaultFriction = 0.4f;
 
-        [Header("--- 진동 감쇠 (구덩이/계곡 oscillation 방지) ---")]
-        [Tooltip("이 속도(m/s) 이하일 때 댐핑 적용")]
-        public float dampingSpeedThreshold = 0.5f;
-        [Tooltip("느린 알에 적용할 최대 댐핑값 (클수록 빨리 멈춤)")]
-        public float highDamping = 3f;
+        [Header("--- Resolving 시간 가속 ---")]
+        [Tooltip("Resolving 중 시간 배속 (2=2배 빠름, 알이 빨리 멈춤)")]
+        public float resolveTimeScale = 2.5f;
 
         [Header("--- 보드 크기 (참조용) ---")]
         public float boardSize = 10f;
