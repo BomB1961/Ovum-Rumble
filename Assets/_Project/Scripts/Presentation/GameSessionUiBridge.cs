@@ -20,6 +20,7 @@ public class GameSessionUiBridge : MonoBehaviour
     private float gameStartedAt;
     private float turnStartedAt;
     private bool isPlaying;
+    private bool hasGameEnded;
 
     private void Awake()
     {
@@ -33,6 +34,7 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted += HandleGameStarted;
         GameEvents.OnTurnStarted += HandleTurnStarted;
+        GameEvents.OnEggLaunched += HandleEggLaunched;
         GameEvents.OnEggFell += HandleEggFell;
         GameEvents.OnGameEnded += HandleGameEnded;
     }
@@ -41,6 +43,7 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         GameEvents.OnGameStarted -= HandleGameStarted;
         GameEvents.OnTurnStarted -= HandleTurnStarted;
+        GameEvents.OnEggLaunched -= HandleEggLaunched;
         GameEvents.OnEggFell -= HandleEggFell;
         GameEvents.OnGameEnded -= HandleGameEnded;
     }
@@ -50,6 +53,7 @@ public class GameSessionUiBridge : MonoBehaviour
         gameStartedAt = Time.time;
         turnStartedAt = Time.time;
         isPlaying = true;
+        hasGameEnded = false;
         resultScreen?.Hide();
         hudPresenter?.ShowGuide("\uc54c\uc744 \uc870\uc900\ud558\uc138\uc694.");
         RefreshHud();
@@ -62,6 +66,12 @@ public class GameSessionUiBridge : MonoBehaviour
         RefreshHud();
     }
 
+    private void HandleEggLaunched(EggController egg)
+    {
+        hudPresenter?.ShowGuide("\uc54c\uc774 \uc6c0\uc9c1\uc774\ub294 \uc911\uc785\ub2c8\ub2e4.\n\uc785\ub825\uc774 \uc7a0\uc2dc \uc7a0\uae41\ub2c8\ub2e4.");
+        RefreshHud();
+    }
+
     private void HandleEggFell(EggController egg)
     {
         RefreshHud();
@@ -69,6 +79,12 @@ public class GameSessionUiBridge : MonoBehaviour
 
     private void HandleGameEnded(GameResult result)
     {
+        if (hasGameEnded)
+        {
+            return;
+        }
+
+        hasGameEnded = true;
         isPlaying = false;
         if (result == GameResult.Player1Win)
         {
