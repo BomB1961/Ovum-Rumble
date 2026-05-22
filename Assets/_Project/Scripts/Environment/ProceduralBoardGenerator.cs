@@ -77,8 +77,8 @@ namespace DinoAlkkagi.Environment
                     currentSeed
                 );
 
-                SpawnZoneFlattener.Flatten(heightfield, settings.boardSize, settings.spawnFlattenRadius);
                 SlopeClamper.Clamp(heightfield, settings.boardSize, settings.maxSlopeGradient);
+                SpawnZoneFlattener.Flatten(heightfield, settings.boardSize, settings.spawnFlattenRadius);
 
                 if (MapValidator.Validate(heightfield, settings.boardSize, settings.spawnFlattenRadius, settings.maxSlopeGradient))
                 {

@@ -51,8 +51,7 @@ namespace DinoAlkkagi.Environment
 
                     if (dist <= radius)
                     {
-                        float t = Mathf.SmoothStep(1f, 0f, dist / radius);
-                        heightfield[x, z] = Mathf.Lerp(heightfield[x, z], avgHeight, t);
+                        heightfield[x, z] = avgHeight;
                     }
                 }
             }

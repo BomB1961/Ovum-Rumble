@@ -195,7 +195,7 @@ namespace DinoAlkkagi.Core
             if (flickInputController == null) return;
 
             flickInputController.SetActivePlayer(playerId);
-            flickInputController.SetInputEnabled(true);
+            SyncInputAvailability();
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace DinoAlkkagi.Core
         /// </summary>
         private void HandleOnEggLaunched(EggController egg)
         {
-            flickInputController?.SetInputEnabled(true);
+            SyncInputAvailability();
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace DinoAlkkagi.Core
         /// </summary>
         private void OnFlickEggLaunched(EggController egg)
         {
-            flickInputController?.SetInputEnabled(true);
+            SyncInputAvailability();
         }
 
         /// <summary>
@@ -221,7 +221,18 @@ namespace DinoAlkkagi.Core
         {
             if (turnController == null || flickInputController == null) return;
 
-            flickInputController.SetInputEnabled(!turnController.IsInputLocked);
+            SyncInputAvailability();
+        }
+
+        private void SyncInputAvailability()
+        {
+            if (turnController == null || flickInputController == null)
+            {
+                return;
+            }
+
+            bool isAiTurn = aiInputController != null && aiInputController.IsAiPlayer(turnController.CurrentPlayerId);
+            flickInputController.SetInputEnabled(!turnController.IsInputLocked && !isAiTurn);
         }
 
         /// <summary>

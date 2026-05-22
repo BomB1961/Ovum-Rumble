@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3402a0e498dc0684cb7ed3ed14cac9d5, type: 3}
   m_Name: FeatureFlags
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Data.FeatureFlags
-  enableProceduralMap: 1
+  enableProceduralMap: 0
   enableBomb: 0
   enableWind: 0
   enableEarthquake: 0
@@ -21,5 +21,6 @@ MonoBehaviour:
   enableAbilityEggs: 0
   enableHatching: 0
   enable4PlayerMode: 0
+  enableAI: 0
   enableLanMultiplayer: 0
   enableLobby: 0

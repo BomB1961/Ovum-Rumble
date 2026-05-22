@@ -66,7 +66,8 @@ namespace DinoAlkkagi.Environment
                 : new Vector3(0f, 0f, 3f);
 
             List<Vector3> points = new List<Vector3>();
-            float spacing = 1.1f;
+            const float spacing = 1.6f;
+            const float spawnHeightOffset = 0.75f;
 
             for (int i = 0; i < 6; i++)
             {
@@ -75,7 +76,7 @@ namespace DinoAlkkagi.Environment
                 float xOffset = (col - 1) * spacing;
                 float zOffset = (row - 0.5f) * spacing;
                 Vector3 pos = center + new Vector3(xOffset, 0f, zOffset);
-                pos.y = GetHeight(pos) + 0.5f;
+                pos.y = GetHeight(pos) + spawnHeightOffset;
                 points.Add(pos);
             }
 

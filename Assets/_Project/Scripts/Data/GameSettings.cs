@@ -31,6 +31,10 @@ namespace DinoAlkkagi.Data
         public float defaultBounciness = 0.3f;
         public float defaultFriction = 0.4f;
 
+        [Header("--- Resolving 시간 가속 ---")]
+        [Tooltip("Resolving 중 시간 배속 (2=2배 빠름, 알이 빨리 멈춤)")]
+        public float resolveTimeScale = 2.5f;
+
         [Header("--- 보드 크기 (참조용) ---")]
         public float boardSize = 10f;
         public float fallZoneDepth = 2f;

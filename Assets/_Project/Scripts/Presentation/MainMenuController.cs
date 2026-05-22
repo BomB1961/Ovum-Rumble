@@ -1,4 +1,5 @@
 using TMPro;
+using DinoAlkkagi.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -23,6 +24,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button hostGameButton;
     [SerializeField] private Button showJoinPanelButton;
     [SerializeField] private Button testJoinButton;
+    [SerializeField] private Button vsComputerButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button quitGameButton;
 
@@ -40,7 +42,9 @@ public class MainMenuController : MonoBehaviour
 
     private void Awake()
     {
+        GameLaunchContext.ResetToDefault();
         ResolveMissingReferences();
+        EnsureVsComputerButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
         InitializeVolumeSliders();
         RegisterButtonListeners();
@@ -49,6 +53,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickHostGame()
     {
+        GameLaunchContext.SetMode(GameMode.LocalHotseat);
         SceneManager.LoadScene(MapSelectSceneName);
     }
 
@@ -74,6 +79,13 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickTestJoin()
     {
+        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+        SceneManager.LoadScene(GameSceneName);
+    }
+
+    public void OnClickVsComputer()
+    {
+        GameLaunchContext.SetMode(GameMode.VsComputer);
         SceneManager.LoadScene(GameSceneName);
     }
 
@@ -174,6 +186,7 @@ public class MainMenuController : MonoBehaviour
         AddClickListener(hostGameButton, OnClickHostGame);
         AddClickListener(showJoinPanelButton, OnClickJoinRoom);
         AddClickListener(testJoinButton, OnClickTestJoin);
+        AddClickListener(vsComputerButton, OnClickVsComputer);
         AddClickListener(settingsButton, OnClickSettings);
         AddClickListener(quitGameButton, OnClickQuitGame);
         AddClickListener(joinGameButton, OnClickJoinGame);
@@ -213,6 +226,7 @@ public class MainMenuController : MonoBehaviour
         hostGameButton ??= FindInactiveComponent<Button>("Button_HostGame", "Button_CreateRoom");
         showJoinPanelButton ??= FindInactiveComponent<Button>("Button_ShowJoinPanel", "Button_JoinRoom");
         testJoinButton ??= FindInactiveComponent<Button>("Button_TestJoin");
+        vsComputerButton ??= FindInactiveComponent<Button>("Button_VsComputer");
         settingsButton ??= FindInactiveComponent<Button>("Button_Settings");
         quitGameButton ??= FindInactiveComponent<Button>("Button_QuitGame");
 
@@ -224,6 +238,54 @@ public class MainMenuController : MonoBehaviour
         bgmSlider ??= FindInactiveComponent<Slider>("Slider_BGM");
         sfxSlider ??= FindInactiveComponent<Slider>("Slider_SFX");
         closeSettingsButton ??= FindInactiveComponent<Button>("Button_CloseSettings");
+    }
+
+    private void EnsureVsComputerButton()
+    {
+        if (vsComputerButton != null)
+        {
+            return;
+        }
+
+        Button templateButton = testJoinButton != null ? testJoinButton : hostGameButton;
+        if (templateButton == null || templateButton.transform.parent == null)
+        {
+            return;
+        }
+
+        GameObject buttonObject = Instantiate(templateButton.gameObject, templateButton.transform.parent);
+        buttonObject.name = "Button_VsComputer";
+        buttonObject.transform.SetSiblingIndex(templateButton.transform.GetSiblingIndex());
+
+        vsComputerButton = buttonObject.GetComponent<Button>();
+        if (vsComputerButton != null)
+        {
+            vsComputerButton.onClick = new Button.ButtonClickedEvent();
+        }
+
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        RectTransform templateRect = templateButton.GetComponent<RectTransform>();
+        if (buttonRect != null && templateRect != null)
+        {
+            buttonRect.anchorMin = templateRect.anchorMin;
+            buttonRect.anchorMax = templateRect.anchorMax;
+            buttonRect.pivot = templateRect.pivot;
+            buttonRect.sizeDelta = templateRect.sizeDelta;
+            buttonRect.anchoredPosition = templateRect.anchoredPosition + new Vector2(0f, 66f);
+        }
+
+        TMP_Text tmpLabel = buttonObject.GetComponentInChildren<TMP_Text>(true);
+        if (tmpLabel != null)
+        {
+            tmpLabel.text = "컴퓨터와 대결";
+            return;
+        }
+
+        Text legacyLabel = buttonObject.GetComponentInChildren<Text>(true);
+        if (legacyLabel != null)
+        {
+            legacyLabel.text = "컴퓨터와 대결";
+        }
     }
 
     private void InitializeVolumeSliders()

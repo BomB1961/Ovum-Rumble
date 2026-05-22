@@ -836,9 +836,9 @@ MonoBehaviour:
   featureFlags: {fileID: 11400000, guid: acb5c2df706f6be4ead4e311d8c00038, type: 2}
   manualSeed: -1
   boardMaterial: {fileID: -2317110199934127957, guid: 14eb7f8492c2dc14abecec75d44e27d8, type: 3}
-  terrianMapPrefab: {fileID: 0}
-  iceMapPrefab: {fileID: 0}
-  desertMapPrefab: {fileID: 0}
+  terrianMapPrefab: {fileID: 100100000, guid: fdc6b13af1080d64a8456f859dbdd8c3, type: 3}
+  iceMapPrefab: {fileID: 100100000, guid: b36d34a0db5a41b4a9df42df7f41f801, type: 3}
+  desertMapPrefab: {fileID: 100100000, guid: 8ddf705e6b6df284baa1a864501ee7b9, type: 3}
 --- !u!64 &639607065
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -1564,9 +1564,9 @@ MonoBehaviour:
   player1Root: {fileID: 1876930049}
   player2Root: {fileID: 250049754}
   eggsPerPlayer: 6
-  spacing: 1.1
-  player1StartCenter: {x: 0, y: 0.5, z: -3}
-  player2StartCenter: {x: 0, y: 0.5, z: 3}
+  spacing: 1.6
+  player1StartCenter: {x: 0, y: 0.75, z: -3}
+  player2StartCenter: {x: 0, y: 0.75, z: 3}
   spawnOnStart: 0
 --- !u!4 &1401538239
 Transform:

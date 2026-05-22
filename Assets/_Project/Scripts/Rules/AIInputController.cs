@@ -40,6 +40,14 @@ namespace DinoAlkkagi.Rules
         private float timer = 0f;
         private bool decisionMade = false;
 
+        public int AiPlayerId => aiPlayerId;
+        public bool IsAiEnabled => (featureFlags != null && featureFlags.enableAI) || GameLaunchContext.IsVsComputer;
+
+        public bool IsAiPlayer(int playerId)
+        {
+            return IsAiEnabled && playerId == aiPlayerId;
+        }
+
         private void OnEnable()
         {
             GameEvents.OnTurnStarted += HandleOnTurnStarted;
@@ -52,8 +60,7 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnTurnStarted(int playerId)
         {
-            bool aiEnabled = featureFlags != null && featureFlags.enableAI;
-            isAiTurn = aiEnabled && playerId == aiPlayerId;
+            isAiTurn = IsAiPlayer(playerId);
 
             if (isAiTurn)
             {
