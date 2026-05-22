@@ -41,6 +41,13 @@ public class EggSpawner : MonoBehaviour
         }
 
         ClearSpawnedEggs();
+        if (boardSurface != null)
+        {
+            SpawnFromBoardSurface(1, player1Root);
+            SpawnFromBoardSurface(2, player2Root);
+            return;
+        }
+
         SpawnPlayerEggs(1, player1Root, player1StartCenter);
         SpawnPlayerEggs(2, player2Root, player2StartCenter);
     }
@@ -75,18 +82,26 @@ public class EggSpawner : MonoBehaviour
 
     private void SpawnPlayerEggs(int ownerPlayerId, Transform parent, Vector3 center)
     {
-        if (boardSurface != null)
-        {
-            SpawnFromBoardSurface(ownerPlayerId, parent);
-            return;
-        }
-
         EggController prefab = GetPrefabForPlayer(ownerPlayerId);
         for (int i = 0; i < eggsPerPlayer; i++)
         {
             Vector3 position = GetGridPosition(center, i);
+            position.y += 1.0f;
+
             EggController egg = Instantiate(prefab, position, Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
+
+            Rigidbody rb = egg.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.WakeUp();
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            }
+
             spawnedEggs.Add(egg);
         }
     }
@@ -97,8 +112,22 @@ public class EggSpawner : MonoBehaviour
         EggController prefab = GetPrefabForPlayer(ownerPlayerId);
         for (int i = 0; i < eggsPerPlayer && i < points.Count; i++)
         {
-            EggController egg = Instantiate(prefab, points[i], Quaternion.identity, parent);
+            Vector3 spawnPos = points[i];
+
+            EggController egg = Instantiate(prefab, spawnPos, Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
+
+            Rigidbody rb = egg.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.WakeUp();
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            }
+
             spawnedEggs.Add(egg);
         }
     }
