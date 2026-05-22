@@ -275,7 +275,7 @@ MonoBehaviour:
   distance: 10
   minDistance: 3
   maxDistance: 20
-  orbitSensitivity: 200
+  orbitSensitivity: 20
   zoomSensitivity: 5
   orbitPivotLayerMask:
     serializedVersion: 2
@@ -833,9 +833,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Environment.StaticBoardLoader
   settings: {fileID: 11400000, guid: 5ecf7b4c1e64cf74db25541fe3e6721e, type: 2}
-  featureFlags: {fileID: 11400000, guid: acb5c2df706f6be4ead4e311d8c00038, type: 2}
-  manualSeed: -1
-  boardMaterial: {fileID: -2317110199934127957, guid: 14eb7f8492c2dc14abecec75d44e27d8, type: 3}
   terrianMapPrefab: {fileID: 3258265017178192629, guid: fdc6b13af1080d64a8456f859dbdd8c3, type: 3}
   iceMapPrefab: {fileID: 1000000000000000000, guid: b36d34a0db5a41b4a9df42df7f41f801, type: 3}
   desertMapPrefab: {fileID: 2000000000000000000, guid: 8ddf705e6b6df284baa1a864501ee7b9, type: 3}

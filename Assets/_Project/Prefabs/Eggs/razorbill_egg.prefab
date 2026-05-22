@@ -108,9 +108,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5061484074317390238}
-    - targetCorrespondingSourceObject: {fileID: -6689036041284674117, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: -8208860824436171503, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2381923102862184747}
+      addedObject: {fileID: 877291568262005180}
   m_SourcePrefab: {fileID: -5645937942226959685, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
 --- !u!1 &2262202603394153123 stripped
 GameObject:
@@ -150,7 +150,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: -2490630749704929923, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -216,14 +216,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!135 &2381923102862184747
-SphereCollider:
+--- !u!1 &3628622514905168393 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -8208860824436171503, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
+  m_PrefabInstance: {fileID: 4345745359347427096}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &877291568262005180
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2262202603394153123}
-  m_Material: {fileID: 13400000, guid: 46557bcdb3189ad47834b5971194ac35, type: 2}
+  m_GameObject: {fileID: 3628622514905168393}
+  m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -234,6 +239,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.36
-  m_Center: {x: 0, y: 0, z: 0}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -7227129179611170996, guid: ac4841b373d038445bc20dbc69b01d3e, type: 3}
