@@ -38,6 +38,7 @@ namespace DinoAlkkagi.Rules
             isResolving = false;
             stopTimer = 0f;
             resolveTimer = 0f;
+            ResetEggDamping();
         }
 
         private void HandleOnEggLaunched(EggController egg)
@@ -53,6 +54,9 @@ namespace DinoAlkkagi.Rules
             if (!isResolving) return;
 
             resolveTimer += Time.deltaTime;
+
+            // 느린 알에 동적 댐핑 적용 (구덩이/계곡 진동 빠르게 감쇠)
+            ApplyDynamicDamping();
 
             // [6-3] 강제 턴 종료: 최대 해석 시간 초과 시 모든 알 강제 정지
             if (resolveTimer >= settings.maxResolveTime)
@@ -71,12 +75,62 @@ namespace DinoAlkkagi.Rules
                 {
                     Debug.Log("[MotionResolver] All eggs stopped. Ending resolve.");
                     isResolving = false;
+                    ResetEggDamping();
                     GameEvents.TriggerAllEggsStopped();
                 }
             }
             else
             {
                 stopTimer = 0f;
+            }
+        }
+
+        /// <summary>
+        /// 느리게 움직이는 알의 댐핑을 높여 진동을 빠르게 감쇠시킨다.
+        /// 빠른 알(발사 직후)은 정상 물리 유지.
+        /// </summary>
+        private void ApplyDynamicDamping()
+        {
+            for (int i = trackedEggs.Count - 1; i >= 0; i--)
+            {
+                if (trackedEggs[i] == null)
+                {
+                    trackedEggs.RemoveAt(i);
+                    continue;
+                }
+                if (!trackedEggs[i].IsAlive) continue;
+
+                float speed = trackedEggs[i].Rigidbody.linearVelocity.magnitude;
+                if (speed < settings.dampingSpeedThreshold)
+                {
+                    float t = Mathf.Clamp01(speed / settings.dampingSpeedThreshold);
+                    float damping = Mathf.Lerp(settings.highDamping, 0f, t);
+                    trackedEggs[i].Rigidbody.linearDamping = damping;
+                    trackedEggs[i].Rigidbody.angularDamping = damping * 0.5f;
+                }
+                else
+                {
+                    trackedEggs[i].Rigidbody.linearDamping = 0f;
+                    trackedEggs[i].Rigidbody.angularDamping = 0f;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 모든 알의 댐핑을 기본값(0)으로 복원.
+        /// </summary>
+        private void ResetEggDamping()
+        {
+            for (int i = trackedEggs.Count - 1; i >= 0; i--)
+            {
+                if (trackedEggs[i] == null)
+                {
+                    trackedEggs.RemoveAt(i);
+                    continue;
+                }
+                if (!trackedEggs[i].IsAlive) continue;
+                trackedEggs[i].Rigidbody.linearDamping = 0f;
+                trackedEggs[i].Rigidbody.angularDamping = 0f;
             }
         }
 
@@ -111,7 +165,6 @@ namespace DinoAlkkagi.Rules
                 if (!trackedEggs[i].IsAlive) continue;
                 trackedEggs[i].Rigidbody.linearVelocity = Vector3.zero;
                 trackedEggs[i].Rigidbody.angularVelocity = Vector3.zero;
-                trackedEggs[i].Rigidbody.isKinematic = true; // 경사면/구덩이에서 중력에 의한 재굴름 방지
             }
             isResolving = false;
             GameEvents.TriggerAllEggsStopped();

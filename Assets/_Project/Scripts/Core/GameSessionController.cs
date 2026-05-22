@@ -188,7 +188,7 @@ namespace DinoAlkkagi.Core
         }
 
         /// <summary>
-        /// 턴 시작 시 FlickInputController와 동기화하고, 경사면 정지된 알의 물리를 복원한다.
+        /// 턴 시작 시 FlickInputController와 동기화한다.
         /// </summary>
         private void HandleOnTurnStarted(int playerId)
         {
@@ -196,15 +196,6 @@ namespace DinoAlkkagi.Core
 
             flickInputController.SetActivePlayer(playerId);
             flickInputController.SetInputEnabled(true);
-
-            // ForceStopAllEggs에서 kinematic으로 정지된 알을 다시 물리 활성화
-            foreach (var egg in allEggs)
-            {
-                if (egg != null && egg.IsAlive)
-                {
-                    egg.Rigidbody.isKinematic = false;
-                }
-            }
         }
 
         /// <summary>
