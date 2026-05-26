@@ -4,6 +4,17 @@ using DinoAlkkagi.Core;
 namespace DinoAlkkagi.Environment
 {
     [System.Serializable]
+    public class LightingPreset
+    {
+        public Color directionalLightColor = Color.white;
+        public float directionalLightIntensity = 1f;
+        public Vector3 directionalLightRotation = new Vector3(50f, -30f, 0f);
+        public Color ambientSkyColor = new Color(0.212f, 0.227f, 0.259f);
+        public Color ambientEquatorColor = new Color(0.114f, 0.125f, 0.133f);
+        public float ambientIntensity = 1f;
+    }
+
+    [System.Serializable]
     public class SkyboxPreset
     {
         public string displayName;
@@ -11,6 +22,7 @@ namespace DinoAlkkagi.Environment
         public Material cloudMaterial;
         public Vector3 sunDirectionEuler;
         public Vector3 moonDirectionEuler;
+        public LightingPreset lighting = new LightingPreset();
     }
 
     public class SkyboxManager : MonoBehaviour
@@ -24,6 +36,7 @@ namespace DinoAlkkagi.Environment
         [SerializeField] private Transform sunDir;
         [SerializeField] private Transform moonDir;
         [SerializeField] private DirectionToSkybox directionToSkybox;
+        [SerializeField] private Light directionalLight;
 
         private MapId currentMap;
 
@@ -77,7 +90,25 @@ namespace DinoAlkkagi.Environment
                 directionToSkybox.targetMaterialCloudTA = preset.cloudMaterial;
             }
 
+            ApplyLighting(preset.lighting);
+
             Debug.Log($"[SkyboxManager] Applied preset: {preset.displayName}");
+        }
+
+        private void ApplyLighting(LightingPreset lighting)
+        {
+            if (lighting == null) return;
+
+            if (directionalLight != null)
+            {
+                directionalLight.color = lighting.directionalLightColor;
+                directionalLight.intensity = lighting.directionalLightIntensity;
+                directionalLight.transform.localEulerAngles = lighting.directionalLightRotation;
+            }
+
+            RenderSettings.ambientSkyColor = lighting.ambientSkyColor;
+            RenderSettings.ambientEquatorColor = lighting.ambientEquatorColor;
+            RenderSettings.ambientIntensity = lighting.ambientIntensity;
         }
     }
 }

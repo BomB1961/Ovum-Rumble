@@ -311,10 +311,38 @@ namespace DinoAlkkagi.Editor
                 }
             }
 
-            // Set presets
-            SkyboxPreset dayPreset = new SkyboxPreset { displayName = "Day", skyMaterial = skyDay, cloudMaterial = cloudDay, sunDirectionEuler = new Vector3(35f, 225f, 0), moonDirectionEuler = new Vector3(-30f, 45f, 0) };
-            SkyboxPreset sunsetPreset = new SkyboxPreset { displayName = "Sunset", skyMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Sky_Sunset.mat")), cloudMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Cloud_Sunset.mat")), sunDirectionEuler = new Vector3(0f, 180f, 0), moonDirectionEuler = new Vector3(-10f, 0, 0) };
-            SkyboxPreset nightPreset = new SkyboxPreset { displayName = "Night", skyMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Sky_Night.mat")), cloudMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Cloud_Night.mat")), sunDirectionEuler = new Vector3(-45f, 0, 0), moonDirectionEuler = new Vector3(45f, 90f, 0) };
+            // Set presets with lighting
+            LightingPreset dayLight = new LightingPreset
+            {
+                directionalLightColor = new Color(1f, 1f, 1f),
+                directionalLightIntensity = 1.2f,
+                directionalLightRotation = new Vector3(50f, -30f, 0f),
+                ambientSkyColor = new Color(0.6f, 0.7f, 0.85f),
+                ambientEquatorColor = new Color(0.5f, 0.55f, 0.65f),
+                ambientIntensity = 1.0f
+            };
+            LightingPreset sunsetLight = new LightingPreset
+            {
+                directionalLightColor = new Color(1f, 0.85f, 0.6f),
+                directionalLightIntensity = 1.0f,
+                directionalLightRotation = new Vector3(15f, -60f, 0f),
+                ambientSkyColor = new Color(0.5f, 0.4f, 0.3f),
+                ambientEquatorColor = new Color(0.45f, 0.35f, 0.25f),
+                ambientIntensity = 0.8f
+            };
+            LightingPreset nightLight = new LightingPreset
+            {
+                directionalLightColor = new Color(0.4f, 0.5f, 0.7f),
+                directionalLightIntensity = 0.25f,
+                directionalLightRotation = new Vector3(-30f, -120f, 0f),
+                ambientSkyColor = new Color(0.03f, 0.04f, 0.08f),
+                ambientEquatorColor = new Color(0.02f, 0.03f, 0.06f),
+                ambientIntensity = 0.3f
+            };
+
+            SkyboxPreset dayPreset = new SkyboxPreset { displayName = "Day", skyMaterial = skyDay, cloudMaterial = cloudDay, sunDirectionEuler = new Vector3(35f, 225f, 0), moonDirectionEuler = new Vector3(-30f, 45f, 0), lighting = dayLight };
+            SkyboxPreset sunsetPreset = new SkyboxPreset { displayName = "Sunset", skyMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Sky_Sunset.mat")), cloudMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Cloud_Sunset.mat")), sunDirectionEuler = new Vector3(0f, 180f, 0), moonDirectionEuler = new Vector3(-10f, 0, 0), lighting = sunsetLight };
+            SkyboxPreset nightPreset = new SkyboxPreset { displayName = "Night", skyMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Sky_Night.mat")), cloudMaterial = AssetDatabase.LoadAssetAtPath<Material>(MatPath("Cloud_Night.mat")), sunDirectionEuler = new Vector3(-45f, 0, 0), moonDirectionEuler = new Vector3(45f, 90f, 0), lighting = nightLight };
 
             // Apply presets using the public field via reflection since it's not exposed in the serialized object easily
             // We'll set via SetValue helper
@@ -323,7 +351,13 @@ namespace DinoAlkkagi.Editor
             SetPresetField(so, "nightPreset", nightPreset);
             so.ApplyModifiedProperties();
 
-            // Link to StaticBoardLoader
+            Light dirLight = Object.FindFirstObjectByType<Light>();
+            if (dirLight != null && dirLight.type == LightType.Directional)
+            {
+                so.FindProperty("directionalLight").objectReferenceValue = dirLight;
+                so.ApplyModifiedProperties();
+                Debug.Log("[SkyboxSetup] Linked Directional Light to SkyboxManager.");
+            }
             StaticBoardLoader loader = Object.FindFirstObjectByType<StaticBoardLoader>();
             if (loader)
             {
@@ -378,6 +412,20 @@ namespace DinoAlkkagi.Editor
             prop.FindPropertyRelative("cloudMaterial").objectReferenceValue = preset.cloudMaterial;
             prop.FindPropertyRelative("sunDirectionEuler").vector3Value = preset.sunDirectionEuler;
             prop.FindPropertyRelative("moonDirectionEuler").vector3Value = preset.moonDirectionEuler;
+
+            if (preset.lighting != null)
+            {
+                var lp = prop.FindPropertyRelative("lighting");
+                if (lp != null)
+                {
+                    lp.FindPropertyRelative("directionalLightColor").colorValue = preset.lighting.directionalLightColor;
+                    lp.FindPropertyRelative("directionalLightIntensity").floatValue = preset.lighting.directionalLightIntensity;
+                    lp.FindPropertyRelative("directionalLightRotation").vector3Value = preset.lighting.directionalLightRotation;
+                    lp.FindPropertyRelative("ambientSkyColor").colorValue = preset.lighting.ambientSkyColor;
+                    lp.FindPropertyRelative("ambientEquatorColor").colorValue = preset.lighting.ambientEquatorColor;
+                    lp.FindPropertyRelative("ambientIntensity").floatValue = preset.lighting.ambientIntensity;
+                }
+            }
         }
 
         private static string ShadersPath(string file) => Path.Combine(ShaderPath, file);
