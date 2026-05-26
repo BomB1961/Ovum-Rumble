@@ -405,7 +405,7 @@ public class CameraController : MonoBehaviour
         float fitDistance = Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.5f;
         distance = Mathf.Clamp(fitDistance, minDistance, maxDistance);
         topDownPivot = bounds.center;
-        topDownDistance = Mathf.Clamp(Mathf.Max(topDownDistance, fitDistance), minDistance, maxDistance);
+        topDownDistance = Mathf.Max(topDownDistance, fitDistance);
 
         SaveStateForAllPlayers();
     }
