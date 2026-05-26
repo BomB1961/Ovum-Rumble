@@ -223,7 +223,6 @@ public class MainMenuController : MonoBehaviour
         ShowConnectionStatus("연결이 끊어졌습니다.");
         Invoke(nameof(ShowMainMenu), 2f);
     }
-}
 
     private void ShowSettingsPanel()
     {
