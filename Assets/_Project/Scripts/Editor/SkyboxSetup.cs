@@ -99,37 +99,37 @@ namespace DinoAlkkagi.Editor
             if (irradianceMap) skyDay.SetTexture("_IrradianceMap", irradianceMap);
             if (moonTex) skyDay.SetTexture("_MoonTex", moonTex);
 
-            // ===== Sky_Sunset (Desert - warm orange/yellow) =====
+            // ===== Sky_Sunset (from 5456.mat) =====
             Material skySunset = CreateMaterial(skyShader, "Sky_Sunset", MaterialPath);
-            skySunset.SetColor("_upPartSunColor", new Color(1.0f, 0.65f, 0.25f));
-            skySunset.SetColor("_upPartSkyColor", new Color(0.85f, 0.45f, 0.15f));
-            skySunset.SetColor("_downPartSunColor", new Color(1.0f, 0.78f, 0.40f));
-            skySunset.SetColor("_downPartSkyColor", new Color(0.95f, 0.65f, 0.25f));
+            skySunset.SetColor("_upPartSunColor", new Color(1.000f, 0.879f, 0.593f));
+            skySunset.SetColor("_upPartSkyColor", new Color(0.318f, 0.596f, 0.805f));
+            skySunset.SetColor("_downPartSunColor", new Color(0.929f, 0.937f, 0.863f));
+            skySunset.SetColor("_downPartSkyColor", new Color(0.648f, 0.859f, 0.955f));
             skySunset.SetFloat("_IrradianceMapR_maxAngleRange", 0.347f);
             skySunset.SetFloat("_mainColorSunGatherFactor", 1.718f);
-            skySunset.SetColor("_SunAdditionColor", new Color(1.0f, 0.80f, 0.35f));
-            skySunset.SetFloat("_SunAdditionIntensity", 0.8f);
+            skySunset.SetColor("_SunAdditionColor", new Color(0.920f, 0.894f, 0.651f));
+            skySunset.SetFloat("_SunAdditionIntensity", 0.624f);
             skySunset.SetFloat("_IrradianceMapG_maxAngleRange", 0.625f);
             skySunset.SetFloat("_SunRadius", 8.3f);
             skySunset.SetFloat("_SunInnerBoundary", 0f);
             skySunset.SetFloat("_SunOuterBoundary", 0.822f);
             skySunset.SetFloat("_sun_disk_power_999", 164.4f);
-            skySunset.SetFloat("_SunScattering", 0.3f);
-            skySunset.SetFloat("_sun_color_intensity", 1.5f);
-            skySunset.SetColor("_sun_color", new Color(1.0f, 0.75f, 0.30f));
-            skySunset.SetColor("_sun_color_Scat", new Color(0.85f, 0.40f, 0.10f));
+            skySunset.SetFloat("_SunScattering", 0.194f);
+            skySunset.SetFloat("_sun_color_intensity", 1.241f);
+            skySunset.SetColor("_sun_color", new Color(0.997f, 0.840f, 0.678f));
+            skySunset.SetColor("_sun_color_Scat", new Color(0.283f, 0.283f, 0.283f));
             skySunset.SetVector("_SunDirection", new Vector4(0f, 0.014f, -1.0f, 0));
             skySunset.SetVector("_MoonDirection", new Vector4(-0.905f, 0.342f, -0.254f, 0));
             skySunset.SetFloat("_MoonRadius", 2.15f);
             skySunset.SetFloat("_MoonMaskRadius", 5.49f);
             skySunset.SetFloat("_Moon_color_intensity", 1.39f);
             skySunset.SetFloat("_mainColorMoonGatherFactor", 0.74f);
-            skySunset.SetColor("_MoonScatteringColor", new Color(0.4f, 0.25f, 0.1f));
-            skySunset.SetColor("_Moon_color", new Color(0.7f, 0.45f, 0.2f));
+            skySunset.SetColor("_MoonScatteringColor", new Color(0.134f, 0.364f, 0.557f));
+            skySunset.SetColor("_Moon_color", new Color(0.538f, 0.538f, 0.538f));
             skySunset.SetFloat("_NoiseSpeed", 0.079f);
             skySunset.SetFloat("_galaxy_INT", 0.2f);
             skySunset.SetFloat("_galaxy_intensity", 0f);
-            skySunset.SetFloat("_starColorIntensity", 3.0f);
+            skySunset.SetFloat("_starColorIntensity", 8.033f);
             skySunset.SetFloat("_starIntensityLinearDamping", 0.557f);
             skySunset.SetVector("_StarDotMap_ST", new Vector4(1, 1.2f, 0, 0));
             skySunset.SetVector("_StarColorLut_ST", new Vector4(0.5f, 1, 0, 0));
@@ -144,16 +144,16 @@ namespace DinoAlkkagi.Editor
                 skySunset.SetVector("_galaxyTex_ST", new Vector4(0.45f, 0.61f, 0.55f, 0.6f));
             }
 
-            // ===== Sky_Night (Terrain - deep navy blue) =====
+            // ===== Sky_Night (from 333.mat) =====
             Material skyNight = CreateMaterial(skyShader, "Sky_Night", MaterialPath);
-            skyNight.SetColor("_upPartSunColor", new Color(0.02f, 0.04f, 0.15f));
-            skyNight.SetColor("_upPartSkyColor", new Color(0.01f, 0.02f, 0.08f));
-            skyNight.SetColor("_downPartSunColor", new Color(0.04f, 0.06f, 0.18f));
-            skyNight.SetColor("_downPartSkyColor", new Color(0.03f, 0.05f, 0.20f));
+            skyNight.SetColor("_upPartSunColor", new Color(0.003f, 0.182f, 0.631f));
+            skyNight.SetColor("_upPartSkyColor", new Color(0.029f, 0.161f, 0.279f));
+            skyNight.SetColor("_downPartSunColor", new Color(0.308f, 0.346f, 0.246f));
+            skyNight.SetColor("_downPartSkyColor", new Color(0.043f, 0.262f, 0.470f));
             skyNight.SetFloat("_IrradianceMapR_maxAngleRange", 0.103f);
             skyNight.SetFloat("_mainColorSunGatherFactor", 0.493f);
-            skyNight.SetColor("_SunAdditionColor", new Color(0.1f, 0.15f, 0.4f));
-            skyNight.SetFloat("_SunAdditionIntensity", 0.15f);
+            skyNight.SetColor("_SunAdditionColor", new Color(0.325f, 0.951f, 1.0f));
+            skyNight.SetFloat("_SunAdditionIntensity", 0.286f);
             skyNight.SetFloat("_IrradianceMapG_maxAngleRange", 0.672f);
             skyNight.SetFloat("_SunRadius", 0.5f);
             skyNight.SetFloat("_SunInnerBoundary", 1f);
@@ -162,20 +162,20 @@ namespace DinoAlkkagi.Editor
             skyNight.SetFloat("_SunScattering", 0.623f);
             skyNight.SetFloat("_sun_color_intensity", 0f);
             skyNight.SetColor("_sun_color", new Color(1f, 0.682f, 0f));
-            skyNight.SetColor("_sun_color_Scat", new Color(0.1f, 0.12f, 0.2f));
+            skyNight.SetColor("_sun_color_Scat", new Color(0.274f, 0.274f, 0.274f));
             skyNight.SetFloat("_MoonRadius", 3f);
             skyNight.SetFloat("_MoonMaskRadius", 5f);
-            skyNight.SetFloat("_Moon_color_intensity", 1.5f);
+            skyNight.SetFloat("_Moon_color_intensity", 1.185f);
             skyNight.SetFloat("_mainColorMoonGatherFactor", 0.313f);
-            skyNight.SetColor("_MoonScatteringColor", new Color(0.3f, 0.35f, 0.6f));
-            skyNight.SetColor("_Moon_color", new Color(0.8f, 0.85f, 1.0f));
+            skyNight.SetColor("_MoonScatteringColor", Color.white);
+            skyNight.SetColor("_Moon_color", new Color(0.906f, 0.430f, 0.117f));
             skyNight.SetVector("_SunDirection", new Vector4(-0.261f, 0.122f, -0.958f, 0));
             skyNight.SetVector("_MoonDirection", new Vector4(-0.333f, -0.119f, 0.935f, 0));
-            skyNight.SetFloat("_starColorIntensity", 2.5f);
+            skyNight.SetFloat("_starColorIntensity", 0.847f);
             skyNight.SetFloat("_starIntensityLinearDamping", 0.808f);
             skyNight.SetFloat("_NoiseSpeed", 0.293f);
-            skyNight.SetFloat("_galaxy_INT", 0.3f);
-            skyNight.SetFloat("_galaxy_intensity", 0.6f);
+            skyNight.SetFloat("_galaxy_INT", 0f);
+            skyNight.SetFloat("_galaxy_intensity", 0f);
             skyNight.SetVector("_StarDotMap_ST", new Vector4(10, 10, 0, 0));
             skyNight.SetVector("_StarColorLut_ST", new Vector4(0.5f, 1, 0, 0));
             if (irradianceMap) skyNight.SetTexture("_IrradianceMap", irradianceMap);
@@ -195,25 +195,25 @@ namespace DinoAlkkagi.Editor
             if (cloudA) cloudDay.SetTexture("_CloudMap", cloudA);
             if (noiseMap) cloudDay.SetTexture("_NoiseMap", noiseMap);
 
-            // ===== Cloud_Sunset (Desert - warm orange clouds) =====
+            // ===== Cloud_Sunset (from Cloud 2.mat) =====
             Material cloudSunset = CreateMaterial(cloudShader, "Cloud_Sunset", MaterialPath);
-            cloudSunset.SetColor("_CloudColorA", new Color(0.85f, 0.55f, 0.25f));
-            cloudSunset.SetColor("_CloudColorB", new Color(1.0f, 0.75f, 0.35f));
-            cloudSunset.SetColor("_CloudColorC", new Color(1.0f, 0.85f, 0.50f));
-            cloudSunset.SetColor("_CloudColorD", new Color(1.0f, 0.55f, 0.15f));
-            cloudSunset.SetColor("_Cloud_edgeColor", new Color(1.0f, 0.65f, 0.25f));
+            cloudSunset.SetColor("_CloudColorA", new Color(0.610f, 0.738f, 0.791f));
+            cloudSunset.SetColor("_CloudColorB", new Color(0.799f, 0.638f, 0.624f));
+            cloudSunset.SetColor("_CloudColorC", new Color(0.905f, 0.922f, 0.776f));
+            cloudSunset.SetColor("_CloudColorD", new Color(0.913f, 0.597f, 0.156f));
+            cloudSunset.SetColor("_Cloud_edgeColor", new Color(0.799f, 0.624f, 0.565f));
             cloudSunset.SetFloat("_Cloud_SDF_TSb", 0.047f);
             cloudSunset.SetFloat("_SunMoon", 0f);
             if (cloudB) cloudSunset.SetTexture("_CloudMap", cloudB);
             if (noiseMap) cloudSunset.SetTexture("_NoiseMap", noiseMap);
 
-            // ===== Cloud_Night (Terrain - dark blue clouds) =====
+            // ===== Cloud_Night (from Cloud 1.mat) =====
             Material cloudNight = CreateMaterial(cloudShader, "Cloud_Night", MaterialPath);
-            cloudNight.SetColor("_CloudColorA", new Color(0.04f, 0.06f, 0.16f));
-            cloudNight.SetColor("_CloudColorB", new Color(0.02f, 0.03f, 0.10f));
-            cloudNight.SetColor("_CloudColorC", new Color(0.08f, 0.10f, 0.25f));
-            cloudNight.SetColor("_CloudColorD", new Color(0.06f, 0.08f, 0.20f));
-            cloudNight.SetColor("_Cloud_edgeColor", new Color(0.15f, 0.20f, 0.45f));
+            cloudNight.SetColor("_CloudColorA", new Color(0.100f, 0.142f, 0.255f));
+            cloudNight.SetColor("_CloudColorB", new Color(0.007f, 0.068f, 0.171f));
+            cloudNight.SetColor("_CloudColorC", Color.white);
+            cloudNight.SetColor("_CloudColorD", Color.white);
+            cloudNight.SetColor("_Cloud_edgeColor", Color.white);
             cloudNight.SetFloat("_Cloud_SDF_TSb", 0.122f);
             cloudNight.SetFloat("_SunMoon", 0f);
             if (cloudB) cloudNight.SetTexture("_CloudMap", cloudB);
