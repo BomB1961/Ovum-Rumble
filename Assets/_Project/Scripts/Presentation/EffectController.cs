@@ -26,6 +26,8 @@ namespace DinoAlkkagi.Presentation
 
         private readonly List<ParticleSystem> collisionPool = new List<ParticleSystem>();
         private readonly List<ParticleSystem> fallPool = new List<ParticleSystem>();
+        private readonly Dictionary<ParticleSystem, Coroutine> deactivationCoroutines =
+            new Dictionary<ParticleSystem, Coroutine>();
         private int collisionPoolIndex;
         private int fallPoolIndex;
 
@@ -48,6 +50,8 @@ namespace DinoAlkkagi.Presentation
             GameEvents.OnGameStarted -= HandleGameStarted;
             GameEvents.OnEggFell -= HandleEggFell;
             UnsubscribeAllEggs();
+            StopAllCoroutines();
+            deactivationCoroutines.Clear();
         }
 
         private void HandleGameStarted()
@@ -109,7 +113,7 @@ namespace DinoAlkkagi.Presentation
             effect.gameObject.SetActive(true);
             effect.Play();
 
-            StartCoroutine(DeactivateAfterDelay(effect, effectLifetime));
+            ScheduleDeactivation(effect);
         }
 
         private void HandleEggFell(EggController egg)
@@ -124,7 +128,7 @@ namespace DinoAlkkagi.Presentation
             effect.gameObject.SetActive(true);
             effect.Play();
 
-            StartCoroutine(DeactivateAfterDelay(effect, effectLifetime));
+            ScheduleDeactivation(effect);
         }
 
         private ParticleSystem GetNextFromPool(List<ParticleSystem> pool, ref int index)
@@ -136,6 +140,16 @@ namespace DinoAlkkagi.Presentation
             return effect;
         }
 
+        private void ScheduleDeactivation(ParticleSystem effect)
+        {
+            if (deactivationCoroutines.TryGetValue(effect, out Coroutine pendingCoroutine))
+            {
+                StopCoroutine(pendingCoroutine);
+            }
+
+            deactivationCoroutines[effect] = StartCoroutine(DeactivateAfterDelay(effect, effectLifetime));
+        }
+
         private IEnumerator DeactivateAfterDelay(ParticleSystem effect, float delay)
         {
             yield return new WaitForSeconds(delay);
@@ -143,6 +157,7 @@ namespace DinoAlkkagi.Presentation
             {
                 effect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 effect.gameObject.SetActive(false);
+                deactivationCoroutines.Remove(effect);
             }
         }
     }

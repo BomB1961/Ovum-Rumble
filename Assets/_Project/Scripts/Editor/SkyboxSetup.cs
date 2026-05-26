@@ -301,8 +301,6 @@ namespace DinoAlkkagi.Editor
             // Set cloud renderers
             if (cloudCardsPrefab)
             {
-                var cloudObjects = GameObject.FindGameObjectsWithTag("Untagged");
-                // Re-find by name under Clouds parent
                 var cloudChildren = clouds.transform.GetComponentsInChildren<MeshRenderer>();
                 if (cloudChildren.Length > 0)
                 {
@@ -383,11 +381,19 @@ namespace DinoAlkkagi.Editor
         private static Material CreateMaterial(Shader shader, string name, string folder)
         {
             string path = Path.Combine(folder, name + ".mat");
-            AssetDatabase.DeleteAsset(path);
-            Material mat = new Material(shader);
-            mat.name = name;
-            AssetDatabase.CreateAsset(mat, path);
-            return AssetDatabase.LoadAssetAtPath<Material>(path);
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                mat.name = name;
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            else
+            {
+                mat.shader = shader;
+            }
+
+            return mat;
         }
 
         private static void EnsureFolder(string path)
