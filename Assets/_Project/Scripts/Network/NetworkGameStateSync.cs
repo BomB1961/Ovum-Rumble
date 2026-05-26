@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 using Mirror;
 using DinoAlkkagi.Core;
 using DinoAlkkagi.Rules;
@@ -12,7 +11,6 @@ public class NetworkGameStateSync : MonoBehaviour
     [SerializeField] private float snapshotInterval = 0.1f;
 
     private GameSessionController session;
-    private WinConditionChecker winChecker;
     private TurnController turnController;
     private float snapshotTimer;
     private bool isResolving;
@@ -27,18 +25,19 @@ public class NetworkGameStateSync : MonoBehaviour
     {
         GameEvents.OnEggLaunched += HandleEggLaunched;
         GameEvents.OnAllEggsStopped += HandleAllEggsStopped;
+        GameEvents.OnGameEnded += HandleOnGameEnded;
     }
 
     private void OnDisable()
     {
         GameEvents.OnEggLaunched -= HandleEggLaunched;
         GameEvents.OnAllEggsStopped -= HandleAllEggsStopped;
+        GameEvents.OnGameEnded -= HandleOnGameEnded;
     }
 
     private void Start()
     {
         session = FindFirstObjectByType<GameSessionController>();
-        winChecker = FindFirstObjectByType<WinConditionChecker>();
         turnController = FindFirstObjectByType<TurnController>();
         isServerActive = GameLaunchContext.IsNetworkHost || !GameLaunchContext.IsNetwork;
     }
@@ -62,24 +61,26 @@ public class NetworkGameStateSync : MonoBehaviour
                 TurnChangeMessage turnMsg = new TurnChangeMessage { playerId = turnController.CurrentPlayerId };
                 NetworkServer.SendToAll(turnMsg);
             }
-            if (winChecker != null && winChecker.GameEnded)
-            {
-                int resultValue = 0;
-                var eggs = session != null ? session.AllEggs : null;
-                if (eggs != null)
-                {
-                    int p1Alive = eggs.Count(e => e != null && e.OwnerPlayerId == 1 && e.IsAlive);
-                    int p2Alive = eggs.Count(e => e != null && e.OwnerPlayerId == 2 && e.IsAlive);
-                    if (p1Alive == 0 && p2Alive > 0) resultValue = 2;
-                    else if (p2Alive == 0 && p1Alive > 0) resultValue = 1;
-                    else if (p1Alive == 0 && p2Alive == 0) resultValue = 3;
-                }
-                if (resultValue > 0)
-                {
-                    GameResultMessage resultMsg = new GameResultMessage { result = resultValue };
-                    NetworkServer.SendToAll(resultMsg);
-                }
-            }
+        }
+    }
+
+    private void HandleOnGameEnded(GameResult result)
+    {
+        if (!NetworkServer.active || !isServerActive) return;
+
+        int resultValue;
+        switch (result)
+        {
+            case GameResult.Player1Win: resultValue = 1; break;
+            case GameResult.Player2Win: resultValue = 2; break;
+            case GameResult.Draw:       resultValue = 3; break;
+            default:                    resultValue = 0; break;
+        }
+
+        if (resultValue > 0)
+        {
+            GameResultMessage resultMsg = new GameResultMessage { result = resultValue };
+            NetworkServer.SendToAll(resultMsg);
         }
     }
 

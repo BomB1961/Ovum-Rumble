@@ -1,5 +1,6 @@
 using TMPro;
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -44,6 +45,9 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button closeSettingsButton;
     [SerializeField] private AudioManager audioManager;
 
+    [Header("Feature Flags")]
+    [SerializeField] private FeatureFlags featureFlags;
+
     private string pendingAutoJoinIp;
 
     private void Awake()
@@ -52,9 +56,11 @@ public class MainMenuController : MonoBehaviour
         ResolveMissingReferences();
         EnsureVsComputerButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
+        featureFlags ??= FindFirstObjectByType<FeatureFlags>();
         InitializeVolumeSliders();
         RegisterButtonListeners();
         ShowMainMenu();
+        UpdateNetworkButtons();
 
         // 커맨드라인 자동 접속: --auto-join 127.0.0.1
         string[] args = System.Environment.GetCommandLineArgs();
@@ -79,6 +85,15 @@ public class MainMenuController : MonoBehaviour
             ShowConnectionStatus($"자동 접속 중: {ip}");
             netMan.StartNetworkClient(ip);
         }
+    }
+
+    private void UpdateNetworkButtons()
+    {
+        if (featureFlags == null) return;
+        bool lanEnabled = featureFlags.enableLanMultiplayer;
+        if (hostGameButton != null) hostGameButton.interactable = lanEnabled;
+        if (showJoinPanelButton != null) showJoinPanelButton.interactable = lanEnabled;
+        if (testJoinButton != null) testJoinButton.interactable = lanEnabled;
     }
 
     public void OnClickHostGame()
