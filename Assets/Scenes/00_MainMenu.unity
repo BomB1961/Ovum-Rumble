@@ -5522,8 +5522,8 @@ MonoBehaviour:
   NoDelay: 1
   Interval: 10
   Timeout: 10000
-  RecvBufferSize: 7516192768
-  SendBufferSize: 7516192768
+  RecvBufferSize: 7361536
+  SendBufferSize: 7361536
   FastResend: 2
   ReceiveWindowSize: 4096
   SendWindowSize: 4096
