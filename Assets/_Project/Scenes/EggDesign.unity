@@ -481,6 +481,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2991347138757057293, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_Name
+      value: Tidecrest_Egg_Visual
+      objectReference: {fileID: 0}
+    - target: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.86
+      objectReference: {fileID: 0}
+    - target: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.86
+      objectReference: {fileID: 0}
+    - target: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.86
+      objectReference: {fileID: 0}
+    - target: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.8
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -488,7 +512,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 8054494223508602334, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
 --- !u!4 &900438846 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 200986319337180766, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
+  m_CorrespondingSourceObject: {fileID: 4658678092516331479, guid: 78596639d1596a34b8449514f0dc843d, type: 3}
   m_PrefabInstance: {fileID: 900438845}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &951833765

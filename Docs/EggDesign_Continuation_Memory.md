@@ -50,10 +50,17 @@ These changes were present outside the egg design commits and should not be stag
 ### Tidecrest
 
 - Ocean-themed egg based on `Tidecrest.png`.
-- Visual ingredients: aqua/deep-blue shell, raised white foam wave, teal swell bands, carved wave seams, coral knobs, sand tube shells.
+- Current preferred construction: one egg body mesh with a UV texture and one painted shell material.
+- Do not use protruding exterior reef, wave-ring, coral, or tube-shell meshes for the Tidecrest body skin.
+- Visual ingredients should remain: aqua/deep-blue shell, creamy foam wave, teal swell bands, painted wave seams, coral motifs, sand tube shell motifs.
+- The ingredients should read as painted/enamel/inlaid surface art under a glossy shell clearcoat, not as separate geometry attached outside the egg silhouette.
+- Art quality note:
+  - The UV texture workflow is approved, but the texture must match the other eggs' quality level.
+  - Avoid flat/mobile-icon color. Use deeper blue range, richer aqua variation, tighter value contrast, painted highlights, small panel/seam details, and glossy material response so Tidecrest does not look dull beside Embercore and Prismhorn.
 - Model assets:
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_Seamless.blend`
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_Seamless.glb`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_SurfaceTexture.png`
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_Seamless_Preview.png`
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_UnityPreview.png`
 - FX assets:
@@ -65,6 +72,10 @@ These changes were present outside the egg design commits and should not be stag
   - `YoshiEgg.prefab` is tagged as Tidecrest.
 - FX note:
   - Tidecrest FX was built to face correctly without the Prismhorn rotation offset.
+  - Removed `BasaltShard_Tidecrest_CoralShellChip` pieces from the Tidecrest impact FX because they read as stray objects stuck to the egg surface. Keep future Tidecrest FX fragments away from the body silhouette unless they are clearly moving impact particles.
+- Preview alignment note:
+  - In `Assets/_Project/Scenes/EggDesign.unity`, keep the Tidecrest looping impact FX preview visually centered on the Tidecrest egg preview.
+  - If the egg body/pivot changes, re-check `Tidecrest_Egg_Visual` and `Tidecrest_ImpactFX_LoopingPreview` positions so the FX does not appear offset from the egg.
 
 ## Runtime FX Selection Structure
 
