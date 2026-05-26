@@ -332,6 +332,15 @@ namespace DinoAlkkagi.Editor
                 Debug.Log("[SkyboxSetup] Linked SkyboxManager to StaticBoardLoader.");
             }
 
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.clearFlags = CameraClearFlags.SolidColor;
+                mainCam.backgroundColor = Color.black;
+                if (mainCam.farClipPlane < 500f)
+                    mainCam.farClipPlane = 1000f;
+            }
+
             Selection.activeGameObject = root;
             Debug.Log("[SkyboxSetup] SkyboxSystem created in scene. Configure presets in Inspector.");
         }
