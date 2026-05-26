@@ -100,6 +100,7 @@ Shader "Custom/GenshinCloud"
  
           
                 o.uv =  v.texUV1;
+                o.uv.y = 1.0 - o.uv.y;
                 o.noiseuv =  TRANSFORM_TEX(v.texUV1, _NoiseMap);
                 o.noiseuv = o.noiseuv * _NoiseMap_ST.xy + _NoiseMap_ST.zw + _Time.x*0.05;
                
