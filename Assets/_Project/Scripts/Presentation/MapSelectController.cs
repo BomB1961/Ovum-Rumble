@@ -39,9 +39,9 @@ public class MapSelectController : MonoBehaviour
 
     private void Start()
     {
-        // 네트워크 호스트 모드: 씬 로드 후 서버 시작
         if (GameLaunchContext.IsNetworkHost)
         {
+            // 호스트: 서버 시작 후 P2 대기
             netMan = FindFirstObjectByType<DinoNetworkManager>();
             if (netMan != null && !NetworkServer.active && !NetworkClient.active)
             {
@@ -52,6 +52,13 @@ public class MapSelectController : MonoBehaviour
                 SetStatusText("상대방 연결을 기다리는 중...");
                 Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
+        }
+        else if (GameLaunchContext.IsNetworkClient)
+        {
+            // 클라이언트: 호스트가 맵 선택할 때까지 대기
+            SetMapButtonsEnabled(false);
+            SetStatusText("호스트가 맵을 선택 중입니다...");
+            Debug.Log("[MapSelectController] Client waiting for host map selection.");
         }
     }
 
