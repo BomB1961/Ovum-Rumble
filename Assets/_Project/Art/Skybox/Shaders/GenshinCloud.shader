@@ -29,7 +29,7 @@ Shader "Custom/GenshinCloud"
         LOD 100
         Blend SrcAlpha OneMinusSrcAlpha
         ZWrite On
-        ZTest NotEqual
+        ZTest LEqual
         Pass
         {
             Name "Unlit"
