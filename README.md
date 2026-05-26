@@ -9,3 +9,7 @@
 - 이후 `02_MapSelect` 씬으로 이동
 - 기존 `Button_CreateRoom` 흐름 유지
 - 기존 `OnClickVsComputer()` 흐름 유지
+
+## 미완료 작업
+
+- 인게임 UI 디자인 적용 작업 진행 중

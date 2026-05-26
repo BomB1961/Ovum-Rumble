@@ -53,14 +53,11 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private GameSessionController gameSessionController;
     [SerializeField] private AudioManager audioManager;
 
-    private TMP_FontAsset resultFont;
-
     private void Awake()
     {
         EnsureUiReferences();
         gameSessionController ??= FindFirstObjectByType<GameSessionController>();
         audioManager ??= FindFirstObjectByType<AudioManager>();
-        resultFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/BlackHanSans-Regular SDF");
         InitializeVolumeSliders();
         RegisterListeners();
         ResetGameUI();
@@ -97,12 +94,12 @@ public class GameUIController : MonoBehaviour
 
     public void SetTurnTime(float remainingSeconds)
     {
-        SetText(turnTimeText, $"\ub0a8\uc740 \ud134 \uc2dc\uac04: {FormatTime(remainingSeconds)}");
+        SetText(turnTimeText, FormatTime(remainingSeconds));
     }
 
     public void SetGameTime(float elapsedSeconds)
     {
-        SetText(gameTimeText, $"\uc804\uccb4 \uac8c\uc784 \uc2dc\uac04: {FormatTime(elapsedSeconds)}");
+        SetText(gameTimeText, FormatTime(elapsedSeconds));
     }
 
     public void SetGuideText(string message)
@@ -118,9 +115,7 @@ public class GameUIController : MonoBehaviour
     public void ShowResult(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetPanelState(resultPanel, true);
-        ConfigureResultButtons();
-        ConfigureResultLayout();
-        ApplyResultFonts();
+        PrepareResultButtons();
         SetText(resultTitleText, $"{winnerName} \uc2b9\ub9ac!");
         SetResultDetail(winnerName, p1EggCount, p2EggCount, p1WinCount, p2WinCount);
     }
@@ -128,9 +123,7 @@ public class GameUIController : MonoBehaviour
     public void ShowDrawResult(int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetPanelState(resultPanel, true);
-        ConfigureResultButtons();
-        ConfigureResultLayout();
-        ApplyResultFonts();
+        PrepareResultButtons();
         SetText(resultTitleText, "\ubb34\uc2b9\ubd80!");
         SetText(resultDetailText, "\uac8c\uc784 \uc885\ub8cc");
     }
@@ -246,11 +239,10 @@ public class GameUIController : MonoBehaviour
         bgmSlider ??= FindSlider("Slider_BGM");
         sfxSlider ??= FindSlider("Slider_SFX");
 
-        turnTimeText ??= CreateHudText("Text_TurnTime", "\ub0a8\uc740 \ud134 \uc2dc\uac04: 00:30", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(430f, 50f), TextAlignmentOptions.Center);
-        gameTimeText ??= CreateHudText("Text_GameTime", "\uc804\uccb4 \uac8c\uc784 \uc2dc\uac04: 00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
+        turnTimeText ??= CreateHudText("Text_TurnTime", "00:30", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(430f, 50f), TextAlignmentOptions.Center);
+        gameTimeText ??= CreateHudText("Text_GameTime", "00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
         exitButton ??= CreateResultExitButton();
         settingsExitButton ??= CreateSettingsExitButton();
-        ConfigureResultButtons();
     }
 
     private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
@@ -261,17 +253,17 @@ public class GameUIController : MonoBehaviour
         SetText(resultDetailText, $"\ub0a8\uc740 \uc54c {winnerEggCount}\n{winnerWinCount}\uc2b9");
     }
 
-    private void ConfigureResultButtons()
+    private void PrepareResultButtons()
     {
         SetPanelState(retryButton != null ? retryButton.gameObject : null, true);
         SetPanelState(mainMenuButton != null ? mainMenuButton.gameObject : null, true);
         SetPanelState(exitButton != null ? exitButton.gameObject : null, true);
-        ConfigureButton(retryButton, "\ud55c \ud310 \ub354", new Vector2(-260f, -250f));
-        ConfigureButton(mainMenuButton, "\uba54\uc778 \uba54\ub274", new Vector2(0f, -250f));
-        ConfigureButton(exitButton, "\uac8c\uc784 \uc885\ub8cc", new Vector2(260f, -250f));
+        PrepareButton(retryButton);
+        PrepareButton(mainMenuButton);
+        PrepareButton(exitButton);
     }
 
-    private void ConfigureButton(Button button, string label, Vector2 anchoredPosition)
+    private void PrepareButton(Button button)
     {
         if (button == null)
         {
@@ -295,34 +287,11 @@ public class GameUIController : MonoBehaviour
             image.color = imageColor;
         }
 
-        RectTransform buttonRect = button.GetComponent<RectTransform>();
-        if (buttonRect != null)
-        {
-            buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
-            buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
-            buttonRect.pivot = new Vector2(0.5f, 0.5f);
-            buttonRect.anchoredPosition = anchoredPosition;
-            buttonRect.sizeDelta = new Vector2(220f, 70f);
-        }
-
         TMP_Text tmpLabel = button.GetComponentInChildren<TMP_Text>(true);
         if (tmpLabel != null)
         {
             tmpLabel.gameObject.SetActive(true);
-            tmpLabel.text = label;
-            tmpLabel.color = Color.black;
             tmpLabel.alpha = 1f;
-            tmpLabel.alignment = TextAlignmentOptions.Center;
-            ApplyFont(tmpLabel);
-
-            RectTransform rectTransform = tmpLabel.GetComponent<RectTransform>();
-            if (rectTransform != null)
-            {
-                rectTransform.anchorMin = Vector2.zero;
-                rectTransform.anchorMax = Vector2.one;
-                rectTransform.offsetMin = Vector2.zero;
-                rectTransform.offsetMax = Vector2.zero;
-            }
             return;
         }
 
@@ -330,82 +299,6 @@ public class GameUIController : MonoBehaviour
         if (legacyLabel != null)
         {
             legacyLabel.gameObject.SetActive(true);
-            legacyLabel.text = label;
-            legacyLabel.color = Color.black;
-            RectTransform rectTransform = legacyLabel.GetComponent<RectTransform>();
-            if (rectTransform != null)
-            {
-                rectTransform.anchorMin = Vector2.zero;
-                rectTransform.anchorMax = Vector2.one;
-                rectTransform.offsetMin = Vector2.zero;
-                rectTransform.offsetMax = Vector2.zero;
-            }
-        }
-    }
-
-    private void ConfigureResultLayout()
-    {
-        ConfigureTextRect(resultTitleText, new Vector2(0f, 150f), new Vector2(620f, 90f), 56f);
-        ConfigureTextRect(resultDetailText, new Vector2(0f, 40f), new Vector2(620f, 120f), 40f);
-    }
-
-    private void ConfigureTextRect(TMP_Text target, Vector2 anchoredPosition, Vector2 sizeDelta, float fontSize)
-    {
-        if (target == null)
-        {
-            return;
-        }
-
-        RectTransform rectTransform = target.GetComponent<RectTransform>();
-        if (rectTransform != null)
-        {
-            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.anchoredPosition = anchoredPosition;
-            rectTransform.sizeDelta = sizeDelta;
-        }
-
-        target.fontSize = fontSize;
-        target.alignment = TextAlignmentOptions.Center;
-        target.textWrappingMode = TextWrappingModes.NoWrap;
-    }
-
-    private void ApplyResultFonts()
-    {
-        ApplyFont(resultTitleText);
-        ApplyFont(resultDetailText);
-        ApplyButtonFont(retryButton);
-        ApplyButtonFont(mainMenuButton);
-        ApplyButtonFont(exitButton);
-    }
-
-    private void ApplyButtonFont(Button button)
-    {
-        if (button == null)
-        {
-            return;
-        }
-
-        ApplyFont(button.GetComponentInChildren<TMP_Text>(true));
-    }
-
-    private void ApplyFont(TMP_Text target)
-    {
-        if (target == null)
-        {
-            return;
-        }
-
-        if (resultFont != null)
-        {
-            target.font = resultFont;
-            target.fontSharedMaterial = resultFont.material;
-        }
-        else if (currentTurnText != null)
-        {
-            target.font = currentTurnText.font;
-            target.fontSharedMaterial = currentTurnText.fontSharedMaterial;
         }
     }
 
