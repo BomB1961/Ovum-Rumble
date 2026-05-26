@@ -53,6 +53,30 @@ public class MainMenuController : MonoBehaviour
         InitializeVolumeSliders();
         RegisterButtonListeners();
         ShowMainMenu();
+
+        // 커맨드라인 자동 접속: --auto-join 127.0.0.1
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i].ToLower() == "--auto-join")
+            {
+                string ip = args[i + 1];
+                Debug.Log($"[MainMenu] Auto-join requested: {ip}");
+                Invoke(nameof(DoAutoJoin), 1f);
+                break;
+            }
+        }
+    }
+
+    private void DoAutoJoin()
+    {
+        string ip = "127.0.0.1";
+        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        if (netMan != null)
+        {
+            ShowConnectionStatus($"자동 접속 중: {ip}");
+            netMan.StartNetworkClient(ip);
+        }
     }
 
     public void OnClickHostGame()
