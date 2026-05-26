@@ -130,11 +130,22 @@ public class NetworkGameStateSync : MonoBehaviour
         }
 
         TurnController turnCtrl = turnController ?? FindFirstObjectByType<TurnController>();
+        GameSessionUiBridge uiBridge = FindFirstObjectByType<GameSessionUiBridge>();
+        float gameTime = 0f;
+        float turnTime = 0f;
+        if (uiBridge != null)
+        {
+            gameTime = uiBridge.GetGameElapsedTime();
+            turnTime = uiBridge.GetTurnElapsedTime();
+        }
+
         StateSnapshotMessage msg = new StateSnapshotMessage
         {
             currentPlayerId = turnCtrl != null ? turnCtrl.CurrentPlayerId : 1,
             p1AliveCount = p1Alive,
             p2AliveCount = p2Alive,
+            gameElapsedTime = gameTime,
+            turnElapsedTime = turnTime,
             eggStates = states.ToArray()
         };
 
@@ -145,6 +156,13 @@ public class NetworkGameStateSync : MonoBehaviour
     {
         session ??= FindFirstObjectByType<GameSessionController>();
         if (session == null) return;
+
+        // 서버 타이머 동기화
+        GameSessionUiBridge uiBridge = FindFirstObjectByType<GameSessionUiBridge>();
+        if (uiBridge != null)
+        {
+            uiBridge.ApplyServerTime(msg.gameElapsedTime, msg.turnElapsedTime);
+        }
 
         foreach (var eggState in msg.eggStates)
         {

@@ -22,6 +22,11 @@ public class GameSessionUiBridge : MonoBehaviour
     private bool isPlaying;
     private bool hasGameEnded;
 
+    // 네트워크 타이머 동기화
+    private float serverGameElapsed;
+    private float serverTurnElapsed;
+    private bool useServerTime;
+
     private void Awake()
     {
         hudPresenter ??= FindFirstObjectByType<HudPresenter>();
@@ -121,12 +126,49 @@ public class GameSessionUiBridge : MonoBehaviour
 
     private void RefreshHud()
     {
-        float gameElapsedSeconds = isPlaying ? Time.time - gameStartedAt : 0f;
-        float turnRemainingSeconds = isPlaying
-            ? Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt))
-            : turnDurationSeconds;
+        float gameElapsedSeconds;
+        float turnRemainingSeconds;
+
+        if (useServerTime)
+        {
+            gameElapsedSeconds = serverGameElapsed;
+            turnRemainingSeconds = Mathf.Max(0f, turnDurationSeconds - serverTurnElapsed);
+        }
+        else
+        {
+            gameElapsedSeconds = isPlaying ? Time.time - gameStartedAt : 0f;
+            turnRemainingSeconds = isPlaying
+                ? Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt))
+                : turnDurationSeconds;
+        }
 
         hudPresenter?.ShowHud(GetCurrentPlayerName(), GetAliveCount(1), GetAliveCount(2), turnRemainingSeconds, gameElapsedSeconds);
+    }
+
+    /// <summary>
+    /// 서버에서 받은 타이머 값을 클라이언트 HUD에 적용한다.
+    /// </summary>
+    public void ApplyServerTime(float gameElapsed, float turnElapsed)
+    {
+        if (GameLaunchContext.IsNetworkClient)
+        {
+            serverGameElapsed = gameElapsed;
+            serverTurnElapsed = turnElapsed;
+            useServerTime = true;
+        }
+    }
+
+    /// <summary>
+    /// 서버가 스냅샷에 보낼 현재 게임/턴 경과 시간 반환.
+    /// </summary>
+    public float GetGameElapsedTime()
+    {
+        return isPlaying ? Time.time - gameStartedAt : 0f;
+    }
+
+    public float GetTurnElapsedTime()
+    {
+        return isPlaying ? Time.time - turnStartedAt : 0f;
     }
 
     private void Update()

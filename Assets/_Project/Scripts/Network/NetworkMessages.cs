@@ -33,6 +33,8 @@ public struct StateSnapshotMessage : NetworkMessage
     public int currentPlayerId;
     public int p1AliveCount;
     public int p2AliveCount;
+    public float gameElapsedTime;
+    public float turnElapsedTime;
     public EggState[] eggStates;
 }
 
