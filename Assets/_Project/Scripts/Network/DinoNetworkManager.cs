@@ -15,6 +15,8 @@ public class DinoNetworkManager : NetworkManager
     private int nextPlayerId = 1;
     private bool gameStarted;
     private int playerCount;
+    private float lastRestartTime = -10f;
+    private const float RestartCooldown = 2f;
 
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
@@ -35,7 +37,8 @@ public class DinoNetworkManager : NetworkManager
         }
 
         base.Awake();
-        featureFlags ??= FindFirstObjectByType<FeatureFlags>();
+        if (featureFlags == null)
+            featureFlags = FindFirstObjectByType<FeatureFlags>();
     }
 
     public override void OnStartServer()
@@ -131,13 +134,22 @@ public class DinoNetworkManager : NetworkManager
     private void OnServerRestartRequest(NetworkConnectionToClient conn, RestartRequestMessage msg)
     {
         if (!gameStarted) return;
+
+        // 재시작 쿨다운: 너무 빠른 재시작 요청 방지
+        if (Time.time - lastRestartTime < RestartCooldown)
+        {
+            Debug.LogWarning("[DinoNetworkManager] Restart request ignored (cooldown).");
+            return;
+        }
+        lastRestartTime = Time.time;
+
         gameStarted = false;
         GameSessionController session = FindFirstObjectByType<GameSessionController>();
         if (session != null)
         {
             session.RestartGame();
+            // RestartGame → BeginGame → NotifyGameStarted()에서 gameStarted = true로 설정됨
         }
-        gameStarted = true;
         RestartConfirmedMessage confirmMsg = new RestartConfirmedMessage { restartApproved = true };
         NetworkServer.SendToAll(confirmMsg);
     }
@@ -182,6 +194,11 @@ public class DinoNetworkManager : NetworkManager
 
     public void StartNetworkHost()
     {
+        if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+        {
+            Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+            return;
+        }
         GameLaunchContext.SetMode(GameMode.NetworkHost);
         GameLaunchContext.ServerIP = "0.0.0.0";
         networkAddress = "localhost";
@@ -190,6 +207,11 @@ public class DinoNetworkManager : NetworkManager
 
     public void StartNetworkClient(string ip)
     {
+        if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+        {
+            Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+            return;
+        }
         GameLaunchContext.SetMode(GameMode.NetworkClient);
         GameLaunchContext.ServerIP = ip;
         networkAddress = ip;

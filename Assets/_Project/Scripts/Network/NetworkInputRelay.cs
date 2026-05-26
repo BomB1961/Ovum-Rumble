@@ -22,7 +22,11 @@ public class NetworkInputRelay : MonoBehaviour
 
     public void SendLaunchInput(uint eggNetId, Vector3 direction, float force)
     {
-        if (!NetworkClient.active) return;
+        if (!NetworkClient.active)
+        {
+            Debug.LogWarning("[NetworkInputRelay] Cannot send launch input: not connected to server.");
+            return;
+        }
 
         LaunchInputMessage msg = new LaunchInputMessage
         {
@@ -36,7 +40,11 @@ public class NetworkInputRelay : MonoBehaviour
 
     public void SendRestartRequest(bool ready)
     {
-        if (!NetworkClient.active) return;
+        if (!NetworkClient.active)
+        {
+            Debug.LogWarning("[NetworkInputRelay] Cannot send restart request: not connected to server.");
+            return;
+        }
 
         RestartRequestMessage msg = new RestartRequestMessage { playerReady = ready };
         NetworkClient.Send(msg);

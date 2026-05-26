@@ -44,6 +44,8 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button closeSettingsButton;
     [SerializeField] private AudioManager audioManager;
 
+    private string pendingAutoJoinIp;
+
     private void Awake()
     {
         GameLaunchContext.ResetToDefault();
@@ -60,8 +62,8 @@ public class MainMenuController : MonoBehaviour
         {
             if (args[i].ToLower() == "--auto-join")
             {
-                string ip = args[i + 1];
-                Debug.Log($"[MainMenu] Auto-join requested: {ip}");
+                pendingAutoJoinIp = args[i + 1];
+                Debug.Log($"[MainMenu] Auto-join requested: {pendingAutoJoinIp}");
                 Invoke(nameof(DoAutoJoin), 1f);
                 break;
             }
@@ -70,7 +72,7 @@ public class MainMenuController : MonoBehaviour
 
     private void DoAutoJoin()
     {
-        string ip = "127.0.0.1";
+        string ip = string.IsNullOrEmpty(pendingAutoJoinIp) ? "127.0.0.1" : pendingAutoJoinIp;
         DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
         if (netMan != null)
         {
@@ -122,9 +124,15 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickTestJoin()
     {
+#if UNITY_EDITOR
+        Debug.LogWarning("[MainMenu] TestJoin: 서버 없이 클라이언트 모드 진입 (Editor 디버깅 전용)");
         GameLaunchContext.SetMode(GameMode.NetworkClient);
         GameLaunchContext.SetNetworkClientInfo(2);
         SceneManager.LoadScene(GameSceneName);
+#else
+        Debug.Log("[MainMenu] TestJoin is only available in Editor.");
+        ShowMainMenu();
+#endif
     }
 
     public void OnClickVsComputer()
