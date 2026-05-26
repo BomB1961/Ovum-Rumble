@@ -25,7 +25,7 @@ RenderSettings:
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SubtractiveShadowColor: {r: 0.9622642, g: 0.6637608, b: 0.24056605, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -282,9 +282,11 @@ MonoBehaviour:
     m_Bits: 257
   pitchMin: 15
   pitchMax: 89
-  topDownDistance: 15
+  topDownDistance: 30
   topDownPivot: {x: 0, y: 0, z: 0}
   transitionDuration: 0.5
+  panLimitRadius: 30
+  panLimitSoftMargin: 10
   minImpactForShake: 2
   maxImpactForShake: 15
   minShakeIntensity: 0.05
@@ -1311,7 +1313,7 @@ Transform:
   m_GameObject: {fileID: 1014944250}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.10938166, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 276, z: -166}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2877,24 +2879,46 @@ MonoBehaviour:
     cloudMaterial: {fileID: 2100000, guid: ec9bb7fef043de34d8b720a35590f5d4, type: 2}
     sunDirectionEuler: {x: 35, y: 225, z: 0}
     moonDirectionEuler: {x: -30, y: 45, z: 0}
+    lighting:
+      directionalLightColor: {r: 1, g: 1, b: 1, a: 1}
+      directionalLightIntensity: 1
+      directionalLightRotation: {x: 50, y: -30, z: 0}
+      ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+      ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+      ambientIntensity: 1
   sunsetPreset:
     displayName: Sunset
     skyMaterial: {fileID: 2100000, guid: fa0889a2d0553544a9774a8949c5e0ac, type: 2}
     cloudMaterial: {fileID: 2100000, guid: f580ef33b209e2346ba3f51ecff208ac, type: 2}
     sunDirectionEuler: {x: 0, y: 180, z: 0}
     moonDirectionEuler: {x: -10, y: 0, z: 0}
+    lighting:
+      directionalLightColor: {r: 1, g: 1, b: 1, a: 1}
+      directionalLightIntensity: 1
+      directionalLightRotation: {x: 50, y: -30, z: 0}
+      ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+      ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+      ambientIntensity: 1
   nightPreset:
     displayName: Night
     skyMaterial: {fileID: 2100000, guid: d9db26630fb053646ab871ef7a99f417, type: 2}
     cloudMaterial: {fileID: 2100000, guid: 3a5bca71fde3b1542b236c250b16ff6b, type: 2}
     sunDirectionEuler: {x: -45, y: 0, z: 0}
     moonDirectionEuler: {x: 45, y: 90, z: 0}
+    lighting:
+      directionalLightColor: {r: 1, g: 1, b: 1, a: 1}
+      directionalLightIntensity: 1
+      directionalLightRotation: {x: 50, y: -30, z: 0}
+      ambientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+      ambientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+      ambientIntensity: 1
   skySphereRenderer: {fileID: 203883273}
   cloudRenderers:
   - {fileID: 1810007537}
   sunDir: {fileID: 1735175626}
   moonDir: {fileID: 417232424}
   directionToSkybox: {fileID: 1399311728}
+  directionalLight: {fileID: 1014944251}
 --- !u!4 &1874041762
 Transform:
   m_ObjectHideFlags: 0

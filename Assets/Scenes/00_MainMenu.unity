@@ -337,7 +337,7 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -5145,6 +5145,7 @@ MonoBehaviour:
   hostGameButton: {fileID: 830354797}
   showJoinPanelButton: {fileID: 1335610545}
   testJoinButton: {fileID: 2100001005}
+  vsComputerButton: {fileID: 0}
   settingsButton: {fileID: 898472871}
   quitGameButton: {fileID: 779873530}
   hostIpInput: {fileID: 1534611366}
