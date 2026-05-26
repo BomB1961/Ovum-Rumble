@@ -12,6 +12,8 @@ namespace DinoAlkkagi.Environment
         public Material targetMaterialCloudTB;
         public string sunDirectionPropertyName = "_SunDirection";
         public string moonDirectionPropertyName = "_MoonDirection";
+        public bool syncSunDirection = true;
+        public bool syncMoonDirection = true;
 
         private Matrix4x4 lastMoonLocalToWorld;
         private Vector3 lastSunDirection;
@@ -59,7 +61,7 @@ namespace DinoAlkkagi.Environment
                 }
             }
 
-            if (sun)
+            if (syncSunDirection && sun)
             {
                 Vector3 sunDirection = -sun.transform.forward.normalized;
                 if (targetChanged || sunDirection != lastSunDirection)
@@ -71,7 +73,7 @@ namespace DinoAlkkagi.Environment
                 }
             }
 
-            if (moon)
+            if (syncMoonDirection && moon)
             {
                 Vector3 moonDirection = -moon.transform.forward.normalized;
                 if (targetChanged || moonDirection != lastMoonDirection)

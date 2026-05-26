@@ -51,9 +51,9 @@ Material:
     m_Floats:
     - _IrradianceMapG_maxAngleRange: 0.234
     - _IrradianceMapR_maxAngleRange: 0.432
-    - _MoonMaskRadius: 5
-    - _MoonRadius: 3
-    - _Moon_color_intensity: 1.185
+    - _MoonMaskRadius: 0
+    - _MoonRadius: 0
+    - _Moon_color_intensity: 0
     - _NoiseSpeed: 0
     - _SunAdditionIntensity: 0.269
     - _SunInnerBoundary: 0
@@ -62,7 +62,7 @@ Material:
     - _SunScattering: 1
     - _galaxy_INT: 0.2
     - _galaxy_intensity: 0
-    - _mainColorMoonGatherFactor: 0.313
+    - _mainColorMoonGatherFactor: 3.03
     - _mainColorSunGatherFactor: 1.904
     - _starColorIntensity: 0
     - _starIntensityLinearDamping: 0.80829
@@ -70,7 +70,7 @@ Material:
     - _sun_disk_power_999: 663.6
     m_Colors:
     - _MoonDirection: {r: -0, g: -0, b: -1, a: 0}
-    - _MoonScatteringColor: {r: 1, g: 1, b: 1, a: 1}
+    - _MoonScatteringColor: {r: 0, g: 0, b: 0, a: 1}
     - _Moon_color: {r: 0.906, g: 0.43, b: 0.117, a: 1}
     - _StarColorLut_ST: {r: 0.5, g: 1, b: 0, a: 0}
     - _SunAdditionColor: {r: 0.847, g: 0.887, b: 0.672, a: 1}
