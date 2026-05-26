@@ -46,6 +46,10 @@ public class CameraController : MonoBehaviour
     [Header("Transition")]
     [SerializeField] private float transitionDuration = 0.5f;
 
+    [Header("Pan Limit")]
+    [SerializeField] private float panLimitRadius = 30f;
+    [SerializeField] private float panLimitSoftMargin = 10f;
+
     [Header("Shake")]
     [SerializeField] private float minImpactForShake = 2f;
     [SerializeField] private float maxImpactForShake = 15f;
@@ -71,6 +75,7 @@ public class CameraController : MonoBehaviour
     private float shakeTimer;
     private float currentShakeIntensity;
     private IBoardSurface boardSurface;
+    private Vector3 boardCenter;
 
     public void SetBoardSurface(IBoardSurface surface)
     {
@@ -313,7 +318,29 @@ public class CameraController : MonoBehaviour
             {
                 Vector3 worldBefore = rayBefore.GetPoint(enterBefore);
                 Vector3 worldAfter = rayAfter.GetPoint(enterAfter);
-                pivotPoint += worldBefore - worldAfter;
+                Vector3 delta = worldBefore - worldAfter;
+
+                Vector3 nextPivot = pivotPoint + delta;
+                float xzDist = HorizontalDistance(nextPivot, boardCenter);
+                float softStart = panLimitRadius - panLimitSoftMargin;
+
+                if (xzDist > softStart && softStart < panLimitRadius)
+                {
+                    float t = Mathf.Clamp01((xzDist - softStart) / panLimitSoftMargin);
+                    delta *= 1.0f - t;
+                }
+
+                pivotPoint += delta;
+
+                xzDist = HorizontalDistance(pivotPoint, boardCenter);
+                if (xzDist > panLimitRadius)
+                {
+                    float originalY = pivotPoint.y;
+                    Vector3 offset = pivotPoint - boardCenter;
+                    offset.y = 0f;
+                    pivotPoint = boardCenter + offset.normalized * panLimitRadius;
+                    pivotPoint.y = originalY;
+                }
             }
         }
     }
@@ -372,6 +399,7 @@ public class CameraController : MonoBehaviour
         if (boardSurface == null) return;
 
         Bounds bounds = boardSurface.GetCameraBounds();
+        boardCenter = bounds.center;
         pivotPoint = bounds.center;
 
         float fitDistance = Mathf.Max(bounds.extents.x, bounds.extents.z) * 1.5f;
@@ -386,6 +414,16 @@ public class CameraController : MonoBehaviour
     {
         distance = Mathf.Clamp(distance, minDistance, maxDistance);
         pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
+
+        float xzDist = HorizontalDistance(pivotPoint, boardCenter);
+        if (xzDist > panLimitRadius)
+        {
+            float originalY = pivotPoint.y;
+            Vector3 offset = pivotPoint - boardCenter;
+            offset.y = 0f;
+            pivotPoint = boardCenter + offset.normalized * panLimitRadius;
+            pivotPoint.y = originalY;
+        }
     }
 
     private PlayerCameraState GetCurrentState()
@@ -409,6 +447,13 @@ public class CameraController : MonoBehaviour
     private bool IsValidPlayerId(int playerId)
     {
         return playerId > 0 && playerId < savedStates.Length;
+    }
+
+    private static float HorizontalDistance(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dz = a.z - b.z;
+        return Mathf.Sqrt(dx * dx + dz * dz);
     }
 
     private bool WasSecondaryButtonPressedThisFrame()
