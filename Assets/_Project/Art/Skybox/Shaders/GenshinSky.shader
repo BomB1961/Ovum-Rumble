@@ -182,7 +182,7 @@ Shader "Custom/GenshinSky"
                 float4 _clippos  = mul(UNITY_MATRIX_VP, float4(_worldPos, 1.0));
  
                 o.positionCS= _clippos;
-                o.UV = v.uv;
+                o.UV = float4(NormalizeWorldPos, 1.0);
  
                 o.Varying_StarColorUVAndNoise_UV.xy = TRANSFORM_TEX(v.uv.xz , _StarDotMap);
                 o.Varying_StarColorUVAndNoise_UV.zw = v.uv * 20.0;
