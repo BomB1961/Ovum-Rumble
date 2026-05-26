@@ -99,8 +99,8 @@ Shader "Custom/GenshinCloud"
                 o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
  
           
-                o.uv =  v.texUV2;
-                o.noiseuv =  TRANSFORM_TEX(v.texUV2, _NoiseMap);
+                o.uv =  v.texUV1;
+                o.noiseuv =  TRANSFORM_TEX(v.texUV1, _NoiseMap);
                 o.noiseuv = o.noiseuv * _NoiseMap_ST.xy + _NoiseMap_ST.zw + _Time.x*0.05;
                
                 o.fogCoord = ComputeFogFactor(o.positionCS.z);
