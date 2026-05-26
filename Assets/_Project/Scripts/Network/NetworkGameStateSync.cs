@@ -164,6 +164,8 @@ public class NetworkGameStateSync : MonoBehaviour
             uiBridge.ApplyServerTime(msg.gameElapsedTime, msg.turnElapsedTime);
         }
 
+        bool isClientOnly = GameLaunchContext.IsNetworkClient;
+
         foreach (var eggState in msg.eggStates)
         {
             EggController egg = FindEggByEggId((int)eggState.netId, session.AllEggs);
@@ -175,8 +177,14 @@ public class NetworkGameStateSync : MonoBehaviour
             if (egg.Rigidbody != null)
             {
                 egg.Rigidbody.linearVelocity = eggState.velocity;
-                egg.Rigidbody.isKinematic = !eggState.isAlive;
-                egg.Rigidbody.useGravity = eggState.isAlive;
+
+                // 클라이언트는 물리 직접 실행 안 함 — kinematic 상태 유지
+                // 서버(호스트)에서만 물리 상태를 스냅샷과 동기화
+                if (!isClientOnly)
+                {
+                    egg.Rigidbody.isKinematic = !eggState.isAlive;
+                    egg.Rigidbody.useGravity = eggState.isAlive;
+                }
             }
 
             if (!eggState.isAlive && egg.IsAlive)

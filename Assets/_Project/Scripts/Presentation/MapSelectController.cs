@@ -109,6 +109,11 @@ public class MapSelectController : MonoBehaviour
             DinoNetworkManager nMan = netMan ?? FindFirstObjectByType<DinoNetworkManager>();
             if (nMan != null)
             {
+                // 클라이언트에 맵 정보 먼저 전송 → 이후 씬 로드 시 GameLaunchContext.SelectedMap 사용
+                MapSelectMessage mapMsg = new MapSelectMessage { mapId = (int)mapId };
+                NetworkServer.SendToAll(mapMsg);
+                Debug.Log($"[MapSelectController] Sent MapSelectMessage: {mapId}");
+
                 nMan.ServerChangeScene(GameSceneName);
                 return;
             }

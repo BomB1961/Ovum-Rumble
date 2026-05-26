@@ -84,6 +84,7 @@ public class DinoNetworkManager : NetworkManager
         NetworkClient.RegisterHandler<GameResultMessage>(OnClientGameResult);
         NetworkClient.RegisterHandler<RestartConfirmedMessage>(OnClientRestartConfirmed);
         NetworkClient.RegisterHandler<LoadSceneMessage>(OnClientLoadScene);
+        NetworkClient.RegisterHandler<MapSelectMessage>(OnClientMapSelect);
         Debug.Log("[DinoNetworkManager] Client started.");
     }
 
@@ -210,6 +211,12 @@ public class DinoNetworkManager : NetworkManager
     {
         base.OnStopClient();
         GameLaunchContext.ResetToDefault();
+    }
+
+    private void OnClientMapSelect(MapSelectMessage msg)
+    {
+        GameLaunchContext.SelectMap((MapId)msg.mapId);
+        Debug.Log($"[DinoNetworkManager] Client received MapSelect: {msg.mapId}");
     }
 
     private void OnClientLoadScene(LoadSceneMessage msg)
