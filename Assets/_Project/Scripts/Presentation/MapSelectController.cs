@@ -1,5 +1,6 @@
 using DinoAlkkagi.Core;
 using Mirror;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -14,6 +15,9 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private Button terrianButton;
     [SerializeField] private Button iceButton;
     [SerializeField] private Button desertButton;
+    [SerializeField] private TMP_Text connectionStatusText;
+
+    private DinoNetworkManager netMan;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreateForMapSelectScene()
@@ -38,13 +42,40 @@ public class MapSelectController : MonoBehaviour
         // 네트워크 호스트 모드: 씬 로드 후 서버 시작
         if (GameLaunchContext.IsNetworkHost)
         {
-            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+            netMan = FindFirstObjectByType<DinoNetworkManager>();
             if (netMan != null && !NetworkServer.active && !NetworkClient.active)
             {
+                netMan.OnRemotePlayerConnected += HandleRemotePlayerConnected;
+                netMan.OnRemotePlayerDisconnected += HandleRemotePlayerDisconnected;
                 netMan.StartNetworkHost();
-                Debug.Log("[MapSelectController] Network host started.");
+                SetMapButtonsEnabled(false);
+                SetStatusText("상대방 연결을 기다리는 중...");
+                Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (netMan != null)
+        {
+            netMan.OnRemotePlayerConnected -= HandleRemotePlayerConnected;
+            netMan.OnRemotePlayerDisconnected -= HandleRemotePlayerDisconnected;
+        }
+    }
+
+    private void HandleRemotePlayerConnected()
+    {
+        SetMapButtonsEnabled(true);
+        SetStatusText("P2 연결됨! 맵을 선택하세요.");
+        Debug.Log("[MapSelectController] Remote player connected. Map selection enabled.");
+    }
+
+    private void HandleRemotePlayerDisconnected()
+    {
+        SetMapButtonsEnabled(false);
+        SetStatusText("상대방 연결이 끊어졌습니다. 다시 기다리는 중...");
+        Debug.Log("[MapSelectController] Remote player disconnected. Waiting again.");
     }
 
     public void OnClickTerrian()
@@ -68,10 +99,10 @@ public class MapSelectController : MonoBehaviour
 
         if (GameLaunchContext.IsNetworkHost && NetworkServer.active)
         {
-            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
-            if (netMan != null)
+            DinoNetworkManager nMan = netMan ?? FindFirstObjectByType<DinoNetworkManager>();
+            if (nMan != null)
             {
-                netMan.ServerChangeScene(GameSceneName);
+                nMan.ServerChangeScene(GameSceneName);
                 return;
             }
         }
@@ -91,6 +122,49 @@ public class MapSelectController : MonoBehaviour
         terrianButton ??= FindButton("Button_Terrian", "button_terrian");
         iceButton ??= FindButton("Button_Ice", "button_ice");
         desertButton ??= FindButton("Button_Desert", "button_Desert");
+        connectionStatusText ??= FindText("Text_ConnectionStatus");
+        if (connectionStatusText == null)
+        {
+            connectionStatusText = CreateStatusText();
+        }
+    }
+
+    private TMP_Text CreateStatusText()
+    {
+        GameObject go = new GameObject("Text_ConnectionStatus", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+        go.transform.SetParent(FindFirstObjectByType<Canvas>()?.transform ?? null, false);
+
+        TMP_Text text = go.GetComponent<TMP_Text>();
+        text.text = "";
+        text.fontSize = 36;
+        text.alignment = TextAlignmentOptions.Center;
+        text.color = Color.white;
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 1);
+        rt.anchorMax = new Vector2(1, 1);
+        rt.pivot = new Vector2(0.5f, 1);
+        rt.anchoredPosition = new Vector2(0, -100);
+        rt.sizeDelta = new Vector2(600, 50);
+
+        return text;
+    }
+
+    private void SetMapButtonsEnabled(bool enabled)
+    {
+        if (terrianButton != null) terrianButton.interactable = enabled;
+        if (iceButton != null) iceButton.interactable = enabled;
+        if (desertButton != null) desertButton.interactable = enabled;
+    }
+
+    private void SetStatusText(string message)
+    {
+        if (connectionStatusText != null)
+        {
+            connectionStatusText.text = message;
+            connectionStatusText.gameObject.SetActive(true);
+        }
+        Debug.Log($"[MapSelect] {message}");
     }
 
     private static void AddClickListener(Button button, UnityEngine.Events.UnityAction action)
@@ -112,6 +186,20 @@ public class MapSelectController : MonoBehaviour
             if (found != null)
             {
                 return found.GetComponent<Button>();
+            }
+        }
+
+        return null;
+    }
+
+    private static TMP_Text FindText(params string[] names)
+    {
+        foreach (string objectName in names)
+        {
+            GameObject found = GameObject.Find(objectName);
+            if (found != null)
+            {
+                return found.GetComponent<TMP_Text>();
             }
         }
 

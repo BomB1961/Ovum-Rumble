@@ -14,9 +14,15 @@ public class DinoNetworkManager : NetworkManager
 
     private int nextPlayerId = 1;
     private bool gameStarted;
+    private int playerCount;
 
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
+    public int PlayerCount => playerCount;
+    public bool IsRemotePlayerConnected => playerCount >= 2;
+
+    public event System.Action OnRemotePlayerConnected;
+    public event System.Action OnRemotePlayerDisconnected;
 
     public override void Awake()
     {
@@ -36,11 +42,37 @@ public class DinoNetworkManager : NetworkManager
     {
         base.OnStartServer();
         nextPlayerId = 1;
+        playerCount = 0;
         gameStarted = false;
         NetworkServer.RegisterHandler<JoinGameMessage>(OnServerJoinGame);
         NetworkServer.RegisterHandler<LaunchInputMessage>(OnServerLaunchInput);
         NetworkServer.RegisterHandler<RestartRequestMessage>(OnServerRestartRequest);
         Debug.Log("[DinoNetworkManager] Server started.");
+    }
+
+    public override void OnServerConnect(NetworkConnectionToClient conn)
+    {
+        base.OnServerConnect(conn);
+        playerCount = NetworkServer.connections.Count;
+        Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
+
+        // Host(Player 1)는 항상 첫 연결. Player 2(원격)가 연결되면 알림.
+        if (playerCount >= 2)
+        {
+            OnRemotePlayerConnected?.Invoke();
+        }
+    }
+
+    public override void OnServerDisconnect(NetworkConnectionToClient conn)
+    {
+        base.OnServerDisconnect(conn);
+        playerCount = NetworkServer.connections.Count;
+        Debug.Log($"[DinoNetworkManager] Player disconnected. Total: {playerCount}");
+
+        if (playerCount < 2)
+        {
+            OnRemotePlayerDisconnected?.Invoke();
+        }
     }
 
     public override void OnStartClient()
