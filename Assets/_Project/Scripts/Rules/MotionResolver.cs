@@ -59,6 +59,14 @@ namespace DinoAlkkagi.Rules
 
             resolveTimer += Time.deltaTime;
 
+            // [6-3] 강제 턴 종료: 최대 해석 시간 초과 시 모든 알 강제 정지
+            if (resolveTimer >= settings.maxResolveTime)
+            {
+                Debug.Log($"[MotionResolver] Max resolve time ({settings.maxResolveTime}s) reached. Forcing stop.");
+                ForceStopAllEggs();
+                return;
+            }
+
             bool allStopped = CheckAllEggsStopped();
 
             if (allStopped)
@@ -95,6 +103,23 @@ namespace DinoAlkkagi.Rules
                     return false;
             }
             return true;
+        }
+
+        private void ForceStopAllEggs()
+        {
+            for (int i = trackedEggs.Count - 1; i >= 0; i--)
+            {
+                if (trackedEggs[i] == null)
+                {
+                    trackedEggs.RemoveAt(i);
+                    continue;
+                }
+                if (!trackedEggs[i].IsAlive) continue;
+                trackedEggs[i].StopImmediately();
+            }
+            isResolving = false;
+            Time.timeScale = 1f;
+            GameEvents.TriggerAllEggsStopped();
         }
 
         public void RegisterEgg(EggController egg)
