@@ -57,6 +57,7 @@ These changes were present outside the egg design commits and should not be stag
 - Art quality note:
   - The UV texture workflow is approved, but the texture must match the other eggs' quality level.
   - Avoid flat/mobile-icon color. Use deeper blue range, richer aqua variation, tighter value contrast, painted highlights, small panel/seam details, and glossy material response so Tidecrest does not look dull beside Embercore and Prismhorn.
+  - Surface seam issue: do not keep straight vertical panel/seam lines in the Tidecrest albedo. If a vertical line reads on the shell in Unity, remove the line from the texture rather than covering it with exterior geometry.
 - Model assets:
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_Seamless.blend`
   - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Tidecrest/EggSkin_Tidecrest_Seamless.glb`
@@ -73,9 +74,15 @@ These changes were present outside the egg design commits and should not be stag
 - FX note:
   - Tidecrest FX was built to face correctly without the Prismhorn rotation offset.
   - Removed `BasaltShard_Tidecrest_CoralShellChip` pieces from the Tidecrest impact FX because they read as stray objects stuck to the egg surface. Keep future Tidecrest FX fragments away from the body silhouette unless they are clearly moving impact particles.
+  - Tidecrest FX should stay at the collision point and dissipate there. Avoid long forward-projecting water jets or surface ripple/crack lines; use compact rings, local droplets, and sparse burst fragments instead.
 - Preview alignment note:
   - In `Assets/_Project/Scenes/EggDesign.unity`, keep the Tidecrest looping impact FX preview visually centered on the Tidecrest egg preview.
   - If the egg body/pivot changes, re-check `Tidecrest_Egg_Visual` and `Tidecrest_ImpactFX_LoopingPreview` positions so the FX does not appear offset from the egg.
+  - EggDesign scene preview standard: Embercore, Prismhorn, and Tidecrest should share a 2.20 unit visual height, 1.55 unit max horizontal footprint, and y=0 bottom contact.
+  - Runtime egg prefab standard: playable egg prefabs should keep a 1.00 unit visual height unless gameplay explicitly requires a different scale.
+- Seam cleanup note:
+  - 2026-05-26: Tidecrest front vertical UV seam was removed in Blender by smoothing the horizontal wrap boundary in `EggSkin_Tidecrest_SurfaceTexture.png`, keeping the body as one mesh with one material, and offsetting the body UVs by +0.5 on U so the wrap boundary no longer sits on the front view.
+  - Re-exported `EggSkin_Tidecrest_Seamless.glb` from `EggSkin_Tidecrest_Seamless.blend` and refreshed Unity. `EggSkin_Tidecrest_UnityPreview.png` now shows the front without the vertical line.
 
 ## Runtime FX Selection Structure
 
