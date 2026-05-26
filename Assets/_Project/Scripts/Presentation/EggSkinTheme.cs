@@ -6,7 +6,8 @@ namespace DinoAlkkagi.Presentation
     {
         Embercore,
         Prismhorn,
-        Tidecrest
+        Tidecrest,
+        Toxitide
     }
 
     public class EggSkinTheme : MonoBehaviour

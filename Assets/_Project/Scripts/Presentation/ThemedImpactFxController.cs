@@ -12,6 +12,7 @@ namespace DinoAlkkagi.Presentation
         [SerializeField] private GameObject embercoreImpactFxPrefab;
         [SerializeField] private GameObject prismhornImpactFxPrefab;
         [SerializeField] private GameObject tidecrestImpactFxPrefab;
+        [SerializeField] private GameObject toxitideImpactFxPrefab;
 
         [Header("Impact Thresholds")]
         [SerializeField] private float minImpactForEffect = 1.25f;
@@ -127,6 +128,8 @@ namespace DinoAlkkagi.Presentation
                     return prismhornImpactFxPrefab != null ? prismhornImpactFxPrefab : embercoreImpactFxPrefab;
                 case EggSkinFxTheme.Tidecrest:
                     return tidecrestImpactFxPrefab != null ? tidecrestImpactFxPrefab : embercoreImpactFxPrefab;
+                case EggSkinFxTheme.Toxitide:
+                    return toxitideImpactFxPrefab != null ? toxitideImpactFxPrefab : embercoreImpactFxPrefab;
                 case EggSkinFxTheme.Embercore:
                 default:
                     return embercoreImpactFxPrefab;
@@ -145,6 +148,7 @@ namespace DinoAlkkagi.Presentation
             {
                 case EggSkinFxTheme.Prismhorn:
                     return Quaternion.Euler(90f, 0f, 0f);
+                case EggSkinFxTheme.Toxitide:
                 case EggSkinFxTheme.Tidecrest:
                 case EggSkinFxTheme.Embercore:
                 default:

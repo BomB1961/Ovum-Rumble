@@ -190,6 +190,7 @@ MonoBehaviour:
   embercoreImpactFxPrefab: {fileID: 206707043951001261, guid: 708df44668290c9489fef188ec84413d, type: 3}
   prismhornImpactFxPrefab: {fileID: 8350990510994010187, guid: 578752aecb84a3f438d56e6efadcb81a, type: 3}
   tidecrestImpactFxPrefab: {fileID: 8134715800885836019, guid: 272a579873362fe41b6b62996d2ac4b6, type: 3}
+  toxitideImpactFxPrefab: {fileID: 7143239864054697475, guid: 482facf6dd8d41e49b0c3671f0f7b133, type: 3}
   minImpactForEffect: 1.25
   maxImpactForScale: 12
   minEffectScale: 0.7

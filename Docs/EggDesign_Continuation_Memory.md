@@ -84,6 +84,38 @@ These changes were present outside the egg design commits and should not be stag
   - 2026-05-26: Tidecrest front vertical UV seam was removed in Blender by smoothing the horizontal wrap boundary in `EggSkin_Tidecrest_SurfaceTexture.png`, keeping the body as one mesh with one material, and offsetting the body UVs by +0.5 on U so the wrap boundary no longer sits on the front view.
   - Re-exported `EggSkin_Tidecrest_Seamless.glb` from `EggSkin_Tidecrest_Seamless.blend` and refreshed Unity. `EggSkin_Tidecrest_UnityPreview.png` now shows the front without the vertical line.
 
+### Toxitide
+
+- Toxic slime/cracked shell egg based on the supplied five-view slime egg reference.
+- Construction follows the approved Tidecrest body workflow: one egg body mesh, one UV surface texture, and one painted glossy shell material.
+- Do not add separate exterior slime, bubble, or cracked plate geometry to the Toxitide body skin. Slime cap, drips, bubbles, purple cracked shell, and toxic green fissures are painted into the UV texture.
+- FX theme: toxic green slime burst with purple shell chips and glowing corrosive fissures.
+- Model assets:
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_Seamless.blend`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_Seamless.glb`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_SurfaceTexture.png`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_Seamless_Preview.png`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_UnityPreview.png`
+- FX assets:
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_ImpactFX.blend`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_ImpactFX.glb`
+  - `Assets/_Project/Art/Models/EggSkins_TextureProjected/Toxitide/EggSkin_Toxitide_ImpactFX_Preview.png`
+  - `Assets/_Project/Prefabs/Effects/ToxitideImpactFX.prefab`
+- Runtime theme:
+  - `EggSkinFxTheme.Toxitide`
+  - `ThemedImpactFxController` selects `toxitideImpactFxPrefab`, falling back to Embercore if missing.
+  - Toxitide FX was rebuilt so its burst reads upright and parallel with the other egg FX previews without the Prismhorn rotation offset.
+- Seam and preview notes:
+  - 2026-05-26: Toxitide had a straight vertical line visible on the front shell. The fix was to smooth the visible center band in `EggSkin_Toxitide_SurfaceTexture.png`, soften the texture wrap edges for mip safety, and re-export `EggSkin_Toxitide_Seamless.glb`.
+  - Do not solve this kind of body seam by adding cover geometry. Fix the UV placement and/or texture continuity, then verify the Unity preview from the front.
+  - 2026-05-26: Toxitide ImpactFX initially exported on the XZ floor plane and appeared as a flat horizontal band in Unity. Reoriented the ImpactFX source geometry into the XY impact plane, kept the prefab root at identity rotation, and re-exported `EggSkin_Toxitide_ImpactFX.glb`.
+  - `Toxitide_ImpactFX_LoopingPreview` must override `ThemedImpactFxInstance.destroyOnComplete` to false in `EggDesign.unity`. If this remains true, Play mode destroys the preview root after the first cycle and the FX only appears once.
+- Scene preview:
+  - `Assets/_Project/Scenes/EggDesign.unity` contains `Toxitide_Egg_Visual` to the right of Tidecrest.
+  - `Assets/_Project/Scenes/EggDesign.unity` contains `Toxitide_ImpactFX_LoopingPreview` and `EggDesign_ToxitideImpactFXPreviewController`.
+  - Preview verification: 1 renderer, `Toxitide_SurfacePaintedShell` material, bounds approximately 1.49 x 2.20 x 1.49.
+  - ImpactFX verification after orientation fix: prefab root rotation is identity, prefab bounds approximately 1.16 x 1.08 x 0.36, EggDesign preview bounds approximately 1.10 x 1.15 x 0.79, and `destroyOnComplete` is false on the looping preview.
+
 ## Runtime FX Selection Structure
 
 Files:
@@ -101,6 +133,7 @@ Current behavior:
   - Embercore -> `embercoreImpactFxPrefab`
   - Prismhorn -> `prismhornImpactFxPrefab`
   - Tidecrest -> `tidecrestImpactFxPrefab`
+  - Toxitide -> `toxitideImpactFxPrefab`
 - If a themed prefab is missing, it falls back to Embercore.
 
 FX child object naming matters because `ThemedImpactFxInstance` animates by substring:
@@ -129,30 +162,46 @@ Use those substrings in future FX GLB object names so the existing animation log
 
 ## Format for the Next Egg
 
-For a new egg named `NewEggName`, use this same structure:
+For a new egg named `NewEggName`, use this same structure. A new egg is not considered complete until both the body skin and its themed impact FX are built, imported, wired, previewed, and documented.
 
+- Body construction standard:
+  - Build the egg body as one mesh with one UV surface texture and one painted glossy shell material.
+  - Do not add exterior decorative body geometry when the design can be represented in the UV texture.
+  - Always place the UV wrap seam away from the front presentation view, preferably on the rear side of the egg.
+  - Always smooth the left/right texture wrap edge before export so mipmaps do not reveal a vertical line.
+- Completion standard:
+  - Every new egg must include the body skin and a matching themed impact FX.
+  - Do not stop at the body skin unless the user explicitly asks for a body-only draft.
+  - The themed FX must be connected to runtime selection and represented in the EggDesign preview scene.
 - Folder: `Assets/_Project/Art/Models/EggSkins_TextureProjected/NewEggName/`
 - Body files:
   - `EggSkin_NewEggName_Seamless.blend`
   - `EggSkin_NewEggName_Seamless.glb`
+  - `EggSkin_NewEggName_SurfaceTexture.png`
   - `EggSkin_NewEggName_Seamless_Preview.png`
   - `EggSkin_NewEggName_UnityPreview.png`
 - FX files:
   - `EggSkin_NewEggName_ImpactFX.blend`
   - `EggSkin_NewEggName_ImpactFX.glb`
   - `EggSkin_NewEggName_ImpactFX_Preview.png`
+- FX orientation standard:
+  - The FX prefab root should use identity local rotation unless there is a proven import-axis mismatch.
+  - Build the GLB so the local burst axis faces Unity local +Z and the preview reads upright/parallel with Embercore, Tidecrest, and Toxitide.
+  - Only add a `ThemedImpactFxController` rotation offset when the exported GLB cannot be corrected cleanly; Prismhorn is the known exception.
 - Prefab:
   - `Assets/_Project/Prefabs/Effects/NewEggNameImpactFX.prefab`
 - Code:
   - Add enum value to `EggSkinFxTheme`.
   - Add serialized prefab field to `ThemedImpactFxController`.
   - Add selection case with Embercore fallback.
-  - Add rotation offset only if the GLB local burst axis does not face Unity local +Z.
+  - Add rotation offset only if the GLB local burst axis does not face Unity local +Z after export cleanup.
 - Unity:
   - Refresh and compile with `unity-cli editor refresh --compile`.
   - Wire the new FX prefab in `Assets/Scenes/01_Game.unity`.
   - Add preview objects and looping FX preview in `Assets/_Project/Scenes/EggDesign.unity`.
   - Tag the chosen egg prefab with the new `EggSkinTheme`.
+  - Confirm the new egg preview includes both `NewEggName_Egg_Visual` and `NewEggName_ImpactFX_LoopingPreview`.
+  - In the EggDesign preview scene, set the looping preview FX instance `destroyOnComplete` to false so Play mode can repeat the effect.
 
 ## Required Verification
 
