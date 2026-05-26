@@ -33,6 +33,20 @@ public class MapSelectController : MonoBehaviour
         RegisterButtonListeners();
     }
 
+    private void Start()
+    {
+        // 네트워크 호스트 모드: 씬 로드 후 서버 시작
+        if (GameLaunchContext.IsNetworkHost)
+        {
+            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+            if (netMan != null && !NetworkServer.active && !NetworkClient.active)
+            {
+                netMan.StartNetworkHost();
+                Debug.Log("[MapSelectController] Network host started.");
+            }
+        }
+    }
+
     public void OnClickTerrian()
     {
         SelectMapAndStart(MapId.Terrian);
@@ -52,10 +66,14 @@ public class MapSelectController : MonoBehaviour
     {
         GameLaunchContext.SelectMap(mapId);
 
-        if (GameLaunchContext.IsNetworkHost)
+        if (GameLaunchContext.IsNetworkHost && NetworkServer.active)
         {
-            LoadSceneMessage msg = new LoadSceneMessage { sceneName = GameSceneName };
-            NetworkServer.SendToAll(msg);
+            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+            if (netMan != null)
+            {
+                netMan.ServerChangeScene(GameSceneName);
+                return;
+            }
         }
 
         SceneManager.LoadScene(GameSceneName);

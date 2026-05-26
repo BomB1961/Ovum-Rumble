@@ -60,7 +60,7 @@ public class MainMenuController : MonoBehaviour
         DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
         if (netMan != null)
         {
-            netMan.StartNetworkHost();
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
             ShowConnectionStatus("호스트 시작 중...");
             SceneManager.LoadScene(MapSelectSceneName);
             return;

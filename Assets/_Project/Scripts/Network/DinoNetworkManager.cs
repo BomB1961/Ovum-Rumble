@@ -20,6 +20,14 @@ public class DinoNetworkManager : NetworkManager
 
     public override void Awake()
     {
+        // 중복 인스턴스 방지: 이미 singleton이 있으면 파괴
+        if (singleton != null && singleton != this)
+        {
+            Debug.Log("[DinoNetworkManager] Duplicate detected. Destroying self.");
+            Destroy(gameObject);
+            return;
+        }
+
         base.Awake();
         featureFlags ??= FindFirstObjectByType<FeatureFlags>();
     }
