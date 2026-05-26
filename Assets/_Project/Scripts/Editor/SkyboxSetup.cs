@@ -281,7 +281,8 @@ namespace DinoAlkkagi.Editor
             {
                 GameObject cloudHigh = (GameObject)PrefabUtility.InstantiatePrefab(cloudCardsPrefab, clouds.transform);
                 cloudHigh.name = "CloudHigh";
-                cloudHigh.transform.localPosition = Vector3.up * 5f;
+                cloudHigh.transform.localPosition = Vector3.up * 15f;
+                cloudHigh.transform.localScale = Vector3.one * 3f;
                 MeshRenderer cloudRend = cloudHigh.GetComponent<MeshRenderer>();
                 if (cloudRend) { cloudRend.sharedMaterial = cloudDay; cloudRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; cloudRend.receiveShadows = false; }
             }
