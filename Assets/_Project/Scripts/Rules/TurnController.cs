@@ -17,6 +17,8 @@ namespace DinoAlkkagi.Rules
         private bool isInputLocked = false;
         private bool isGameEnded = false;
 
+        private bool isClientOnly => GameLaunchContext.IsNetworkClient;
+
         public int CurrentPlayerId => currentPlayerId;
         public bool IsInputLocked => isInputLocked;
         public int TotalPlayers => totalPlayers;
@@ -44,6 +46,7 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnGameStarted()
         {
+            if (isClientOnly) return;
             currentPlayerId = startingPlayerId;
             isInputLocked = false;
             isGameEnded = false;
@@ -53,11 +56,13 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnEggLaunched(EggController egg)
         {
+            if (isClientOnly) return;
             LockInput();
         }
 
         private void HandleOnAllEggsStopped()
         {
+            if (isClientOnly) return;
             if (isGameEnded) return;
             if (HasPlayerBeenEliminated()) return;
 
@@ -66,6 +71,7 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnGameEnded(GameResult result)
         {
+            if (isClientOnly) return;
             isGameEnded = true;
         }
 

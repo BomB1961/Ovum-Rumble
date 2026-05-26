@@ -36,8 +36,14 @@ namespace DinoAlkkagi.Core
         [Header("--- 정적 맵 ---")]
         [SerializeField] private StaticBoardLoader staticBoardLoader;
 
+        [Header("--- 네트워크 ---")]
+        [SerializeField] private DinoNetworkManager networkManager;
+
         private List<EggController> allEggs = new List<EggController>();
         private GameState currentState = GameState.Setup;
+
+        private bool isServerMode;
+        private bool isClientOnly;
 
         public GameState CurrentState => currentState;
         public IReadOnlyList<EggController> AllEggs => allEggs.AsReadOnly();
@@ -71,6 +77,13 @@ namespace DinoAlkkagi.Core
             boardFallZone ??= FindFirstObjectByType<BoardFallZone>();
             aiInputController ??= FindFirstObjectByType<AIInputController>();
             staticBoardLoader ??= FindFirstObjectByType<StaticBoardLoader>();
+            networkManager ??= FindFirstObjectByType<DinoNetworkManager>();
+
+            isServerMode = GameLaunchContext.IsNetworkHost || !GameLaunchContext.IsNetwork;
+            isClientOnly = GameLaunchContext.IsNetworkClient;
+
+            if (flickInputController != null)
+                flickInputController.UseNetworkRelay = isClientOnly;
 
             // 누락 체크
             if (settings == null)
@@ -93,12 +106,43 @@ namespace DinoAlkkagi.Core
 
         private void Start()
         {
+            if (isClientOnly)
+            {
+                Debug.Log("[GameSessionController] Client-only mode. Spawning eggs for display.");
+                DistributeBoardSurface();
+
+                eggSpawner?.ClearSpawnedEggs();
+                eggSpawner?.SpawnAll();
+                CollectAndRegisterEggs();
+                SetState(GameState.Aiming);
+
+                if (flickInputController != null)
+                {
+                    flickInputController.UseNetworkRelay = true;
+                    flickInputController.EggLaunched += OnFlickEggLaunched;
+                }
+
+                MakeClientEggsKinematic();
+                GameEvents.TriggerGameStarted();
+                return;
+            }
+
             if (flickInputController != null)
                 flickInputController.EggLaunched += OnFlickEggLaunched;
 
             DistributeBoardSurface();
             StartCoroutine(InitializePhysicsNextFrame());
             BeginGame();
+        }
+
+        private void MakeClientEggsKinematic()
+        {
+            foreach (var egg in allEggs)
+            {
+                if (egg == null || egg.Rigidbody == null) continue;
+                egg.Rigidbody.isKinematic = true;
+                egg.Rigidbody.useGravity = false;
+            }
         }
 
         private IEnumerator InitializePhysicsNextFrame()
@@ -136,6 +180,10 @@ namespace DinoAlkkagi.Core
             CollectAndRegisterEggs();
             SetState(GameState.Aiming);
             Debug.Log("[GameSessionController] Game setup complete. Starting match.");
+
+            if (isServerMode && networkManager != null)
+                networkManager.NotifyGameStarted();
+
             GameEvents.TriggerGameStarted();
         }
 
@@ -227,6 +275,7 @@ namespace DinoAlkkagi.Core
         /// </summary>
         private void Update()
         {
+            if (isClientOnly) return;
             if (turnController == null || flickInputController == null) return;
 
             SyncInputAvailability();
@@ -248,6 +297,40 @@ namespace DinoAlkkagi.Core
         /// TurnController가 이벤트를 받아 IsInputLocked를 설정하고,
         /// 여기서 FlickInputController를 비활성화한다.
         /// </summary>
+        /// <summary>
+        /// 네트워크로부터 원격 클라이언트의 발사 입력을 받아 처리한다.
+        /// </summary>
+        public void OnRemoteLaunch(uint eggNetId, Vector3 direction, float force)
+        {
+            if (!isServerMode)
+            {
+                Debug.LogWarning("[GameSessionController] Ignored remote launch: not server mode.");
+                return;
+            }
+
+            EggController egg = FindEggByNetId(eggNetId);
+            if (egg == null)
+            {
+                Debug.LogWarning($"[GameSessionController] Remote launch: egg with netId {eggNetId} not found.");
+                return;
+            }
+
+            Debug.Log($"[GameSessionController] Remote launch: P{egg.OwnerPlayerId} egg {eggNetId}, force={force}");
+            egg.Launch(direction * force);
+        }
+
+        private EggController FindEggByNetId(uint netId)
+        {
+            int eggId = (int)netId;
+            foreach (var egg in allEggs)
+            {
+                if (egg == null) continue;
+                if (egg.NetworkEggId == eggId)
+                    return egg;
+            }
+            return null;
+        }
+
         public void LockAllInput()
         {
             turnController?.LockInput();

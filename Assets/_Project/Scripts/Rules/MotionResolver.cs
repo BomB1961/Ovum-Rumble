@@ -20,6 +20,8 @@ namespace DinoAlkkagi.Rules
         private float resolveTimer = 0f;
         private bool isResolving = false;
 
+        private bool isClientOnly => GameLaunchContext.IsNetworkClient;
+
         public bool IsResolving => isResolving;
         public float ResolveTime => resolveTimer;
 
@@ -38,6 +40,7 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnGameStarted()
         {
+            if (isClientOnly) return;
             isResolving = false;
             stopTimer = 0f;
             resolveTimer = 0f;
@@ -46,6 +49,7 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnEggLaunched(EggController egg)
         {
+            if (isClientOnly) return;
             isResolving = true;
             stopTimer = 0f;
             resolveTimer = 0f;
@@ -55,6 +59,7 @@ namespace DinoAlkkagi.Rules
 
         private void Update()
         {
+            if (isClientOnly) return;
             if (!isResolving) return;
 
             resolveTimer += Time.deltaTime;

@@ -1,4 +1,5 @@
 using DinoAlkkagi.Core;
+using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -50,6 +51,13 @@ public class MapSelectController : MonoBehaviour
     private void SelectMapAndStart(MapId mapId)
     {
         GameLaunchContext.SelectMap(mapId);
+
+        if (GameLaunchContext.IsNetworkHost)
+        {
+            LoadSceneMessage msg = new LoadSceneMessage { sceneName = GameSceneName };
+            NetworkServer.SendToAll(msg);
+        }
+
         SceneManager.LoadScene(GameSceneName);
     }
 

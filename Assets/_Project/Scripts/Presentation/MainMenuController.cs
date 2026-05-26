@@ -19,6 +19,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject joinPanel;
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject connectionStatusPanel;
 
     [Header("Main Menu")]
     [SerializeField] private Button hostGameButton;
@@ -33,6 +34,9 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private TMP_Text controlsGuideText;
     [SerializeField] private Button joinGameButton;
     [SerializeField] private Button cancelJoinButton;
+
+    [Header("Connection Status")]
+    [SerializeField] private TMP_Text connectionStatusText;
 
     [Header("Settings")]
     [SerializeField] private Slider bgmSlider;
@@ -53,6 +57,15 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickHostGame()
     {
+        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        if (netMan != null)
+        {
+            netMan.StartNetworkHost();
+            ShowConnectionStatus("호스트 시작 중...");
+            SceneManager.LoadScene(MapSelectSceneName);
+            return;
+        }
+
         GameLaunchContext.SetMode(GameMode.LocalHotseat);
         SceneManager.LoadScene(MapSelectSceneName);
     }
@@ -75,17 +88,18 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickShowJoinPanel()
     {
-        ShowControlsPanel();
+        ShowJoinPanel();
     }
 
     public void OnClickJoinRoom()
     {
-        ShowControlsPanel();
+        ShowJoinPanel();
     }
 
     public void OnClickTestJoin()
     {
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+        GameLaunchContext.SetMode(GameMode.NetworkClient);
+        GameLaunchContext.SetNetworkClientInfo(2);
         SceneManager.LoadScene(GameSceneName);
     }
 
@@ -97,6 +111,18 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
+        string ip = hostIpInput != null ? hostIpInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(ip))
+            ip = "127.0.0.1";
+
+        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        if (netMan != null)
+        {
+            ShowConnectionStatus($"서버 {ip}에 연결 중...");
+            netMan.StartNetworkClient(ip);
+            return;
+        }
+
         ShowMainMenu();
     }
 
@@ -145,6 +171,7 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
+        SetPanelState(connectionStatusPanel, false);
     }
 
     private void ShowJoinPanel()
@@ -152,6 +179,14 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, false);
         SetPanelState(joinPanel, true);
         SetPanelState(settingsPanel, false);
+        SetPanelState(connectionStatusPanel, false);
+
+        if (controlsGuideText != null)
+            controlsGuideText.gameObject.SetActive(false);
+        if (hostIpInput != null)
+            hostIpInput.gameObject.SetActive(true);
+        if (joinGameButton != null)
+            joinGameButton.gameObject.SetActive(true);
     }
 
     private void ShowControlsPanel()
@@ -171,6 +206,24 @@ public class MainMenuController : MonoBehaviour
 
         ShowJoinPanel();
     }
+
+    private void ShowConnectionStatus(string message)
+    {
+        if (connectionStatusPanel != null)
+            connectionStatusPanel.SetActive(true);
+        if (connectionStatusText != null)
+            connectionStatusText.text = message;
+        SetPanelState(mainMenuPanel, false);
+        SetPanelState(joinPanel, false);
+        SetPanelState(settingsPanel, false);
+    }
+
+    public void OnClientDisconnected()
+    {
+        ShowConnectionStatus("연결이 끊어졌습니다.");
+        Invoke(nameof(ShowMainMenu), 2f);
+    }
+}
 
     private void ShowSettingsPanel()
     {

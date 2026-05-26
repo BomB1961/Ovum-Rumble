@@ -41,15 +41,17 @@ public class EggSpawner : MonoBehaviour
         }
 
         ClearSpawnedEggs();
+        int eggIdCounter = 0;
+
         if (boardSurface != null)
         {
-            SpawnFromBoardSurface(1, player1Root);
-            SpawnFromBoardSurface(2, player2Root);
+            eggIdCounter = SpawnFromBoardSurface(1, player1Root, eggIdCounter);
+            SpawnFromBoardSurface(2, player2Root, eggIdCounter);
             return;
         }
 
-        SpawnPlayerEggs(1, player1Root, player1StartCenter);
-        SpawnPlayerEggs(2, player2Root, player2StartCenter);
+        eggIdCounter = SpawnPlayerEggs(1, player1Root, player1StartCenter, eggIdCounter);
+        SpawnPlayerEggs(2, player2Root, player2StartCenter, eggIdCounter);
     }
 
     public void ClearSpawnedEggs()
@@ -80,9 +82,10 @@ public class EggSpawner : MonoBehaviour
         return playerId == 2 ? player2EggPrefab : player1EggPrefab;
     }
 
-    private void SpawnPlayerEggs(int ownerPlayerId, Transform parent, Vector3 center)
+    private int SpawnPlayerEggs(int ownerPlayerId, Transform parent, Vector3 center, int startId)
     {
         EggController prefab = GetPrefabForPlayer(ownerPlayerId);
+        int currentId = startId;
         for (int i = 0; i < eggsPerPlayer; i++)
         {
             Vector3 position = GetGridPosition(center, i);
@@ -90,6 +93,7 @@ public class EggSpawner : MonoBehaviour
 
             EggController egg = Instantiate(prefab, position, Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
+            egg.SetNetworkEggId(currentId++);
 
             Rigidbody rb = egg.GetComponent<Rigidbody>();
             if (rb != null)
@@ -104,18 +108,21 @@ public class EggSpawner : MonoBehaviour
 
             spawnedEggs.Add(egg);
         }
+        return currentId;
     }
 
-    private void SpawnFromBoardSurface(int ownerPlayerId, Transform parent)
+    private int SpawnFromBoardSurface(int ownerPlayerId, Transform parent, int startId)
     {
         IReadOnlyList<Vector3> points = boardSurface.GetSpawnPoints(ownerPlayerId);
         EggController prefab = GetPrefabForPlayer(ownerPlayerId);
+        int currentId = startId;
         for (int i = 0; i < eggsPerPlayer && i < points.Count; i++)
         {
             Vector3 spawnPos = points[i];
 
             EggController egg = Instantiate(prefab, spawnPos, Quaternion.identity, parent);
             egg.Initialize(ownerPlayerId);
+            egg.SetNetworkEggId(currentId++);
 
             Rigidbody rb = egg.GetComponent<Rigidbody>();
             if (rb != null)
@@ -130,6 +137,7 @@ public class EggSpawner : MonoBehaviour
 
             spawnedEggs.Add(egg);
         }
+        return currentId;
     }
 
     private Vector3 GetGridPosition(Vector3 center, int index)

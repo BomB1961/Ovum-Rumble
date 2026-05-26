@@ -7,6 +7,8 @@ public class EggController : MonoBehaviour
     [SerializeField] private bool isAlive = true;
     [SerializeField] private Rigidbody cachedRigidbody;
 
+    private int networkEggId = -1;
+
     public event Action<EggController> Launched;
     public event Action<EggController, float> CollisionOccurred;
     public event Action<EggController> Fallen;
@@ -15,6 +17,9 @@ public class EggController : MonoBehaviour
     public bool IsAlive => isAlive;
     public Rigidbody Rigidbody => cachedRigidbody;
     public bool CanLaunch => isAlive && cachedRigidbody != null;
+    public int NetworkEggId => networkEggId;
+
+    public void SetNetworkEggId(int id) { networkEggId = id; }
 
     private void Awake()
     {
