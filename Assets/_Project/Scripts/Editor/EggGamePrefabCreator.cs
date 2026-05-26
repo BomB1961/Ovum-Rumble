@@ -55,6 +55,40 @@ namespace DinoAlkkagi.Editor
             AssetDatabase.Refresh();
         }
 
+        public static bool ValidateAll()
+        {
+            foreach (EggPrefabSpec spec in Specs)
+            {
+                string prefabPath = $"{PrefabFolder}/{spec.PrefabName}.prefab";
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                {
+                    Debug.LogError($"[{nameof(EggGamePrefabCreator)}] Missing prefab: {prefabPath}");
+                    return false;
+                }
+
+                if (prefab.GetComponent<EggController>() == null)
+                {
+                    Debug.LogError($"[{nameof(EggGamePrefabCreator)}] Missing EggController: {prefabPath}");
+                    return false;
+                }
+
+                if (prefab.GetComponent<Rigidbody>() == null)
+                {
+                    Debug.LogError($"[{nameof(EggGamePrefabCreator)}] Missing Rigidbody: {prefabPath}");
+                    return false;
+                }
+
+                if (prefab.GetComponent<SphereCollider>() == null)
+                {
+                    Debug.LogError($"[{nameof(EggGamePrefabCreator)}] Missing SphereCollider: {prefabPath}");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static void CreatePrefab(EggPrefabSpec spec, PhysicsMaterial physicMaterial)
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(spec.ModelPath);
@@ -64,22 +98,30 @@ namespace DinoAlkkagi.Editor
                 return;
             }
 
-            GameObject instance = PrefabUtility.InstantiatePrefab(source) as GameObject;
-            if (instance == null)
+            GameObject root = new GameObject(spec.PrefabName);
+            root.layer = LayerMask.NameToLayer("Egg");
+
+            GameObject visual = PrefabUtility.InstantiatePrefab(source) as GameObject;
+            if (visual == null)
             {
                 Debug.LogError($"[{nameof(EggGamePrefabCreator)}] Failed to instantiate model: {spec.ModelPath}");
+                Object.DestroyImmediate(root);
                 return;
             }
 
-            instance.name = spec.PrefabName;
-            instance.layer = LayerMask.NameToLayer("Egg");
-            AddPhysics(instance, physicMaterial);
-            AddEggController(instance);
-            AddTheme(instance, spec.Theme);
+            visual.name = $"{spec.PrefabName}_Visual";
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+
+            AddPhysics(root, physicMaterial);
+            AddEggController(root);
+            AddTheme(root, spec.Theme);
 
             string prefabPath = $"{PrefabFolder}/{spec.PrefabName}.prefab";
-            PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-            Object.DestroyImmediate(instance);
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
 
             Debug.Log($"[{nameof(EggGamePrefabCreator)}] Created {prefabPath}");
         }
