@@ -41,7 +41,7 @@ Material:
     - _CloudColorC: {r: 0.905, g: 0.922, b: 0.776, a: 1}
     - _CloudColorD: {r: 0.913, g: 0.597, b: 0.156, a: 1}
     - _Cloud_edgeColor: {r: 0.799, g: 0.624, b: 0.565, a: 1}
-    - _MoonDirection: {r: -0.33274, g: -0.11934, b: 0.93544, a: 0}
-    - _SunDirection: {r: -0.26102, g: 0.12177, b: -0.95762, a: 0}
+    - _MoonDirection: {r: -0, g: -0.17364816, b: -0.9848077, a: 0}
+    - _SunDirection: {r: 0.00000008742278, g: -0, b: 1, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
