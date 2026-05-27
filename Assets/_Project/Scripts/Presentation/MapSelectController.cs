@@ -125,9 +125,13 @@ public class MapSelectController : MonoBehaviour
     private void HandleRemotePlayerConnected()
     {
         SetMapButtonsEnabled(true);
-        SetStatusText("");
+        SetStatusText(""); // 기존 "방 코드" 텍스트 제거
         connectionStatusText?.gameObject.SetActive(false);
         Debug.Log("[MapSelectController] Remote player connected. Map selection enabled.");
+
+        // 방 코드 리스너 종료 (더 이상 필요 없음)
+        if (roomDiscovery != null)
+            Destroy(roomDiscovery);
     }
 
     private void HandleRemotePlayerDisconnected()

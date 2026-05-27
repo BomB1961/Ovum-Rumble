@@ -26,9 +26,10 @@ namespace DinoAlkkagi.Network
         private bool isListening;
         private bool discoveryComplete;
 
-        public event Action<string, string> OnRoomFound; // (ip, roomCode)
-        public event Action<string> OnListenStarted;     // (roomCode)
-        public event Action<string> OnListenError;       // (errorMessage)
+    public event Action<string, string> OnRoomFound; // (ip, roomCode)
+    public event Action<string> OnListenStarted;     // (roomCode)
+    public event Action<string> OnListenError;       // (errorMessage)
+    public event Action OnDiscoveryTimeout;          // 검색 시간 초과
 
         public string RoomCode => roomCode;
 
@@ -45,6 +46,8 @@ namespace DinoAlkkagi.Network
                 if (listenTimer >= listenTimeout)
                 {
                     StopListening();
+                    discoveryComplete = true; // 중복 호출 방지
+                    OnDiscoveryTimeout?.Invoke();
                     Debug.LogWarning("[RoomCodeDiscovery] Discovery timeout. No host found.");
                 }
             }

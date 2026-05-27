@@ -2,6 +2,7 @@ using TMPro;
 using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
 using DinoAlkkagi.Network;
+using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -69,6 +70,11 @@ public class MainMenuController : MonoBehaviour
         roomDiscovery.OnRoomFound += HandleRoomFound;
         roomDiscovery.OnListenError += (err) =>
             ShowConnectionStatus($"방 검색 실패: {err}");
+        roomDiscovery.OnDiscoveryTimeout += () =>
+        {
+            if (gameObject != null)
+                ShowMainMenu();
+        };
 
         // 커맨드라인 자동 접속: --auto-join 127.0.0.1
         string[] args = System.Environment.GetCommandLineArgs();
@@ -315,12 +321,52 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, false);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
+
+        // 연결 상태에서 빠져나올 '취소' 버튼 보장
+        EnsureConnectionCancelButton();
     }
 
     public void OnClientDisconnected()
     {
         ShowConnectionStatus("연결이 끊어졌습니다.");
         Invoke(nameof(ShowMainMenu), 2f);
+    }
+
+    private void EnsureConnectionCancelButton()
+    {
+        if (connectionStatusPanel == null) return;
+        // 이미 취소 버튼이 있으면 스킵
+        if (cancelJoinButton != null && cancelJoinButton.gameObject.activeInHierarchy
+            && cancelJoinButton.transform.IsChildOf(connectionStatusPanel.transform))
+            return;
+
+        Button template = cancelJoinButton ?? joinGameButton ?? hostGameButton;
+        if (template == null) return;
+
+        GameObject cancelObj = Instantiate(template.gameObject, connectionStatusPanel.transform);
+        cancelObj.name = "Button_CancelConnection";
+        Button cancelBtn = cancelObj.GetComponent<Button>();
+        if (cancelBtn != null)
+        {
+            cancelBtn.onClick = new Button.ButtonClickedEvent();
+            cancelBtn.onClick.AddListener(() =>
+            {
+                roomDiscovery?.Cancel();
+                var netMan = FindFirstObjectByType<DinoNetworkManager>();
+                if (netMan != null && NetworkClient.active)
+                    netMan.StopClient();
+                ShowMainMenu();
+            });
+        }
+
+        RectTransform rt = cancelObj.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0);
+        rt.anchorMax = new Vector2(0.5f, 0);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0, 60);
+        rt.sizeDelta = new Vector2(200, 50);
+
+        SetButtonText(cancelObj, "취소");
     }
 
     private void ShowSettingsPanel()
