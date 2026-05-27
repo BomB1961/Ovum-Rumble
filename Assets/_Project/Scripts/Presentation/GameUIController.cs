@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using DinoAlkkagi.Core;
 using UnityEngine;
@@ -33,6 +34,7 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private TMP_Text turnTimeText;
     [SerializeField] private TMP_Text gameTimeText;
     [SerializeField] private TMP_Text guideText;
+    [SerializeField] private Graphic subtitleGraphic;
     [SerializeField] private Button settingsButton;
 
     [Header("Result")]
@@ -56,6 +58,13 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private GameSessionController gameSessionController;
     [SerializeField] private AudioManager audioManager;
 
+    private const float SubtitleHoldSeconds = 2.3f;
+    private const float SubtitleBounceSeconds = 0.55f;
+    private const float SubtitleFadeSeconds = 0.55f;
+    private static bool hasShownSubtitle;
+
+    private Coroutine subtitleRoutine;
+
     private void Awake()
     {
         EnsureUiReferences();
@@ -64,6 +73,7 @@ public class GameUIController : MonoBehaviour
         InitializeVolumeSliders();
         RegisterListeners();
         ResetGameUI();
+        PlaySubtitleOnce();
     }
 
     public void UpdateHUD(string currentTurn, int p1EggCount, int p2EggCount)
@@ -115,6 +125,29 @@ public class GameUIController : MonoBehaviour
     public void SetRandomGuideText()
     {
         SetGuideText(GuideMessages[Random.Range(0, GuideMessages.Length)]);
+    }
+
+    private void PlaySubtitleOnce()
+    {
+        if (subtitleGraphic == null)
+        {
+            return;
+        }
+
+        if (hasShownSubtitle)
+        {
+            subtitleGraphic.gameObject.SetActive(false);
+            return;
+        }
+
+        hasShownSubtitle = true;
+        subtitleGraphic.gameObject.SetActive(true);
+        if (subtitleRoutine != null)
+        {
+            StopCoroutine(subtitleRoutine);
+        }
+
+        subtitleRoutine = StartCoroutine(AnimateSubtitleOnce());
     }
 
     public void ShowResult(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
@@ -245,6 +278,7 @@ public class GameUIController : MonoBehaviour
         turnTimeText ??= FindText("Text_TurnTime");
         gameTimeText ??= FindText("Text_GameTime");
         guideText ??= FindText("Text_Guide");
+        subtitleGraphic ??= FindInactiveGraphic("Image_Subtitle");
         resultTitleText ??= FindText("Text_ResultTitle");
         resultDetailText ??= FindText("Text_ResultDetail");
 
@@ -371,6 +405,56 @@ public class GameUIController : MonoBehaviour
         }
     }
 
+    private IEnumerator AnimateSubtitleOnce()
+    {
+        RectTransform rectTransform = subtitleGraphic.rectTransform;
+        Vector2 basePosition = rectTransform.anchoredPosition;
+        Vector3 baseScale = rectTransform.localScale;
+        Color baseColor = subtitleGraphic.color;
+
+        SetSubtitleAlpha(baseColor.a);
+
+        float elapsed = 0f;
+        while (elapsed < SubtitleBounceSeconds)
+        {
+            elapsed += Time.deltaTime;
+            float normalized = Mathf.Clamp01(elapsed / SubtitleBounceSeconds);
+            float yOffset = Mathf.Sin(normalized * Mathf.PI) * 18f;
+            float scaleOffset = Mathf.Sin(normalized * Mathf.PI * 3f) * 0.05f;
+
+            rectTransform.anchoredPosition = basePosition + new Vector2(0f, yOffset);
+            rectTransform.localScale = baseScale * (1f + scaleOffset);
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = basePosition;
+        rectTransform.localScale = baseScale;
+
+        yield return new WaitForSeconds(SubtitleHoldSeconds);
+
+        elapsed = 0f;
+        while (elapsed < SubtitleFadeSeconds)
+        {
+            elapsed += Time.deltaTime;
+            float normalized = Mathf.Clamp01(elapsed / SubtitleFadeSeconds);
+            SetSubtitleAlpha(Mathf.Lerp(baseColor.a, 0f, normalized));
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = basePosition;
+        rectTransform.localScale = baseScale;
+        subtitleGraphic.color = baseColor;
+        subtitleGraphic.gameObject.SetActive(false);
+        subtitleRoutine = null;
+    }
+
+    private void SetSubtitleAlpha(float alpha)
+    {
+        Color color = subtitleGraphic.color;
+        color.a = alpha;
+        subtitleGraphic.color = color;
+    }
+
     private static void SetText(TMP_Text target, string text)
     {
         if (target != null)
@@ -495,6 +579,22 @@ public class GameUIController : MonoBehaviour
     {
         GameObject found = FindGameObject(names);
         return found != null ? found.GetComponent<TMP_Text>() : null;
+    }
+
+    private static Graphic FindInactiveGraphic(params string[] names)
+    {
+        foreach (Graphic graphic in Resources.FindObjectsOfTypeAll<Graphic>())
+        {
+            foreach (string objectName in names)
+            {
+                if (graphic.name == objectName && graphic.hideFlags == HideFlags.None)
+                {
+                    return graphic;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static Button FindButton(params string[] names)
