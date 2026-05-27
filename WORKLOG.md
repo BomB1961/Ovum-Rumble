@@ -1,5 +1,14 @@
 # WORKLOG
 
+- 2026-05-27: Implemented Person A first extension slice: added `EggType`, `EggDefinition`, and `EggController` definition support. Only `launchImpulseMultiplier` is applied at the final `EggController.Launch()` impulse point, so player input, AI force calculation, and Rules flow remain unchanged. `Default` or missing definitions keep multiplier `1.0` for MVP parity. Heavy, Bouncy, HP, UI selection, and visual binding remain deferred.
+
+## 2026-05-27
+
+- Person A 1차 확장은 `EggType`/`EggDefinition`을 추가하고, Power 알의 발사 배율만 먼저 구현하는 방향으로 결정했다. Default 알은 기존 MVP와 동일하게 유지한다.
+- Person B에는 Power 알 발사 배율이 Rules/AI와 충돌하지 않도록 확인 및 필요 대응을 요청한다.
+- Person C에는 추후 UI 표시를 위해 `EggDefinition`에 필요한 표시 정보(name/icon 등)가 있는지 확인을 요청한다.
+- Person D에는 추후 외형 구분을 위해 `EggDefinition`에 필요한 참조 방식(material/prefab/icon 등)이 있는지 확인을 요청한다.
+
 ## 2026-05-19
 
 - Person A MVP의 기본 폴더 구조와 `EggController` 구현을 완료했다. Unity 컴파일, 콘솔 에러/워닝, 타입 로드 검증을 통과했다.

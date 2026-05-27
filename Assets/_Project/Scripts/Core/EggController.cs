@@ -1,11 +1,13 @@
 using System;
 using UnityEngine;
+using DinoAlkkagi.Data;
 
 public class EggController : MonoBehaviour
 {
     [SerializeField] private int ownerPlayerId;
     [SerializeField] private bool isAlive = true;
     [SerializeField] private Rigidbody cachedRigidbody;
+    [SerializeField] private EggDefinition eggDefinition;
 
     public event Action<EggController> Launched;
     public event Action<EggController, float> CollisionOccurred;
@@ -15,6 +17,9 @@ public class EggController : MonoBehaviour
     public bool IsAlive => isAlive;
     public Rigidbody Rigidbody => cachedRigidbody;
     public bool CanLaunch => isAlive && cachedRigidbody != null;
+    public EggDefinition Definition => eggDefinition;
+    public EggType EggType => eggDefinition != null ? eggDefinition.eggType : EggType.Default;
+    public float LaunchImpulseMultiplier => eggDefinition != null ? eggDefinition.launchImpulseMultiplier : 1f;
 
     private void Awake()
     {
@@ -35,6 +40,17 @@ public class EggController : MonoBehaviour
         isAlive = true;
     }
 
+    public void Initialize(int ownerId, EggDefinition definition)
+    {
+        Initialize(ownerId);
+        eggDefinition = definition;
+    }
+
+    public void SetDefinition(EggDefinition definition)
+    {
+        eggDefinition = definition;
+    }
+
     public void Launch(Vector3 impulse)
     {
         if (!CanLaunch)
@@ -42,7 +58,7 @@ public class EggController : MonoBehaviour
             return;
         }
 
-        cachedRigidbody.AddForce(impulse, ForceMode.Impulse);
+        cachedRigidbody.AddForce(impulse * LaunchImpulseMultiplier, ForceMode.Impulse);
         Launched?.Invoke(this);
     }
 
