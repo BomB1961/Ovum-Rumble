@@ -329,24 +329,46 @@ namespace DinoAlkkagi.Core
         /// <summary>
         /// 네트워크로부터 원격 클라이언트의 발사 입력을 받아 처리한다.
         /// </summary>
-        public void OnRemoteLaunch(uint eggNetId, Vector3 direction, float force)
+    public void OnRemoteLaunch(uint eggNetId, Vector3 direction, float force)
+    {
+        if (!isServerMode)
         {
-            if (!isServerMode)
-            {
-                Debug.LogWarning("[GameSessionController] Ignored remote launch: not server mode.");
-                return;
-            }
-
-            EggController egg = FindEggByNetId(eggNetId);
-            if (egg == null)
-            {
-                Debug.LogWarning($"[GameSessionController] Remote launch: egg with netId {eggNetId} not found.");
-                return;
-            }
-
-            Debug.Log($"[GameSessionController] Remote launch: P{egg.OwnerPlayerId} egg {eggNetId}, force={force}");
-            egg.Launch(direction * force);
+            Debug.LogWarning("[GameSessionController] Ignored remote launch: not server mode.");
+            return;
         }
+
+        // 게임 종료 후 발사 차단
+        if (currentState == GameState.Result)
+        {
+            Debug.LogWarning("[GameSessionController] Ignored remote launch: game is over.");
+            return;
+        }
+
+        // 아직 이전 발사 해결 중이면 차단
+        if (turnController != null && turnController.IsInputLocked)
+        {
+            Debug.LogWarning("[GameSessionController] Ignored remote launch: input locked (resolving).");
+            return;
+        }
+
+        EggController egg = FindEggByNetId(eggNetId);
+        if (egg == null)
+        {
+            Debug.LogWarning($"[GameSessionController] Remote launch: egg with netId {eggNetId} not found.");
+            return;
+        }
+
+        // 턴 확인: 현재 턴인 플레이어의 알만 발사 가능
+        int currentTurnId = turnController != null ? turnController.CurrentPlayerId : 0;
+        if (egg.OwnerPlayerId != currentTurnId)
+        {
+            Debug.LogWarning($"[GameSessionController] Ignored remote launch: P{egg.OwnerPlayerId} egg not P{currentTurnId}'s turn.");
+            return;
+        }
+
+        Debug.Log($"[GameSessionController] Remote launch: P{egg.OwnerPlayerId} egg {eggNetId}, force={force}");
+        egg.Launch(direction * force);
+    }
 
         private EggController FindEggByNetId(uint netId)
         {

@@ -157,6 +157,10 @@ public class FlickInputController : MonoBehaviour
             {
                 relay.SendLaunchInput(eggNetId, direction, force);
             }
+
+            // 서버가 처리할 때까지 self-lock: 재발사 방지
+            // HandleOnTurnStarted에서 서버의 다음 턴 신호를 받으면 재개됨
+            inputEnabled = false;
         }
         else
         {
