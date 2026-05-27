@@ -377,7 +377,7 @@ public class MainMenuController : MonoBehaviour
                 roomDiscovery?.Cancel();
                 var netMan = FindDinoNetworkManager();
                 if (netMan != null && NetworkClient.active)
-                    netMan.StopClient();
+                    netMan.StopClientSafe();
                 ShowMainMenu();
             });
         }
@@ -463,18 +463,18 @@ public class MainMenuController : MonoBehaviour
         try
         {
             // 이전 네트워크 세션이 남아있으면 정리 (재시작/재진입 대비)
-            Mirror.NetworkManager nm = FindDinoNetworkManager();
-            if (nm != null)
+            DinoNetworkManager dnm = FindDinoNetworkManager();
+            if (dnm != null)
             {
                 if (Mirror.NetworkServer.active)
                 {
                     Debug.Log("[MainMenu] Cleaning up previous server session.");
-                    nm.StopHost();
+                    dnm.StopHostSafe();
                 }
                 else if (Mirror.NetworkClient.active)
                 {
                     Debug.Log("[MainMenu] Cleaning up previous client session.");
-                    nm.StopClient();
+                    dnm.StopClientSafe();
                 }
             }
         }

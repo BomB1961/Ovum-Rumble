@@ -108,6 +108,7 @@ namespace DinoAlkkagi.Network
                 // 호스트는 broadcastPort(7778) 고정, 클라이언트는 ephemeral 포트(0 = OS 자동 할당)
                 int bindPort = respondToLookup ? broadcastPort : 0;
                 udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
+                udpClient.EnableBroadcast = true;
 
                 isListening = true;
 
@@ -208,22 +209,22 @@ namespace DinoAlkkagi.Network
 
         private void SendBroadcastLookup(string code)
         {
+            if (udpClient == null)
+            {
+                Debug.LogWarning("[RoomCodeDiscovery] Cannot send lookup: listener not started.");
+                return;
+            }
+
             try
             {
-                using (UdpClient broadcastClient = new UdpClient())
-                {
-                    broadcastClient.EnableBroadcast = true;
-                    string message = $"LOOKUP:{code}";
-                    byte[] data = Encoding.UTF8.GetBytes(message);
+                string message = $"LOOKUP:{code}";
+                byte[] data = Encoding.UTF8.GetBytes(message);
 
-                    // 브로드캐스트 (같은 LAN의 다른 PC)
-                    broadcastClient.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, broadcastPort));
+                // 리스너의 udpClient로 전송 → 호스트 응답이 리스너 포트로 돌아옴
+                udpClient.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, broadcastPort));
+                udpClient.Send(data, data.Length, new IPEndPoint(IPAddress.Loopback, broadcastPort));
 
-                    // 로컬호스트로도 직접 전송 (같은 PC에서 테스트 시 브로드캐스트가 루프백 안 되는 경우 대비)
-                    broadcastClient.Send(data, data.Length, new IPEndPoint(IPAddress.Loopback, broadcastPort));
-
-                    Debug.Log($"[RoomCodeDiscovery] Sent lookup for code {code}");
-                }
+                Debug.Log($"[RoomCodeDiscovery] Sent lookup for code {code}");
             }
             catch (Exception ex)
             {

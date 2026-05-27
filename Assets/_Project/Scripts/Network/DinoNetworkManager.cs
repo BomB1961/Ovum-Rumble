@@ -17,6 +17,7 @@ public class DinoNetworkManager : NetworkManager
     private int playerCount;
     private float lastRestartTime = -10f;
     private const float RestartCooldown = 2f;
+    private bool disconnectIntended;
 
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
@@ -39,6 +40,7 @@ public class DinoNetworkManager : NetworkManager
         base.Awake();
         if (featureFlags == null)
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
+        Application.quitting += () => disconnectIntended = true;
     }
 
     public override void OnStartServer()
@@ -272,14 +274,24 @@ public class DinoNetworkManager : NetworkManager
     public override void OnClientDisconnect()
     {
         base.OnClientDisconnect();
-        Debug.LogError($"[DinoNetworkManager] Client disconnected. Server at '{networkAddress}:7777' may be unreachable or connection rejected.");
-        Debug.LogError($"[DinoNetworkManager] Check: (1) Host PC 방화벽에서 포트 7777(UDP) 허용 (2) 올바른 IP 주소 입력 (3) Host가 먼저 실행 중인지 확인");
 
-        var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-        if (mmc != null)
+        if (disconnectIntended)
         {
-            mmc.ShowConnectionStatus($"연결 실패: {networkAddress}:7777\n방화벽 및 IP를 확인하세요.");
+            Debug.Log($"[DinoNetworkManager] Client disconnected from '{networkAddress}:7777'.");
         }
+        else
+        {
+            Debug.LogError($"[DinoNetworkManager] Client disconnected. Server at '{networkAddress}:7777' may be unreachable or connection rejected.");
+            Debug.LogError($"[DinoNetworkManager] Check: (1) Host PC 방화벽에서 포트 7777(UDP) 허용 (2) 올바른 IP 주소 입력 (3) Host가 먼저 실행 중인지 확인");
+
+            var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
+            if (mmc != null)
+            {
+                mmc.ShowConnectionStatus($"연결 실패: {networkAddress}:7777\n방화벽 및 IP를 확인하세요.");
+            }
+        }
+
+        disconnectIntended = false;
     }
 
     private void OnClientLoadScene(LoadSceneMessage msg)
@@ -291,5 +303,19 @@ public class DinoNetworkManager : NetworkManager
     public void NotifyGameStarted()
     {
         gameStarted = true;
+    }
+
+    /// <summary>의도적 클라이언트 종료 — OnClientDisconnect에서 Error 대신 Info 로그</summary>
+    public void StopClientSafe()
+    {
+        disconnectIntended = true;
+        StopClient();
+    }
+
+    /// <summary>의도적 호스트 종료 — 내부 StopClient 호출 시에도 Info 로그</summary>
+    public void StopHostSafe()
+    {
+        disconnectIntended = true;
+        StopHost();
     }
 }

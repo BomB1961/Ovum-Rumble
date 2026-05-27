@@ -73,7 +73,7 @@ public class MapSelectController : MonoBehaviour
                     Debug.LogWarning($"[MapSelectController] RoomCode listener warning: {err}");
 
                 SetMapButtonsEnabled(false);
-                SetStatusText($"🏠 방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
+                SetStatusText($"방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
                 Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
             else
