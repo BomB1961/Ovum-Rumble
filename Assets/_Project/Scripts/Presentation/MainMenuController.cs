@@ -148,17 +148,25 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickHostGame()
     {
-        DinoNetworkManager netMan = FindDinoNetworkManager();
-        if (netMan != null)
+        try
         {
-            GameLaunchContext.SetMode(GameMode.NetworkHost);
-            ShowConnectionStatus("호스트 시작 중...");
-            SceneManager.LoadScene(MapSelectSceneName);
-            return;
-        }
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+            {
+                GameLaunchContext.SetMode(GameMode.NetworkHost);
+                ShowConnectionStatus("호스트 시작 중...");
+                SceneManager.LoadScene(MapSelectSceneName);
+                return;
+            }
 
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
-        SceneManager.LoadScene(MapSelectSceneName);
+            GameLaunchContext.SetMode(GameMode.LocalHotseat);
+            SceneManager.LoadScene(MapSelectSceneName);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[MainMenu] OnClickHostGame failed: {ex.Message}");
+            ShowMainMenu();
+        }
     }
 
     public void OnClickStartGame()

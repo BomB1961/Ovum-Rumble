@@ -177,10 +177,20 @@ namespace DinoAlkkagi.Network
                 string lookupCode = message.Substring(7).Trim();
                 if (lookupCode == roomCode)
                 {
-                    string response = $"HERE:{roomCode}";
-                    byte[] responseData = Encoding.UTF8.GetBytes(response);
-                    udpClient.Send(responseData, responseData.Length, sender);
-                    Debug.Log($"[RoomCodeDiscovery] Responded to lookup from {sender.Address}");
+                    try
+                    {
+                        if (udpClient != null)
+                        {
+                            string response = $"HERE:{roomCode}";
+                            byte[] responseData = Encoding.UTF8.GetBytes(response);
+                            udpClient.Send(responseData, responseData.Length, sender);
+                            Debug.Log($"[RoomCodeDiscovery] Responded to lookup from {sender.Address}");
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[RoomCodeDiscovery] Failed to respond: {ex.Message}");
+                    }
                 }
             }
             else if (!amHost && message.StartsWith("HERE:"))
