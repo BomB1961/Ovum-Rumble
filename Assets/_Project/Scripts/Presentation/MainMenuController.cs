@@ -258,22 +258,32 @@ public class MainMenuController : MonoBehaviour
             joinGameButton.gameObject.SetActive(true);
     }
 
+    public void OnClickManual()
+    {
+        ShowControlsPanel();
+    }
+
     private void ShowControlsPanel()
     {
+        SetPanelState(mainMenuPanel, false);
+        SetPanelState(joinPanel, true);
+        SetPanelState(settingsPanel, false);
+        SetPanelState(connectionStatusPanel, false);
         SetPanelState(hostIpInput != null ? hostIpInput.gameObject : null, false);
         SetPanelState(joinGameButton != null ? joinGameButton.gameObject : null, false);
-        SetPanelState(controlsGuideText != null ? controlsGuideText.gameObject : null, true);
 
         if (controlsGuideText != null)
         {
-            controlsGuideText.text = "1. \uB0B4 \uC54C\uC744 \uC120\uD0DD\uD569\uB2C8\uB2E4.\n"
-                + "2. \uB9C8\uC6B0\uC2A4\uB85C \uB4DC\uB798\uADF8\uD574 \uBC29\uD5A5\uACFC \uD798\uC744 \uC815\uD569\uB2C8\uB2E4.\n"
-                + "3. \uB9C8\uC6B0\uC2A4\uB97C \uB193\uC73C\uBA74 \uC54C\uC774 \uBC1C\uC0AC\uB429\uB2C8\uB2E4.\n"
-                + "4. \uC54C\uC774 \uC6C0\uC9C1\uC774\uB294 \uB3D9\uC548\uC5D0\uB294 \uAE30\uB2E4\uB9BD\uB2C8\uB2E4.\n"
-                + "5. \uC0C1\uB300 \uC54C\uC744 \uBAA8\uB450 \uB5A8\uC5B4\uB728\uB9AC\uBA74 \uC2B9\uB9AC\uD569\uB2C8\uB2E4.";
+            controlsGuideText.gameObject.SetActive(true);
+            controlsGuideText.text = "1. 내 알을 선택합니다.\n"
+                + "2. 마우스로 드래그해 방향과 힘을 정합니다.\n"
+                + "3. 마우스를 놓으면 알이 발사됩니다.\n"
+                + "4. 알이 움직이는 동안에는 기다립니다.\n"
+                + "5. 상대 알을 모두 떨어뜨리면 승리합니다.\n\n"
+                + "[되돌아가기] 화면 아무 곳이나 클릭";
         }
 
-        ShowJoinPanel();
+        Invoke(nameof(ShowMainMenu), 8f);
     }
 
     public void ShowConnectionStatus(string message)
@@ -330,6 +340,14 @@ public class MainMenuController : MonoBehaviour
         {
             sfxSlider.onValueChanged.RemoveListener(OnSfxVolumeChanged);
             sfxSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+        }
+
+        // Button_Menual이 씬에 있으면 자동 연결
+        var manualBtn = FindInactiveComponent<Button>("Button_Menual");
+        if (manualBtn != null)
+        {
+            manualBtn.onClick = new Button.ButtonClickedEvent();
+            manualBtn.onClick.AddListener(OnClickManual);
         }
     }
 
@@ -550,7 +568,7 @@ public class MainMenuController : MonoBehaviour
         inputField.textViewport = inputRt;
         inputField.textComponent = textComp;
         inputField.placeholder = placeText;
-        inputField.contentType = TMP_InputField.ContentType.IPv4Address;
+        inputField.contentType = TMP_InputField.ContentType.Standard;
     }
 
     private void InitializeVolumeSliders()
