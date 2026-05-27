@@ -105,8 +105,9 @@ namespace DinoAlkkagi.Network
             try
             {
                 udpClient = new UdpClient();
-                udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, broadcastPort));
+                // 호스트는 broadcastPort(7778) 고정, 클라이언트는 ephemeral 포트(0 = OS 자동 할당)
+                int bindPort = respondToLookup ? broadcastPort : 0;
+                udpClient.Client.Bind(new IPEndPoint(IPAddress.Any, bindPort));
 
                 isListening = true;
 
