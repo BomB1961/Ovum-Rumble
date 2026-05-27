@@ -55,6 +55,7 @@ public class MainMenuController : MonoBehaviour
         GameLaunchContext.ResetToDefault();
         ResolveMissingReferences();
         EnsureVsComputerButton();
+        EnsureJoinButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
         featureFlags ??= Resources.Load<FeatureFlags>("FeatureFlags");
         InitializeVolumeSliders();
@@ -412,6 +413,144 @@ public class MainMenuController : MonoBehaviour
         {
             legacyLabel.text = "컴퓨터와 대결";
         }
+    }
+
+    private void EnsureJoinButton()
+    {
+        if (showJoinPanelButton != null)
+            return;
+
+        Button templateButton = vsComputerButton ?? hostGameButton;
+        if (templateButton == null || templateButton.transform.parent == null)
+            return;
+
+        // Join 버튼 생성
+        GameObject buttonObj = Instantiate(templateButton.gameObject, templateButton.transform.parent);
+        buttonObj.name = "Button_ShowJoinPanel";
+        buttonObj.transform.SetSiblingIndex(templateButton.transform.GetSiblingIndex());
+
+        showJoinPanelButton = buttonObj.GetComponent<Button>();
+        if (showJoinPanelButton != null)
+        {
+            showJoinPanelButton.onClick = new Button.ButtonClickedEvent();
+            showJoinPanelButton.onClick.AddListener(OnClickShowJoinPanel);
+        }
+
+        RectTransform btnRect = buttonObj.GetComponent<RectTransform>();
+        RectTransform tmpRect = templateButton.GetComponent<RectTransform>();
+        if (btnRect != null && tmpRect != null)
+        {
+            btnRect.anchorMin = tmpRect.anchorMin;
+            btnRect.anchorMax = tmpRect.anchorMax;
+            btnRect.pivot = tmpRect.pivot;
+            btnRect.sizeDelta = tmpRect.sizeDelta;
+            btnRect.anchoredPosition = tmpRect.anchoredPosition + new Vector2(0f, 132f);
+        }
+
+        SetButtonText(buttonObj, "IP로 접속");
+
+        // Join 패널도 없으면 동적 생성
+        if (joinPanel == null)
+        {
+            CreateJoinPanel();
+        }
+    }
+
+    private static void SetButtonText(GameObject buttonObj, string text)
+    {
+        TMP_Text tmp = buttonObj.GetComponentInChildren<TMP_Text>(true);
+        if (tmp != null) { tmp.text = text; return; }
+        Text legacy = buttonObj.GetComponentInChildren<Text>(true);
+        if (legacy != null) { legacy.text = text; }
+    }
+
+    private void CreateJoinPanel()
+    {
+        if (mainMenuPanel == null) return;
+
+        // Join 패널 컨테이너
+        GameObject panel = new GameObject("UI_JoinRoomPanel", typeof(RectTransform), typeof(CanvasRenderer));
+        panel.transform.SetParent(mainMenuPanel.transform.parent, false);
+        panel.SetActive(false);
+        joinPanel = panel;
+
+        RectTransform panelRt = panel.GetComponent<RectTransform>();
+        panelRt.anchorMin = Vector2.zero;
+        panelRt.anchorMax = Vector2.one;
+        panelRt.sizeDelta = Vector2.zero;
+        panelRt.offsetMin = Vector2.zero;
+        panelRt.offsetMax = Vector2.zero;
+
+        // IP 입력 필드
+        GameObject inputObj = new GameObject("InputField_HostIP", typeof(RectTransform));
+        inputObj.transform.SetParent(panel.transform, false);
+        TMP_InputField inputField = inputObj.AddComponent<TMP_InputField>();
+        hostIpInput = inputField;
+
+        RectTransform inputRt = inputObj.GetComponent<RectTransform>();
+        inputRt.anchorMin = new Vector2(0.5f, 0.5f);
+        inputRt.anchorMax = new Vector2(0.5f, 0.5f);
+        inputRt.sizeDelta = new Vector2(300, 40);
+        inputRt.anchoredPosition = new Vector2(0, 20);
+
+        // 접속 버튼
+        GameObject joinBtnObj = Instantiate(hostGameButton.gameObject, panel.transform);
+        joinBtnObj.name = "Button_JoinGame";
+        Button joinBtn = joinBtnObj.GetComponent<Button>();
+        if (joinBtn != null)
+        {
+            joinBtn.onClick = new Button.ButtonClickedEvent();
+            joinBtn.onClick.AddListener(OnClickJoinGame);
+        }
+        joinGameButton = joinBtn;
+
+        RectTransform joinBtnRt = joinBtnObj.GetComponent<RectTransform>();
+        joinBtnRt.anchorMin = new Vector2(0.5f, 0.5f);
+        joinBtnRt.anchorMax = new Vector2(0.5f, 0.5f);
+        joinBtnRt.anchoredPosition = new Vector2(0, -40);
+        joinBtnRt.sizeDelta = new Vector2(200, 50);
+        SetButtonText(joinBtnObj, "접속");
+
+        // 취소 버튼
+        GameObject cancelBtnObj = Instantiate(hostGameButton.gameObject, panel.transform);
+        cancelBtnObj.name = "Button_CancelJoin";
+        Button cancelBtn = cancelBtnObj.GetComponent<Button>();
+        if (cancelBtn != null)
+        {
+            cancelBtn.onClick = new Button.ButtonClickedEvent();
+            cancelBtn.onClick.AddListener(OnClickCancelJoin);
+        }
+        cancelJoinButton = cancelBtn;
+
+        RectTransform cancelBtnRt = cancelBtnObj.GetComponent<RectTransform>();
+        cancelBtnRt.anchorMin = new Vector2(0.5f, 0.5f);
+        cancelBtnRt.anchorMax = new Vector2(0.5f, 0.5f);
+        cancelBtnRt.anchoredPosition = new Vector2(0, -100);
+        cancelBtnRt.sizeDelta = new Vector2(200, 50);
+        SetButtonText(cancelBtnObj, "취소");
+
+        // Placeholder text for input (간략 처리)
+        GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform));
+        placeholder.transform.SetParent(inputObj.transform, false);
+        TMP_Text placeText = placeholder.AddComponent<TextMeshProUGUI>();
+        placeText.text = "호스트 IP (예: 192.168.0.5)";
+        placeText.fontSize = 18;
+        placeText.color = Color.gray;
+        placeText.alignment = TextAlignmentOptions.Center;
+
+        // 실제 입력 텍스트
+        GameObject textArea = new GameObject("Text", typeof(RectTransform));
+        textArea.transform.SetParent(inputObj.transform, false);
+        TMP_Text textComp = textArea.AddComponent<TextMeshProUGUI>();
+        textComp.fontSize = 24;
+        textComp.color = Color.white;
+        textComp.alignment = TextAlignmentOptions.Center;
+
+        // TextMeshPro InputField 설정
+        inputField.textViewport = inputRt;
+        inputField.textComponent = textComp;
+        inputField.placeholder = placeText;
+        inputField.contentType = TMP_InputField.ContentType.IPv4Address;
     }
 
     private void InitializeVolumeSliders()
