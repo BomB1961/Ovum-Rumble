@@ -206,11 +206,28 @@ namespace DinoAlkkagi.Rules
         private Vector3 TargetSmart(EggController from, List<EggController> enemies)
         {
             // 밀집 지역 우선 + 가장자리 적 우선
+            // 아군 알 근처 적은 페널티 (발사 시 아군 피격 방지)
             return enemies
                 .OrderByDescending(e => EdgeDanger(e.transform.position) * 0.6f
                                        + CountNearbyAllies(e, enemies) * 0.1f
-                                       + CountNearbyAllies(e, GetAliveEggs(aiPlayerId)) * 0.1f) // 내 알도 많으면 위험
+                                       - CountNearbyAllies(e, GetAliveEggs(aiPlayerId)) * 0.15f)
                 .First().transform.position;
+        }
+
+        /// <summary>발사 경로상에 있는 아군 알 수 (자해 방지)</summary>
+        private int CountFriendliesInLineOfFire(EggController from, Vector3 targetPos, List<EggController> friendlies)
+        {
+            Vector3 fireDir = (targetPos - from.transform.position).normalized;
+            fireDir.y = 0f;
+            float threshold = 0.85f; // 좁은 각도로 정밀 검사
+
+            return friendlies.Count(e =>
+            {
+                if (e == from) return false;
+                Vector3 toFriendly = (e.transform.position - from.transform.position).normalized;
+                toFriendly.y = 0f;
+                return Vector3.Dot(fireDir, toFriendly) > threshold;
+            });
         }
 
         // ─── 방향 계산 ────────────────────────────────────────
@@ -264,6 +281,10 @@ namespace DinoAlkkagi.Rules
                     break;
             }
 
+            // 아군 알이 발사 경로에 있으면 힘 감소 (자해 방지)
+            float ownLineCount = CountFriendliesInLineOfFire(selectedEgg, targetPos, GetAliveEggs(aiPlayerId));
+            baseForce *= Mathf.Lerp(1f, 0.35f, Mathf.Clamp01(ownLineCount * 0.5f));
+
             return Mathf.Clamp(baseForce * Random.Range(0.85f, 1.15f), minForce, maxForce);
         }
 
@@ -303,13 +324,14 @@ namespace DinoAlkkagi.Rules
         /// <summary>선택한 알의 발사 방향에 있는 적 수 (일직선 판단)</summary>
         private int CountEnemiesInLine(EggController egg, List<EggController> enemies)
         {
-            Vector3 toCenter = (Vector3.zero - egg.transform.position).normalized;
+            // 플레이어 기준 적진 방향: P1(1)은 +Z, P2(2)는 -Z
+            Vector3 forwardDir = (aiPlayerId == 1) ? Vector3.forward : Vector3.back;
             float threshold = 0.7f; // 방향 일치 임계값
 
             return enemies.Count(e =>
             {
                 Vector3 toEnemy = (e.transform.position - egg.transform.position).normalized;
-                return Vector3.Dot(toCenter, toEnemy) > threshold;
+                return Vector3.Dot(forwardDir, toEnemy) > threshold;
             });
         }
 
