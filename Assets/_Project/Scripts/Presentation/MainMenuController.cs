@@ -64,15 +64,36 @@ public class MainMenuController : MonoBehaviour
 
         // 커맨드라인 자동 접속: --auto-join 127.0.0.1
         string[] args = System.Environment.GetCommandLineArgs();
-        for (int i = 0; i < args.Length - 1; i++)
+        bool hasAutoHost = false;
+        bool hasAutoJoin = false;
+        for (int i = 0; i < args.Length; i++)
         {
-            if (args[i].ToLower() == "--auto-join")
+            if (args[i].ToLower() == "--auto-host" && !hasAutoJoin)
+            {
+                hasAutoHost = true;
+                Debug.Log($"[MainMenu] Auto-host requested");
+            }
+            else if (args[i].ToLower() == "--auto-join" && i + 1 < args.Length && !hasAutoHost)
             {
                 pendingAutoJoinIp = args[i + 1];
+                hasAutoJoin = true;
                 Debug.Log($"[MainMenu] Auto-join requested: {pendingAutoJoinIp}");
-                Invoke(nameof(DoAutoJoin), 1f);
-                break;
             }
+        }
+        if (hasAutoHost)
+            Invoke(nameof(DoAutoHost), 1f);
+        else if (hasAutoJoin)
+            Invoke(nameof(DoAutoJoin), 1f);
+    }
+
+    private void DoAutoHost()
+    {
+        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        if (netMan != null)
+        {
+            Debug.Log("[MainMenu] Auto-hosting...");
+            netMan.StartNetworkHost();
+            SceneManager.LoadScene(MapSelectSceneName);
         }
     }
 
