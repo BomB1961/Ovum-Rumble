@@ -256,9 +256,11 @@ namespace DinoAlkkagi.Core
             if (isClientOnly)
             {
                 // 클라이언트: 항상 P2 제어, P1 턴엔 입력 차단
+                // 게임 종료 후 늦게 도착한 TurnStarted에서 입력 재개되지 않도록 currentState 체크
                 flickInputController.SetActivePlayer(GameLaunchContext.LocalPlayerId);
                 flickInputController.SetInputEnabled(playerId == GameLaunchContext.LocalPlayerId
-                    && !turnController.IsInputLocked);
+                    && !turnController.IsInputLocked
+                    && currentState != GameState.Result);
             }
             else if (GameLaunchContext.IsNetworkHost)
             {
