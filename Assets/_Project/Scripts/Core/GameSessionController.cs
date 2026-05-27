@@ -317,6 +317,13 @@ namespace DinoAlkkagi.Core
                 return;
             }
 
+            // 네트워크 호스트: P1 턴만 직접 조종
+            if (GameLaunchContext.IsNetworkHost && turnController.CurrentPlayerId != 1)
+            {
+                flickInputController.SetInputEnabled(false);
+                return;
+            }
+
             bool isAiTurn = aiInputController != null && aiInputController.IsAiPlayer(turnController.CurrentPlayerId);
             flickInputController.SetInputEnabled(!turnController.IsInputLocked && !isAiTurn);
         }
