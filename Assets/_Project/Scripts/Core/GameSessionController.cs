@@ -80,7 +80,8 @@ namespace DinoAlkkagi.Core
             networkManager ??= FindFirstObjectByType<DinoNetworkManager>();
 
             isServerMode = GameLaunchContext.IsNetworkHost || !GameLaunchContext.IsNetwork;
-            isClientOnly = GameLaunchContext.IsNetworkClient;
+            // 호스트(서버+클라이언트)는 isClientOnly=false. 순수 클라이언트만 true.
+            isClientOnly = GameLaunchContext.IsNetworkClient && !GameLaunchContext.IsNetworkHost;
 
             if (flickInputController != null)
                 flickInputController.UseNetworkRelay = isClientOnly;

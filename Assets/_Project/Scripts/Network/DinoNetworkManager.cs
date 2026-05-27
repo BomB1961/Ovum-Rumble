@@ -157,7 +157,11 @@ public class DinoNetworkManager : NetworkManager
     private void OnClientJoinAccepted(JoinAcceptedMessage msg)
     {
         GameLaunchContext.SetNetworkClientInfo(msg.assignedPlayerId);
-        GameLaunchContext.SetMode(GameMode.NetworkClient);
+        // 호스트의 내부 클라이언트도 이 메시지를 받음. 모드를 덮어쓰면 안 됨.
+        if (!NetworkServer.active)
+        {
+            GameLaunchContext.SetMode(GameMode.NetworkClient);
+        }
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
         // 연결 성공 UI 업데이트
