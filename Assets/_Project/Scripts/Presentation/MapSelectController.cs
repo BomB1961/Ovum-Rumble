@@ -18,8 +18,6 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private TMP_Text connectionStatusText;
 
     private DinoNetworkManager netMan;
-    private float connectionCheckTimer;
-    private bool hostFailed;
 
     private void Awake()
     {
@@ -40,7 +38,16 @@ public class MapSelectController : MonoBehaviour
             if (!NetworkServer.active && !NetworkClient.active)
             {
                 GameLaunchContext.SetMode(GameMode.NetworkHost);
-                netMan.StartNetworkHost();
+                try
+                {
+                    netMan.StartNetworkHost();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[MapSelectController] Host start failed: {ex.Message}");
+                    FallbackToLocalMode();
+                    return;
+                }
             }
             else
             {
@@ -57,14 +64,12 @@ public class MapSelectController : MonoBehaviour
             {
                 ShowHostIp();
                 SetMapButtonsEnabled(false);
-                SetStatusText("상대방 연결을 기다리는 중...");
+                SetStatusText("상대방 연결을 기다리는 중...\nLAN IP를 확인하려면 로그 파일을 참고하세요.");
                 Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
             else
             {
-                hostFailed = true;
-                SetStatusText("[오류] 서버를 시작할 수 없습니다.\n포트 7777가 사용 중인지 확인하세요.");
-                Debug.LogError("[MapSelectController] Failed to start network host! Port 7777 may be in use.");
+                FallbackToLocalMode();
             }
         }
         else if (GameLaunchContext.IsNetworkClient)
@@ -73,6 +78,15 @@ public class MapSelectController : MonoBehaviour
             SetStatusText("호스트가 맵을 선택 중입니다...");
             Debug.Log("[MapSelectController] Client waiting for host map selection.");
         }
+    }
+
+    private void FallbackToLocalMode()
+    {
+        Debug.LogWarning("[MapSelectController] Host 실패 → LocalHotseat 모드로 전환합니다.");
+        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+        GameLaunchContext.ResetToDefault();
+        SetMapButtonsEnabled(true);
+        SetStatusText("[안내] 네트워크 호스트를 시작할 수 없습니다.\n포트 7777이 이미 사용 중입니다. 로컬 핫시트 모드로 전환합니다.");
     }
 
     private void ShowHostIp()
@@ -88,28 +102,6 @@ public class MapSelectController : MonoBehaviour
             }
         }
         Debug.Log($"[MapSelectController] Host IP: {ips} (port: 7777)");
-    }
-
-    private void Update()
-    {
-        if (!hostFailed || netMan == null) return;
-        connectionCheckTimer += Time.unscaledDeltaTime;
-        if (connectionCheckTimer >= 3f)
-        {
-            connectionCheckTimer = 0f;
-            if (!NetworkServer.active)
-            {
-                Debug.LogWarning("[MapSelectController] Retrying server start...");
-                netMan.StartNetworkHost();
-                if (NetworkServer.active)
-                {
-                    hostFailed = false;
-                    ShowHostIp();
-                    SetMapButtonsEnabled(false);
-                    SetStatusText("상대방 연결을 기다리는 중...");
-                }
-            }
-        }
     }
 
     private void OnDestroy()
