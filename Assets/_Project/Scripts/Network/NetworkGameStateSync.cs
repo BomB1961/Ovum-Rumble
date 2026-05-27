@@ -119,7 +119,7 @@ public class NetworkGameStateSync : MonoBehaviour
 
     private void Update()
     {
-        if (NetworkServer.active && isServerActive && isResolving)
+        if (NetworkServer.active && isServerActive)
         {
             snapshotTimer += Time.deltaTime;
             if (snapshotTimer >= snapshotInterval)
