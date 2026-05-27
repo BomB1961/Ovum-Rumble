@@ -245,9 +245,6 @@ public class GameUIController : MonoBehaviour
         turnTimeText ??= CreateHudText("Text_TurnTime", "00:30", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(430f, 50f), TextAlignmentOptions.Center);
         gameTimeText ??= CreateHudText("Text_GameTime", "00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
         exitButton ??= CreateResultExitButton();
-        settingsMainMenuButton ??= CreateSettingsButton(mainMenuButton, "Button_SettingsMainMenu", "\uba54\uc778 \ud654\uba74", new Vector2(-320f, -260f));
-        settingsRetryButton ??= CreateSettingsButton(retryButton, "Button_SettingsRetry", "\uc7ac\uc2dc\uc791", new Vector2(0f, -260f));
-        settingsExitButton ??= CreateSettingsButton(exitButton, "Button_SettingsExit", "\uac8c\uc784 \uc885\ub8cc", new Vector2(320f, -260f));
     }
 
     private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
@@ -401,43 +398,6 @@ public class GameUIController : MonoBehaviour
             if (legacyLabel != null)
             {
                 legacyLabel.text = "\uc885\ub8cc";
-            }
-        }
-
-        return button;
-    }
-
-    private Button CreateSettingsButton(Button template, string objectName, string label, Vector2 anchoredPosition)
-    {
-        if (settingsPanel == null || template == null)
-        {
-            return null;
-        }
-
-        GameObject buttonObject = Instantiate(template.gameObject, settingsPanel.transform);
-        buttonObject.name = objectName;
-
-        RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-        rectTransform.pivot = new Vector2(0.5f, 0.5f);
-        rectTransform.anchoredPosition = anchoredPosition;
-        rectTransform.sizeDelta = new Vector2(300f, 60f);
-
-        Button button = buttonObject.GetComponent<Button>();
-        button.onClick.RemoveAllListeners();
-
-        TMP_Text tmpLabel = buttonObject.GetComponentInChildren<TMP_Text>();
-        if (tmpLabel != null)
-        {
-            tmpLabel.text = label;
-        }
-        else
-        {
-            Text legacyLabel = buttonObject.GetComponentInChildren<Text>();
-            if (legacyLabel != null)
-            {
-                legacyLabel.text = label;
             }
         }
 
