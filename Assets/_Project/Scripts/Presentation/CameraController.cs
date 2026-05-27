@@ -164,6 +164,9 @@ public class CameraController : MonoBehaviour
 
     private void HandleTurnStarted(int playerId)
     {
+        // Host: TurnController.AdvanceTurn() + OnClientTurnChange 중복 방지
+        if (playerId == currentViewerId) return;
+
         if (currentViewerId > 0)
             SaveCurrentState(currentViewerId);
 

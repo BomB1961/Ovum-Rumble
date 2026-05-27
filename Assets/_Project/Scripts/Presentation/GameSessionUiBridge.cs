@@ -69,6 +69,7 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         currentPlayerId = playerId;
         turnStartedAt = Time.time;
+        hudPresenter?.ShowGuide("알을 조준하세요.");
         RefreshHud();
     }
 
