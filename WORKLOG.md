@@ -1,5 +1,7 @@
 # WORKLOG
 
+- 2026-05-27: Implemented Person A second extension slice: `EggController` now caches base Rigidbody mass/damping values and applies `EggDefinition` mass, linear damping, and angular damping multipliers when definitions are initialized or changed. Missing definitions restore base Rigidbody values, and multiplier `1.0` preserves MVP behavior. Scene/Prefab, UI selection, HP, visual binding, Rules, and Network flows remain unchanged.
+
 - 2026-05-27: Implemented Person A first extension slice: added `EggType`, `EggDefinition`, and `EggController` definition support. Only `launchImpulseMultiplier` is applied at the final `EggController.Launch()` impulse point, so player input, AI force calculation, and Rules flow remain unchanged. `Default` or missing definitions keep multiplier `1.0` for MVP parity. Heavy, Bouncy, HP, UI selection, and visual binding remain deferred.
 
 ## 2026-05-27
