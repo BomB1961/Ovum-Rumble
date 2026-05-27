@@ -159,6 +159,13 @@ public class DinoNetworkManager : NetworkManager
         GameLaunchContext.SetNetworkClientInfo(msg.assignedPlayerId);
         GameLaunchContext.SetMode(GameMode.NetworkClient);
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
+
+        // 연결 성공 UI 업데이트
+        var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
+        if (mmc != null)
+        {
+            mmc.ShowConnectionStatus($"P{msg.assignedPlayerId}로 접속됨! 호스트가 맵을 선택 중입니다...");
+        }
     }
 
     private void OnClientStateSnapshot(StateSnapshotMessage msg)
