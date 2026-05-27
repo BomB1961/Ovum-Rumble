@@ -47,18 +47,7 @@ main              ← 항상 실행 가능해야 함
 - 충돌 발생 시 코어 기능 우선 보존
 - 병합 후 즉시 main 실행 가능 상태 확인
 
-### 4. 사용 금지 도구
-- **unity-cli 사용 금지** — Unity Editor를 CLI로 제어하는 도구. 현재 프로젝트에서 작동하지 않음.
-- CLI 도구 대신 **파일을 직접 읽어서** Unity 정보를 확인한다:
-  - `*.unity` (씬 파일) → YAML 형식. 하이라키 구조, GameObject, 컴포넌트 연결 확인 가능
-  - `*.prefab` (프리팹 파일) → YAML 형식. 프리팹 구조, 컴포넌트, 프로퍼티 값 확인 가능
-  - `*.asset` (ScriptableObject 등) → YAML 형식. SO 인스턴스의 필드 값 확인 가능
-  - `*.meta` → GUID, 파일 임포트 설정 확인 가능
-  - 예: 씬의 하이라키 구조를 보려면 `Assets/_Project/Scenes/Prototype.unity` 파일을 읽음
-  - 예: 프리팹 구성을 보려면 `Assets/_Project/Prefabs/...prefab` 파일을 읽음
-- 구체적인 금지 사항은 Spec.md 또는 프로젝트 문서 참조
-
-### 5. 문서화 규칙
+### 4. 문서화 규칙
 - 마크다운(.md) 형식 사용
 - 상태별 문서 분리:
   - `progress/` - 진행 중 문서
@@ -229,7 +218,7 @@ main              ← 항상 실행 가능해야 함
 - [x] 에셋은 Art/, Audio/, Prefabs/, ScriptableObjects/ 로 분리
 
 ### 4. 프로젝트 특화 규칙
-- [x] 사용 금지 도구: unity-cli (위 4번 항목 참조)
+
 - [x] 특수 코딩 규칙: 직접 물리 엔진 금지 — Rigidbody/Collider/Physic Material 사용
 - [x] 성능 목표: 타겟 60fps (Windows 핫시트)
 - [x] 프로젝트 철학: 기본 알까기 코어가 항상 먼저, 확장은 FeatureFlags로 On/Off
