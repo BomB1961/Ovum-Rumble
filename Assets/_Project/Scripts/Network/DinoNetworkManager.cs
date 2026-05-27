@@ -210,6 +210,16 @@ public class DinoNetworkManager : NetworkManager
         GameLaunchContext.ServerIP = "0.0.0.0";
         networkAddress = "localhost";
         StartHost();
+
+        // 서버 시작 직후 상태 로깅
+        if (NetworkServer.active)
+        {
+            Debug.Log($"[DinoNetworkManager] Host started on port 7777 (UDP). LAN IP 확인 후 클라이언트에서 입력하세요.");
+        }
+        else
+        {
+            Debug.LogError("[DinoNetworkManager] Host FAILED to start! Port 7777 may be in use by another process.");
+        }
     }
 
     public void StartNetworkClient(string ip)
@@ -246,6 +256,19 @@ public class DinoNetworkManager : NetworkManager
     {
         GameLaunchContext.SelectMap((MapId)msg.mapId);
         Debug.Log($"[DinoNetworkManager] Client received MapSelect: {msg.mapId}");
+    }
+
+    public override void OnClientDisconnect()
+    {
+        base.OnClientDisconnect();
+        Debug.LogError($"[DinoNetworkManager] Client disconnected. Server at '{networkAddress}:7777' may be unreachable or connection rejected.");
+        Debug.LogError($"[DinoNetworkManager] Check: (1) Host PC 방화벽에서 포트 7777(UDP) 허용 (2) 올바른 IP 주소 입력 (3) Host가 먼저 실행 중인지 확인");
+
+        var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
+        if (mmc != null)
+        {
+            mmc.ShowConnectionStatus($"연결 실패: {networkAddress}:7777\n방화벽 및 IP를 확인하세요.");
+        }
     }
 
     private void OnClientLoadScene(LoadSceneMessage msg)

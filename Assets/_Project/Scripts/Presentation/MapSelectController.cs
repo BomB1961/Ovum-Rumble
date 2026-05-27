@@ -18,6 +18,8 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private TMP_Text connectionStatusText;
 
     private DinoNetworkManager netMan;
+    private float connectionCheckTimer;
+    private bool hostFailed;
 
     private void Awake()
     {
@@ -37,6 +39,7 @@ public class MapSelectController : MonoBehaviour
 
             if (!NetworkServer.active && !NetworkClient.active)
             {
+                GameLaunchContext.SetMode(GameMode.NetworkHost);
                 netMan.StartNetworkHost();
             }
             else
@@ -49,15 +52,63 @@ public class MapSelectController : MonoBehaviour
                 }
             }
 
-            SetMapButtonsEnabled(false);
-            SetStatusText("상대방 연결을 기다리는 중...");
-            Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
+            // 서버가 정상 시작되었는지 확인
+            if (NetworkServer.active)
+            {
+                ShowHostIp();
+                SetMapButtonsEnabled(false);
+                SetStatusText("상대방 연결을 기다리는 중...");
+                Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
+            }
+            else
+            {
+                hostFailed = true;
+                SetStatusText("[오류] 서버를 시작할 수 없습니다.\n포트 7777가 사용 중인지 확인하세요.");
+                Debug.LogError("[MapSelectController] Failed to start network host! Port 7777 may be in use.");
+            }
         }
         else if (GameLaunchContext.IsNetworkClient)
         {
             SetMapButtonsEnabled(false);
             SetStatusText("호스트가 맵을 선택 중입니다...");
             Debug.Log("[MapSelectController] Client waiting for host map selection.");
+        }
+    }
+
+    private void ShowHostIp()
+    {
+        System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+        string ips = "";
+        foreach (var ip in host.AddressList)
+        {
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
+                if (ips.Length > 0) ips += " / ";
+                ips += ip.ToString();
+            }
+        }
+        Debug.Log($"[MapSelectController] Host IP: {ips} (port: 7777)");
+    }
+
+    private void Update()
+    {
+        if (!hostFailed || netMan == null) return;
+        connectionCheckTimer += Time.unscaledDeltaTime;
+        if (connectionCheckTimer >= 3f)
+        {
+            connectionCheckTimer = 0f;
+            if (!NetworkServer.active)
+            {
+                Debug.LogWarning("[MapSelectController] Retrying server start...");
+                netMan.StartNetworkHost();
+                if (NetworkServer.active)
+                {
+                    hostFailed = false;
+                    ShowHostIp();
+                    SetMapButtonsEnabled(false);
+                    SetStatusText("상대방 연결을 기다리는 중...");
+                }
+            }
         }
     }
 
