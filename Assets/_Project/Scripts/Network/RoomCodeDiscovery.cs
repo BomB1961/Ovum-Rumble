@@ -199,10 +199,15 @@ namespace DinoAlkkagi.Network
                 using (UdpClient broadcastClient = new UdpClient())
                 {
                     broadcastClient.EnableBroadcast = true;
-                    IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, broadcastPort);
                     string message = $"LOOKUP:{code}";
                     byte[] data = Encoding.UTF8.GetBytes(message);
-                    broadcastClient.Send(data, data.Length, broadcastEndPoint);
+
+                    // 브로드캐스트 (같은 LAN의 다른 PC)
+                    broadcastClient.Send(data, data.Length, new IPEndPoint(IPAddress.Broadcast, broadcastPort));
+
+                    // 로컬호스트로도 직접 전송 (같은 PC에서 테스트 시 브로드캐스트가 루프백 안 되는 경우 대비)
+                    broadcastClient.Send(data, data.Length, new IPEndPoint(IPAddress.Loopback, broadcastPort));
+
                     Debug.Log($"[RoomCodeDiscovery] Sent lookup for code {code}");
                 }
             }
