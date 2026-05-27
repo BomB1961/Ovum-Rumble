@@ -32,6 +32,7 @@ namespace DinoAlkkagi.Rules
         {
             originalFixedDeltaTime = Time.fixedDeltaTime;
             originalMaxDeltaTime = Time.maximumDeltaTime;
+            settings ??= FindFirstObjectByType<GameSettings>();
         }
 
         private void OnEnable()
@@ -66,6 +67,12 @@ namespace DinoAlkkagi.Rules
         private void HandleOnEggLaunched(EggController egg)
         {
             if (isClientOnly) return;
+            if (settings == null)
+            {
+                Debug.LogError("[MotionResolver] GameSettings is missing. Resolve cannot start.", this);
+                return;
+            }
+
             isResolving = true;
             stopTimer = 0f;
             resolveTimer = 0f;
@@ -87,10 +94,10 @@ namespace DinoAlkkagi.Rules
             resolveTimer += Time.unscaledDeltaTime * settings.resolveTimeScale;
 
             // [6-3] 강제 턴 종료: 최대 해석 시간 초과 시 모든 알 강제 정지
-            if (resolveTimer >= settings.maxResolveTime)
+            if (settings.maxResolveTime > 0f && resolveTimer >= settings.maxResolveTime)
             {
-                Debug.Log($"[MotionResolver] Max resolve time ({settings.maxResolveTime}s) reached. Forcing stop.");
                 ForceStopAllEggs();
+                EndResolve($"Max resolve time reached ({settings.maxResolveTime:0.##}s). Ending resolve.");
                 return;
             }
 
@@ -102,9 +109,7 @@ namespace DinoAlkkagi.Rules
                 stopTimer += Time.unscaledDeltaTime;
                 if (stopTimer >= settings.stopHoldTime)
                 {
-                    Debug.Log("[MotionResolver] All eggs stopped. Ending resolve.");
-                    EndResolve();
-                    GameEvents.TriggerAllEggsStopped();
+                    EndResolve("All eggs stopped. Ending resolve.");
                 }
             }
             else
@@ -141,19 +146,21 @@ namespace DinoAlkkagi.Rules
                     trackedEggs.RemoveAt(i);
                     continue;
                 }
-                if (!trackedEggs[i].IsAlive) continue;
-                trackedEggs[i].StopImmediately();
-            }
 
-            EndResolve();
-            GameEvents.TriggerAllEggsStopped();
+                if (trackedEggs[i].IsAlive)
+                {
+                    trackedEggs[i].StopImmediately();
+                }
+            }
         }
 
-        private void EndResolve()
+        private void EndResolve(string reason)
         {
+            Debug.Log($"[MotionResolver] {reason}");
             isResolving = false;
             Time.fixedDeltaTime = originalFixedDeltaTime;
             Time.maximumDeltaTime = originalMaxDeltaTime;
+            GameEvents.TriggerAllEggsStopped();
         }
 
         public void RegisterEgg(EggController egg)
