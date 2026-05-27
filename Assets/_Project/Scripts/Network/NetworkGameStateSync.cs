@@ -17,6 +17,19 @@ public class NetworkGameStateSync : MonoBehaviour
     private bool isResolving;
     private bool isServerActive;
 
+    // 클라이언트 보간(Interpolation) 상태
+    private struct EggInterpState
+    {
+        public Vector3 prevPos;
+        public Quaternion prevRot;
+        public Vector3 nextPos;
+        public Quaternion nextRot;
+        public bool initialized;
+    }
+    private Dictionary<int, EggInterpState> interpStates = new Dictionary<int, EggInterpState>();
+    private float interpTimer;
+    private float interpDuration = 0.05f;
+
     private void Awake()
     {
         settings ??= FindFirstObjectByType<GameSettings>();
@@ -87,13 +100,34 @@ public class NetworkGameStateSync : MonoBehaviour
 
     private void Update()
     {
-        if (!NetworkServer.active || !isServerActive || !isResolving) return;
-
-        snapshotTimer += Time.deltaTime;
-        if (snapshotTimer >= snapshotInterval)
+        if (NetworkServer.active && isServerActive && isResolving)
         {
-            snapshotTimer = 0f;
-            SendSnapshot();
+            // 서버: 스냅샷 전송
+            snapshotTimer += Time.deltaTime;
+            if (snapshotTimer >= snapshotInterval)
+            {
+                snapshotTimer = 0f;
+                SendSnapshot();
+            }
+        }
+
+        // 클라이언트: 보간(Interpolation) 수행
+        if (GameLaunchContext.IsNetworkClient && interpDuration > 0f)
+        {
+            interpTimer += Time.deltaTime;
+            float t = Mathf.Clamp01(interpTimer / interpDuration);
+
+            foreach (var kvp in interpStates)
+            {
+                var egg = FindEggByEggId(kvp.Key, session != null ? session.AllEggs : null);
+                if (egg == null) continue;
+
+                var state = kvp.Value;
+                if (!state.initialized) continue;
+
+                egg.transform.position = Vector3.Lerp(state.prevPos, state.nextPos, t);
+                egg.transform.rotation = Quaternion.Slerp(state.prevRot, state.nextRot, t);
+            }
         }
     }
 
@@ -173,15 +207,39 @@ public class NetworkGameStateSync : MonoBehaviour
             EggController egg = FindEggByEggId((int)eggState.netId, session.AllEggs);
             if (egg == null) continue;
 
-            egg.transform.position = eggState.position;
-            egg.transform.rotation = eggState.rotation;
+            if (isClientOnly)
+            {
+                // 클라이언트: 보간을 위해 이전 상태 저장 후 다음 프레임부터 Lerp
+                int eggId = (int)eggState.netId;
+                EggInterpState st;
+                if (interpStates.TryGetValue(eggId, out st))
+                {
+                    st.prevPos = st.nextPos;
+                    st.prevRot = st.nextRot;
+                }
+                else
+                {
+                    st.prevPos = egg.transform.position;
+                    st.prevRot = egg.transform.rotation;
+                }
+                st.nextPos = eggState.position;
+                st.nextRot = eggState.rotation;
+                st.initialized = true;
+                interpStates[eggId] = st;
+                interpTimer = 0f;
+            }
+            else
+            {
+                // 서버: 직접 설정
+                egg.transform.position = eggState.position;
+                egg.transform.rotation = eggState.rotation;
+            }
 
             if (egg.Rigidbody != null)
             {
                 egg.Rigidbody.linearVelocity = eggState.velocity;
 
-                // 클라이언트는 물리 직접 실행 안 함 — kinematic 상태 유지
-                // 서버(호스트)에서만 물리 상태를 스냅샷과 동기화
+                // 서버에서만 물리 상태 동기화
                 if (!isClientOnly)
                 {
                     egg.Rigidbody.isKinematic = !eggState.isAlive;
