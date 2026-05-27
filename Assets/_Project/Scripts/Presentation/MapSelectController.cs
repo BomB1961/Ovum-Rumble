@@ -73,7 +73,8 @@ public class MapSelectController : MonoBehaviour
                     Debug.LogWarning($"[MapSelectController] RoomCode listener warning: {err}");
 
                 SetMapButtonsEnabled(false);
-                SetStatusText($"방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
+                string ipText = !string.IsNullOrEmpty(hostIpString) ? $"\n또는 IP 직접 입력: {hostIpString}" : "";
+                SetStatusText($"방 코드: {code}{ipText}\n같은 컴퓨터: '127.0.0.1' 입력");
                 Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
             else
@@ -110,8 +111,11 @@ public class MapSelectController : MonoBehaviour
                 ips += ip.ToString();
             }
         }
+        hostIpString = ips;
         Debug.Log($"[MapSelectController] Host IP: {ips} (port: 7777)");
     }
+
+    private string hostIpString;
 
     private void OnDestroy()
     {
