@@ -188,6 +188,8 @@ public class DinoNetworkManager : NetworkManager
 
     private void OnClientGameResult(GameResultMessage msg)
     {
+        if (NetworkServer.active) return;
+
         GameResult result = (GameResult)msg.result;
         GameEvents.TriggerGameEnded(result);
     }

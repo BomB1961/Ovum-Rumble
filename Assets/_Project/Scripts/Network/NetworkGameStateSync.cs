@@ -10,29 +10,31 @@ public class NetworkGameStateSync : MonoBehaviour
 {
     [SerializeField] private GameSettings settings;
     [SerializeField] private float snapshotInterval = 0.05f;
+    [SerializeField] private float bufferDelay = 0.1f;
+    [SerializeField] private float maxExtrapolationTime = 0.25f;
 
     private GameSessionController session;
     private TurnController turnController;
+    private GameSessionUiBridge uiBridge;
     private float snapshotTimer;
     private bool isResolving;
     private bool isServerActive;
+    private bool gameEndSent;
 
-    // 클라이언트 보간(Interpolation) 상태
-    private struct EggInterpState
+    // 클라이언트 스냅샷 버퍼
+    private struct TimestampedSnapshot
     {
-        public Vector3 prevPos;
-        public Quaternion prevRot;
-        public Vector3 nextPos;
-        public Quaternion nextRot;
-        public bool initialized;
+        public float timestamp;
+        public EggState[] states;
     }
-    private Dictionary<int, EggInterpState> interpStates = new Dictionary<int, EggInterpState>();
-    private float interpTimer;
-    private float interpDuration = 0.05f;
+    private Queue<TimestampedSnapshot> snapshotBuffer = new Queue<TimestampedSnapshot>();
+    private float clientTime;
 
     private void Awake()
     {
-        settings ??= FindFirstObjectByType<GameSettings>();
+        settings ??= Resources.Load<GameSettings>("GameSettings_Default");
+        if (settings == null)
+            settings = FindFirstObjectByType<GameSettings>();
     }
 
     private void OnEnable()
@@ -40,6 +42,7 @@ public class NetworkGameStateSync : MonoBehaviour
         GameEvents.OnEggLaunched += HandleEggLaunched;
         GameEvents.OnAllEggsStopped += HandleAllEggsStopped;
         GameEvents.OnGameEnded += HandleOnGameEnded;
+        GameEvents.OnGameStarted += HandleOnGameStarted;
     }
 
     private void OnDisable()
@@ -47,13 +50,24 @@ public class NetworkGameStateSync : MonoBehaviour
         GameEvents.OnEggLaunched -= HandleEggLaunched;
         GameEvents.OnAllEggsStopped -= HandleAllEggsStopped;
         GameEvents.OnGameEnded -= HandleOnGameEnded;
+        GameEvents.OnGameStarted -= HandleOnGameStarted;
     }
 
     private void Start()
     {
         session = FindFirstObjectByType<GameSessionController>();
         turnController = FindFirstObjectByType<TurnController>();
+        uiBridge = FindFirstObjectByType<GameSessionUiBridge>();
         isServerActive = GameLaunchContext.IsNetworkHost || !GameLaunchContext.IsNetwork;
+    }
+
+    private void HandleOnGameStarted()
+    {
+        gameEndSent = false;
+        snapshotBuffer.Clear();
+        clientTime = 0f;
+        isResolving = false;
+        snapshotTimer = 0f;
     }
 
     private void HandleEggLaunched(EggController egg)
@@ -70,6 +84,7 @@ public class NetworkGameStateSync : MonoBehaviour
         if (NetworkServer.active)
         {
             SendSnapshot();
+            if (gameEndSent) return;
             if (turnController != null)
             {
                 TurnChangeMessage turnMsg = new TurnChangeMessage { playerId = turnController.CurrentPlayerId };
@@ -81,6 +96,9 @@ public class NetworkGameStateSync : MonoBehaviour
     private void HandleOnGameEnded(GameResult result)
     {
         if (!NetworkServer.active || !isServerActive) return;
+        if (gameEndSent) return;
+
+        gameEndSent = true;
 
         int resultValue;
         switch (result)
@@ -93,6 +111,7 @@ public class NetworkGameStateSync : MonoBehaviour
 
         if (resultValue > 0)
         {
+            SendSnapshot();
             GameResultMessage resultMsg = new GameResultMessage { result = resultValue };
             NetworkServer.SendToAll(resultMsg);
         }
@@ -102,7 +121,6 @@ public class NetworkGameStateSync : MonoBehaviour
     {
         if (NetworkServer.active && isServerActive && isResolving)
         {
-            // 서버: 스냅샷 전송
             snapshotTimer += Time.deltaTime;
             if (snapshotTimer >= snapshotInterval)
             {
@@ -111,23 +129,10 @@ public class NetworkGameStateSync : MonoBehaviour
             }
         }
 
-        // 클라이언트: 보간(Interpolation) 수행
-        if (GameLaunchContext.IsNetworkClient && interpDuration > 0f)
+        if (GameLaunchContext.IsNetworkClient && !NetworkServer.active)
         {
-            interpTimer += Time.deltaTime;
-            float t = Mathf.Clamp01(interpTimer / interpDuration);
-
-            foreach (var kvp in interpStates)
-            {
-                var egg = FindEggByEggId(kvp.Key, session != null ? session.AllEggs : null);
-                if (egg == null) continue;
-
-                var state = kvp.Value;
-                if (!state.initialized) continue;
-
-                egg.transform.position = Vector3.Lerp(state.prevPos, state.nextPos, t);
-                egg.transform.rotation = Quaternion.Slerp(state.prevRot, state.nextRot, t);
-            }
+            clientTime += Time.deltaTime;
+            InterpolateFromBuffer();
         }
     }
 
@@ -166,13 +171,13 @@ public class NetworkGameStateSync : MonoBehaviour
         }
 
         TurnController turnCtrl = turnController ?? FindFirstObjectByType<TurnController>();
-        GameSessionUiBridge uiBridge = FindFirstObjectByType<GameSessionUiBridge>();
+        GameSessionUiBridge bridge = uiBridge ?? FindFirstObjectByType<GameSessionUiBridge>();
         float gameTime = 0f;
         float turnTime = 0f;
-        if (uiBridge != null)
+        if (bridge != null)
         {
-            gameTime = uiBridge.GetGameElapsedTime();
-            turnTime = uiBridge.GetTurnElapsedTime();
+            gameTime = bridge.GetGameElapsedTime();
+            turnTime = bridge.GetTurnElapsedTime();
         }
 
         StateSnapshotMessage msg = new StateSnapshotMessage
@@ -190,73 +195,132 @@ public class NetworkGameStateSync : MonoBehaviour
 
     public void ApplySnapshot(StateSnapshotMessage msg)
     {
+        if (NetworkServer.active) return;
+
         session ??= FindFirstObjectByType<GameSessionController>();
         if (session == null) return;
 
-        // 서버 타이머 동기화
-        GameSessionUiBridge uiBridge = FindFirstObjectByType<GameSessionUiBridge>();
-        if (uiBridge != null)
+        GameSessionUiBridge bridge = uiBridge ?? FindFirstObjectByType<GameSessionUiBridge>();
+        if (bridge != null)
         {
-            uiBridge.ApplyServerTime(msg.gameElapsedTime, msg.turnElapsedTime);
+            bridge.ApplyServerTime(msg.gameElapsedTime, msg.turnElapsedTime);
         }
 
-        bool isClientOnly = GameLaunchContext.IsNetworkClient;
-
-        foreach (var eggState in msg.eggStates)
+        snapshotBuffer.Enqueue(new TimestampedSnapshot
         {
-            EggController egg = FindEggByEggId((int)eggState.netId, session.AllEggs);
-            if (egg == null) continue;
+            timestamp = clientTime,
+            states = msg.eggStates
+        });
 
-            if (isClientOnly)
-            {
-                // 클라이언트: 보간을 위해 이전 상태 저장 후 다음 프레임부터 Lerp
-                int eggId = (int)eggState.netId;
-                EggInterpState st;
-                if (interpStates.TryGetValue(eggId, out st))
-                {
-                    st.prevPos = st.nextPos;
-                    st.prevRot = st.nextRot;
-                }
-                else
-                {
-                    st.prevPos = egg.transform.position;
-                    st.prevRot = egg.transform.rotation;
-                }
-                st.nextPos = eggState.position;
-                st.nextRot = eggState.rotation;
-                st.initialized = true;
-                interpStates[eggId] = st;
-                interpTimer = 0f;
-            }
-            else
-            {
-                // 서버: 직접 설정
-                egg.transform.position = eggState.position;
-                egg.transform.rotation = eggState.rotation;
-            }
-
-            if (egg.Rigidbody != null)
-            {
-                egg.Rigidbody.linearVelocity = eggState.velocity;
-
-                // 서버에서만 물리 상태 동기화
-                if (!isClientOnly)
-                {
-                    egg.Rigidbody.isKinematic = !eggState.isAlive;
-                    egg.Rigidbody.useGravity = eggState.isAlive;
-                }
-            }
-
-            if (!eggState.isAlive && egg.IsAlive)
-            {
-                egg.MarkFallen();
-            }
-
-            egg.gameObject.SetActive(eggState.isAlive);
+        while (snapshotBuffer.Count > 30)
+        {
+            snapshotBuffer.Dequeue();
         }
     }
 
-    private EggController FindEggByEggId(int eggId, System.Collections.Generic.IReadOnlyList<EggController> eggs)
+    private void InterpolateFromBuffer()
+    {
+        if (session == null) return;
+        if (snapshotBuffer.Count < 2) return;
+
+        float renderTime = clientTime - bufferDelay;
+
+        TimestampedSnapshot[] buf = snapshotBuffer.ToArray();
+        TimestampedSnapshot before = default;
+        TimestampedSnapshot after = default;
+        bool found = false;
+
+        for (int i = 0; i < buf.Length - 1; i++)
+        {
+            if (buf[i].timestamp <= renderTime && buf[i + 1].timestamp >= renderTime)
+            {
+                before = buf[i];
+                after = buf[i + 1];
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            if (renderTime > buf[buf.Length - 1].timestamp)
+            {
+                before = buf[buf.Length - 2];
+                after = buf[buf.Length - 1];
+                float extraTime = renderTime - after.timestamp;
+                if (extraTime > maxExtrapolationTime)
+                {
+                    ApplyStatesDirectly(after.states);
+                    return;
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        while (snapshotBuffer.Count > 2 && snapshotBuffer.Peek().timestamp < before.timestamp)
+        {
+            snapshotBuffer.Dequeue();
+        }
+
+        float duration = after.timestamp - before.timestamp;
+        float t = duration > 0.001f ? (renderTime - before.timestamp) / duration : 1f;
+        t = Mathf.Clamp01(t);
+
+        foreach (var afterState in after.states)
+        {
+            EggController egg = FindEggByEggId((int)afterState.netId, session.AllEggs);
+            if (egg == null) continue;
+
+            EggState beforeState = default;
+            bool hasBefore = false;
+            foreach (var bs in before.states)
+            {
+                if (bs.netId == afterState.netId)
+                {
+                    beforeState = bs;
+                    hasBefore = true;
+                    break;
+                }
+            }
+
+            if (hasBefore)
+            {
+                egg.transform.position = Vector3.Lerp(beforeState.position, afterState.position, t);
+                egg.transform.rotation = Quaternion.Slerp(beforeState.rotation, afterState.rotation, t);
+            }
+            else
+            {
+                egg.transform.position = afterState.position;
+                egg.transform.rotation = afterState.rotation;
+            }
+
+            if (!afterState.isAlive && egg.IsAlive)
+            {
+                egg.MarkFallen();
+            }
+            egg.gameObject.SetActive(afterState.isAlive);
+        }
+    }
+
+    private void ApplyStatesDirectly(EggState[] states)
+    {
+        if (session == null) return;
+        foreach (var state in states)
+        {
+            EggController egg = FindEggByEggId((int)state.netId, session.AllEggs);
+            if (egg == null) continue;
+            egg.transform.position = state.position;
+            egg.transform.rotation = state.rotation;
+            if (!state.isAlive && egg.IsAlive)
+                egg.MarkFallen();
+            egg.gameObject.SetActive(state.isAlive);
+        }
+    }
+
+    private EggController FindEggByEggId(int eggId, IReadOnlyList<EggController> eggs)
     {
         if (eggs == null) return null;
         foreach (var egg in eggs)
