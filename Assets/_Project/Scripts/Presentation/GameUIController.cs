@@ -47,6 +47,7 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Button settingsBackButton;
     [SerializeField] private Button settingsMainMenuButton;
+    [SerializeField] private Button settingsRetryButton;
     [SerializeField] private Button settingsExitButton;
 
     [Header("Gameplay")]
@@ -195,6 +196,7 @@ public class GameUIController : MonoBehaviour
         AddClickListener(settingsButton, OnClickSettings);
         AddClickListener(settingsBackButton, OnClickSettingsBack);
         AddClickListener(settingsMainMenuButton, OnClickMainMenu);
+        AddClickListener(settingsRetryButton, OnClickRetry);
         AddClickListener(retryButton, OnClickRetry);
         AddClickListener(mainMenuButton, OnClickMainMenu);
         AddClickListener(exitButton, OnClickExit);
@@ -234,6 +236,7 @@ public class GameUIController : MonoBehaviour
         exitButton ??= FindButton("Button_Exit");
         settingsBackButton ??= FindButton("Button_SettingsBack", "Button_CloseSettings");
         settingsMainMenuButton ??= FindButton("Button_SettingsMainMenu");
+        settingsRetryButton ??= FindButton("Button_SettingsRetry");
         settingsExitButton ??= FindButton("Button_SettingsExit");
 
         bgmSlider ??= FindSlider("Slider_BGM");
@@ -242,7 +245,9 @@ public class GameUIController : MonoBehaviour
         turnTimeText ??= CreateHudText("Text_TurnTime", "00:30", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(430f, 50f), TextAlignmentOptions.Center);
         gameTimeText ??= CreateHudText("Text_GameTime", "00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
         exitButton ??= CreateResultExitButton();
-        settingsExitButton ??= CreateSettingsExitButton();
+        settingsMainMenuButton ??= CreateSettingsButton(mainMenuButton, "Button_SettingsMainMenu", "\uba54\uc778 \ud654\uba74", new Vector2(-320f, -260f));
+        settingsRetryButton ??= CreateSettingsButton(retryButton, "Button_SettingsRetry", "\uc7ac\uc2dc\uc791", new Vector2(0f, -260f));
+        settingsExitButton ??= CreateSettingsButton(exitButton, "Button_SettingsExit", "\uac8c\uc784 \uc885\ub8cc", new Vector2(320f, -260f));
     }
 
     private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
@@ -402,33 +407,37 @@ public class GameUIController : MonoBehaviour
         return button;
     }
 
-    private Button CreateSettingsExitButton()
+    private Button CreateSettingsButton(Button template, string objectName, string label, Vector2 anchoredPosition)
     {
-        if (settingsPanel == null || settingsMainMenuButton == null)
+        if (settingsPanel == null || template == null)
         {
             return null;
         }
 
-        GameObject exitObject = Instantiate(settingsMainMenuButton.gameObject, settingsPanel.transform);
-        exitObject.name = "Button_SettingsExit";
+        GameObject buttonObject = Instantiate(template.gameObject, settingsPanel.transform);
+        buttonObject.name = objectName;
 
-        RectTransform rectTransform = exitObject.GetComponent<RectTransform>();
-        rectTransform.anchoredPosition = new Vector2(0f, -340f);
+        RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = anchoredPosition;
+        rectTransform.sizeDelta = new Vector2(300f, 60f);
 
-        Button button = exitObject.GetComponent<Button>();
+        Button button = buttonObject.GetComponent<Button>();
         button.onClick.RemoveAllListeners();
 
-        TMP_Text tmpLabel = exitObject.GetComponentInChildren<TMP_Text>();
+        TMP_Text tmpLabel = buttonObject.GetComponentInChildren<TMP_Text>();
         if (tmpLabel != null)
         {
-            tmpLabel.text = "\uac8c\uc784 \uc885\ub8cc";
+            tmpLabel.text = label;
         }
         else
         {
-            Text legacyLabel = exitObject.GetComponentInChildren<Text>();
+            Text legacyLabel = buttonObject.GetComponentInChildren<Text>();
             if (legacyLabel != null)
             {
-                legacyLabel.text = "\uac8c\uc784 \uc885\ub8cc";
+                legacyLabel.text = label;
             }
         }
 
