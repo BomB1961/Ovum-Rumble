@@ -35,6 +35,7 @@ public struct StateSnapshotMessage : NetworkMessage
     public int p2AliveCount;
     public float gameElapsedTime;
     public float turnElapsedTime;
+    public bool isResolving;
     public EggState[] eggStates;
 }
 

@@ -18,6 +18,7 @@ public class NetworkGameStateSync : MonoBehaviour
     private GameSessionUiBridge uiBridge;
     private float snapshotTimer;
     private bool isResolving;
+    private bool prevResolving;
     private bool isServerActive;
     private bool gameEndSent;
 
@@ -67,6 +68,7 @@ public class NetworkGameStateSync : MonoBehaviour
         snapshotBuffer.Clear();
         clientTime = 0f;
         isResolving = false;
+        prevResolving = false;
         snapshotTimer = 0f;
     }
 
@@ -187,6 +189,7 @@ public class NetworkGameStateSync : MonoBehaviour
             p2AliveCount = p2Alive,
             gameElapsedTime = gameTime,
             turnElapsedTime = turnTime,
+            isResolving = this.isResolving,
             eggStates = states.ToArray()
         };
 
@@ -204,7 +207,13 @@ public class NetworkGameStateSync : MonoBehaviour
         if (bridge != null)
         {
             bridge.ApplyServerTime(msg.gameElapsedTime, msg.turnElapsedTime);
+            // isResolving이 true로 바뀌면 클라이언트 가이드 텍스트 업데이트
+            if (msg.isResolving && !prevResolving)
+            {
+                bridge.ShowResolvingGuide();
+            }
         }
+        prevResolving = msg.isResolving;
 
         snapshotBuffer.Enqueue(new TimestampedSnapshot
         {

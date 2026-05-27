@@ -126,6 +126,14 @@ public class GameSessionUiBridge : MonoBehaviour
         gameSessionController?.RestartGame();
     }
 
+    /// <summary>
+    /// 클라이언트에서 발사 해결 중임을 표시 (스냅샷의 isResolving 플래그로 트리거).
+    /// </summary>
+    public void ShowResolvingGuide()
+    {
+        hudPresenter?.ShowGuide("알이 움직이는 중입니다.\n입력이 잠시 잠깁니다.");
+    }
+
     private void RefreshHud()
     {
         float gameElapsedSeconds;
