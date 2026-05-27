@@ -41,21 +41,32 @@ public class MapSelectController : MonoBehaviour
     {
         if (GameLaunchContext.IsNetworkHost)
         {
-            // 호스트: 서버 시작 후 P2 대기
             netMan = FindFirstObjectByType<DinoNetworkManager>();
-            if (netMan != null && !NetworkServer.active && !NetworkClient.active)
+            if (netMan == null) return;
+
+            netMan.OnRemotePlayerConnected += HandleRemotePlayerConnected;
+            netMan.OnRemotePlayerDisconnected += HandleRemotePlayerDisconnected;
+
+            if (!NetworkServer.active && !NetworkClient.active)
             {
-                netMan.OnRemotePlayerConnected += HandleRemotePlayerConnected;
-                netMan.OnRemotePlayerDisconnected += HandleRemotePlayerDisconnected;
                 netMan.StartNetworkHost();
-                SetMapButtonsEnabled(false);
-                SetStatusText("상대방 연결을 기다리는 중...");
-                Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
+            else
+            {
+                // 이미 서버가 실행 중인 경우: 현재 접속자 수 확인
+                if (NetworkServer.connections.Count >= 2)
+                {
+                    HandleRemotePlayerConnected();
+                    return;
+                }
+            }
+
+            SetMapButtonsEnabled(false);
+            SetStatusText("상대방 연결을 기다리는 중...");
+            Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
         }
         else if (GameLaunchContext.IsNetworkClient)
         {
-            // 클라이언트: 호스트가 맵 선택할 때까지 대기
             SetMapButtonsEnabled(false);
             SetStatusText("호스트가 맵을 선택 중입니다...");
             Debug.Log("[MapSelectController] Client waiting for host map selection.");
@@ -74,7 +85,8 @@ public class MapSelectController : MonoBehaviour
     private void HandleRemotePlayerConnected()
     {
         SetMapButtonsEnabled(true);
-        SetStatusText("P2 연결됨! 맵을 선택하세요.");
+        SetStatusText("");
+        connectionStatusText?.gameObject.SetActive(false);
         Debug.Log("[MapSelectController] Remote player connected. Map selection enabled.");
     }
 
@@ -134,7 +146,7 @@ public class MapSelectController : MonoBehaviour
         terrianButton ??= FindButton("Button_Terrian", "button_terrian");
         iceButton ??= FindButton("Button_Ice", "button_ice");
         desertButton ??= FindButton("Button_Desert", "button_Desert");
-        connectionStatusText ??= FindText("Text_ConnectionStatus");
+        connectionStatusText ??= FindText("Text_ConnectionStatus", "Text");
         if (connectionStatusText == null)
         {
             connectionStatusText = CreateStatusText();
@@ -153,10 +165,10 @@ public class MapSelectController : MonoBehaviour
         text.color = Color.white;
 
         RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0, 1);
-        rt.anchorMax = new Vector2(1, 1);
+        rt.anchorMin = new Vector2(0, 0.5f);
+        rt.anchorMax = new Vector2(1, 0.5f);
         rt.pivot = new Vector2(0.5f, 1);
-        rt.anchoredPosition = new Vector2(0, -100);
+        rt.anchoredPosition = new Vector2(0, 50);
         rt.sizeDelta = new Vector2(600, 50);
 
         return text;
@@ -164,17 +176,33 @@ public class MapSelectController : MonoBehaviour
 
     private void SetMapButtonsEnabled(bool enabled)
     {
-        if (terrianButton != null) terrianButton.interactable = enabled;
-        if (iceButton != null) iceButton.interactable = enabled;
-        if (desertButton != null) desertButton.interactable = enabled;
+        SetButtonInteractable(terrianButton, enabled);
+        SetButtonInteractable(iceButton, enabled);
+        SetButtonInteractable(desertButton, enabled);
     }
 
-    private void SetStatusText(string message)
+    private static void SetButtonInteractable(Button button, bool enabled)
+    {
+        if (button == null) return;
+        button.interactable = enabled;
+
+        // 버튼 텍스트가 투명해지는 것 방지: 자식 TextMeshPro의 알파 보존
+        var text = button.GetComponentInChildren<TMPro.TMP_Text>(true);
+        if (text != null)
+        {
+            Color c = text.color;
+            c.a = enabled ? 1f : 0.5f;
+            text.color = c;
+        }
+    }
+
+    public void SetStatusText(string message)
     {
         if (connectionStatusText != null)
         {
             connectionStatusText.text = message;
             connectionStatusText.gameObject.SetActive(true);
+            connectionStatusText.transform.SetAsLastSibling();
         }
         Debug.Log($"[MapSelect] {message}");
     }

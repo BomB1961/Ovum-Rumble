@@ -119,6 +119,8 @@ namespace DinoAlkkagi.Core
                 if (flickInputController != null)
                 {
                     flickInputController.UseNetworkRelay = true;
+                    flickInputController.SetActivePlayer(GameLaunchContext.LocalPlayerId);
+                    flickInputController.SetInputEnabled(false);
                     flickInputController.EggLaunched += OnFlickEggLaunched;
                 }
 
@@ -250,8 +252,18 @@ namespace DinoAlkkagi.Core
         {
             if (flickInputController == null) return;
 
-            flickInputController.SetActivePlayer(playerId);
-            SyncInputAvailability();
+            if (isClientOnly)
+            {
+                // 클라이언트: 항상 P2 제어, P1 턴엔 입력 차단
+                flickInputController.SetActivePlayer(GameLaunchContext.LocalPlayerId);
+                flickInputController.SetInputEnabled(playerId == GameLaunchContext.LocalPlayerId
+                    && !turnController.IsInputLocked);
+            }
+            else
+            {
+                flickInputController.SetActivePlayer(playerId);
+                SyncInputAvailability();
+            }
         }
 
         /// <summary>

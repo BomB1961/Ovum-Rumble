@@ -92,7 +92,7 @@ public class MainMenuController : MonoBehaviour
         if (netMan != null)
         {
             Debug.Log("[MainMenu] Auto-hosting...");
-            netMan.StartNetworkHost();
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
             SceneManager.LoadScene(MapSelectSceneName);
         }
     }
