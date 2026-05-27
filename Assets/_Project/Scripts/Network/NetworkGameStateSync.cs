@@ -10,8 +10,8 @@ public class NetworkGameStateSync : MonoBehaviour
 {
     [SerializeField] private GameSettings settings;
     [SerializeField] private float snapshotInterval = 0.05f;
-    [SerializeField] private float bufferDelay = 0.1f;
-    [SerializeField] private float maxExtrapolationTime = 0.25f;
+    private float bufferDelay = 0.1f;
+    private float maxExtrapolationTime = 0.25f;
 
     private GameSessionController session;
     private TurnController turnController;
