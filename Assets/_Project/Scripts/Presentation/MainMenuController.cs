@@ -56,7 +56,7 @@ public class MainMenuController : MonoBehaviour
         ResolveMissingReferences();
         EnsureVsComputerButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
-        featureFlags ??= FindFirstObjectByType<FeatureFlags>();
+        featureFlags ??= Resources.Load<FeatureFlags>("FeatureFlags");
         InitializeVolumeSliders();
         RegisterButtonListeners();
         ShowMainMenu();

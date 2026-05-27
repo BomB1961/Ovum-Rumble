@@ -38,7 +38,7 @@ public class DinoNetworkManager : NetworkManager
 
         base.Awake();
         if (featureFlags == null)
-            featureFlags = FindFirstObjectByType<FeatureFlags>();
+            featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
     }
 
     public override void OnStartServer()
