@@ -1,5 +1,4 @@
 using DinoAlkkagi.Core;
-using DinoAlkkagi.Network;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -19,13 +18,11 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private TMP_Text connectionStatusText;
 
     private DinoNetworkManager netMan;
-    private RoomCodeDiscovery roomDiscovery;
 
     private void Awake()
     {
         ResolveMissingReferences();
         RegisterButtonListeners();
-        roomDiscovery = gameObject.AddComponent<RoomCodeDiscovery>();
     }
 
     private void Start()
@@ -65,17 +62,10 @@ public class MapSelectController : MonoBehaviour
             // 서버가 정상 시작되었는지 확인
             if (NetworkServer.active)
             {
-                ShowHostIp();
-
-                // 방 코드 생성 및 브로드캐스트 시작
-                string code = roomDiscovery.StartHostBroadcast();
-                roomDiscovery.OnListenError += (err) =>
-                    Debug.LogWarning($"[MapSelectController] RoomCode listener warning: {err}");
-
+                string localIp = GetLocalIp();
                 SetMapButtonsEnabled(false);
-                string ipText = !string.IsNullOrEmpty(hostIpString) ? $"\n또는 IP 직접 입력: {hostIpString}" : "";
-                SetStatusText($"방 코드: {code}{ipText}\n같은 컴퓨터: '127.0.0.1' 입력");
-                Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
+                SetStatusText($"호스트 IP: {localIp}\n상대방이 이 IP를 입력하면 연결됩니다.\n(같은 PC: 127.0.0.1)");
+                Debug.Log($"[MapSelectController] Network host started. IP: {localIp}:7777. Waiting for player 2.");
             }
             else
             {
@@ -90,6 +80,17 @@ public class MapSelectController : MonoBehaviour
         }
     }
 
+    private string GetLocalIp()
+    {
+        System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+        foreach (var ip in host.AddressList)
+        {
+            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                return ip.ToString();
+        }
+        return "127.0.0.1";
+    }
+
     private void FallbackToLocalMode()
     {
         Debug.LogWarning("[MapSelectController] Host 실패 → LocalHotseat 모드로 전환합니다.");
@@ -98,24 +99,6 @@ public class MapSelectController : MonoBehaviour
         SetMapButtonsEnabled(true);
         SetStatusText("[안내] 네트워크 호스트를 시작할 수 없습니다.\n포트 7777이 이미 사용 중입니다. 로컬 핫시트 모드로 전환합니다.");
     }
-
-    private void ShowHostIp()
-    {
-        System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-        string ips = "";
-        foreach (var ip in host.AddressList)
-        {
-            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-            {
-                if (ips.Length > 0) ips += " / ";
-                ips += ip.ToString();
-            }
-        }
-        hostIpString = ips;
-        Debug.Log($"[MapSelectController] Host IP: {ips} (port: 7777)");
-    }
-
-    private string hostIpString;
 
     private void OnDestroy()
     {
@@ -129,13 +112,9 @@ public class MapSelectController : MonoBehaviour
     private void HandleRemotePlayerConnected()
     {
         SetMapButtonsEnabled(true);
-        SetStatusText(""); // 기존 "방 코드" 텍스트 제거
+        SetStatusText("");
         connectionStatusText?.gameObject.SetActive(false);
         Debug.Log("[MapSelectController] Remote player connected. Map selection enabled.");
-
-        // 방 코드 리스너 종료 (더 이상 필요 없음)
-        if (roomDiscovery != null)
-            Destroy(roomDiscovery);
     }
 
     private void HandleRemotePlayerDisconnected()
@@ -169,7 +148,6 @@ public class MapSelectController : MonoBehaviour
             DinoNetworkManager nMan = netMan ?? FindFirstObjectByType<DinoNetworkManager>();
             if (nMan != null)
             {
-                // 클라이언트에 맵 정보 먼저 전송 → 이후 씬 로드 시 GameLaunchContext.SelectedMap 사용
                 MapSelectMessage mapMsg = new MapSelectMessage { mapId = (int)mapId };
                 NetworkServer.SendToAll(mapMsg);
                 Debug.Log($"[MapSelectController] Sent MapSelectMessage: {mapId}");
@@ -234,7 +212,6 @@ public class MapSelectController : MonoBehaviour
         if (button == null) return;
         button.interactable = enabled;
 
-        // 버튼 텍스트가 투명해지는 것 방지: 자식 TextMeshPro의 알파 보존
         var text = button.GetComponentInChildren<TMPro.TMP_Text>(true);
         if (text != null)
         {
@@ -257,11 +234,7 @@ public class MapSelectController : MonoBehaviour
 
     private static void AddClickListener(Button button, UnityEngine.Events.UnityAction action)
     {
-        if (button == null)
-        {
-            return;
-        }
-
+        if (button == null) return;
         button.onClick.RemoveListener(action);
         button.onClick.AddListener(action);
     }
@@ -271,12 +244,8 @@ public class MapSelectController : MonoBehaviour
         foreach (string objectName in names)
         {
             GameObject found = GameObject.Find(objectName);
-            if (found != null)
-            {
-                return found.GetComponent<Button>();
-            }
+            if (found != null) return found.GetComponent<Button>();
         }
-
         return null;
     }
 
@@ -285,12 +254,8 @@ public class MapSelectController : MonoBehaviour
         foreach (string objectName in names)
         {
             GameObject found = GameObject.Find(objectName);
-            if (found != null)
-            {
-                return found.GetComponent<TMP_Text>();
-            }
+            if (found != null) return found.GetComponent<TMP_Text>();
         }
-
         return null;
     }
 }

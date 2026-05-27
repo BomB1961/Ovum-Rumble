@@ -1,7 +1,6 @@
 using TMPro;
 using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
-using DinoAlkkagi.Network;
 using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -52,7 +51,6 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private FeatureFlags featureFlags;
 
     private string pendingAutoJoinIp;
-    private RoomCodeDiscovery roomDiscovery;
 
     private void Awake()
     {
@@ -69,16 +67,6 @@ public class MainMenuController : MonoBehaviour
         RegisterButtonListeners();
         ShowMainMenu();
         UpdateNetworkButtons();
-
-        roomDiscovery = gameObject.AddComponent<RoomCodeDiscovery>();
-        roomDiscovery.OnRoomFound += HandleRoomFound;
-        roomDiscovery.OnListenError += (err) =>
-            ShowConnectionStatus($"방 검색 실패: {err}");
-        roomDiscovery.OnDiscoveryTimeout += () =>
-        {
-            if (gameObject != null)
-                ShowMainMenu();
-        };
 
         // 커맨드라인 자동 접속: --auto-join 127.0.0.1
         string[] args = System.Environment.GetCommandLineArgs();
@@ -133,17 +121,6 @@ public class MainMenuController : MonoBehaviour
         if (hostGameButton != null) hostGameButton.interactable = lanEnabled;
         if (showJoinPanelButton != null) showJoinPanelButton.interactable = lanEnabled;
         if (testJoinButton != null) testJoinButton.interactable = lanEnabled;
-    }
-
-    private void HandleRoomFound(string ip, string code)
-    {
-        Debug.Log($"[MainMenu] Room found! Code: {code}, IP: {ip}");
-        ShowConnectionStatus($"방 {code} 찾음! {ip}에 연결 중...");
-        DinoNetworkManager netMan = FindDinoNetworkManager();
-        if (netMan != null)
-        {
-            netMan.StartNetworkClient(ip);
-        }
     }
 
     public void OnClickHostGame()
@@ -219,29 +196,14 @@ public class MainMenuController : MonoBehaviour
         string input = hostIpInput != null ? hostIpInput.text.Trim() : "";
         if (string.IsNullOrEmpty(input))
         {
-            ShowConnectionStatus("방 코드 또는 IP를 입력하세요.");
+            ShowConnectionStatus("IP 주소를 입력하세요.");
             return;
         }
 
-        // IP 주소 감지 (숫자.숫자.숫자.숫자 패턴)
-        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
-        {
-            ShowConnectionStatus($"서버 {input}에 직접 연결 중...");
-            DinoNetworkManager netMan = FindDinoNetworkManager();
-            if (netMan != null)
-                netMan.StartNetworkClient(input);
-            return;
-        }
-
-        // 방 코드 (4자리 숫자)
-        if (input.Length != 4 || !System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{4}$"))
-        {
-            ShowConnectionStatus("방 코드는 4자리 숫자, 또는 IP 주소를 입력하세요.");
-            return;
-        }
-
-        ShowConnectionStatus($"방 {input} 검색 중...");
-        roomDiscovery?.StartClientLookup(input);
+        ShowConnectionStatus($"서버 {input}에 연결 중...");
+        DinoNetworkManager netMan = FindDinoNetworkManager();
+        if (netMan != null)
+            netMan.StartNetworkClient(input);
     }
 
     public void OnClickCancelJoin()
@@ -374,7 +336,6 @@ public class MainMenuController : MonoBehaviour
             cancelBtn.onClick = new Button.ButtonClickedEvent();
             cancelBtn.onClick.AddListener(() =>
             {
-                roomDiscovery?.Cancel();
                 var netMan = FindDinoNetworkManager();
                 if (netMan != null && NetworkClient.active)
                     netMan.StopClientSafe();
@@ -673,7 +634,7 @@ public class MainMenuController : MonoBehaviour
         GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform));
         placeholder.transform.SetParent(inputObj.transform, false);
         TMP_Text placeText = placeholder.AddComponent<TextMeshProUGUI>();
-        placeText.text = "방 코드 4자리 (예: 2847)";
+        placeText.text = "호스트 IP 입력 (예: 192.168.0.10)";
         placeText.fontSize = 18;
         placeText.color = Color.gray;
         placeText.alignment = TextAlignmentOptions.Center;
@@ -690,8 +651,8 @@ public class MainMenuController : MonoBehaviour
         inputField.textViewport = inputRt;
         inputField.textComponent = textComp;
         inputField.placeholder = placeText;
-        inputField.contentType = TMP_InputField.ContentType.IntegerNumber;
-        inputField.characterLimit = 4;
+        inputField.contentType = TMP_InputField.ContentType.Standard;
+        inputField.characterLimit = 30;
     }
 
     private void InitializeVolumeSliders()
