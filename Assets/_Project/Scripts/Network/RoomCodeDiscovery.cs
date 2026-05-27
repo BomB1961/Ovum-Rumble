@@ -113,6 +113,8 @@ namespace DinoAlkkagi.Network
                     {
                         while (isListening)
                         {
+                            // Receive with timeout: 1초마다 isListening 체크 가능
+                            udpClient.Client.ReceiveTimeout = 1000;
                             IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
                             byte[] data = udpClient.Receive(ref remoteEndPoint);
                             string message = Encoding.UTF8.GetString(data);
@@ -121,6 +123,7 @@ namespace DinoAlkkagi.Network
                     }
                     catch (ThreadAbortException) { }
                     catch (ObjectDisposedException) { }
+                    catch (SocketException) { /* timeout or closed socket */ }
                     catch (Exception ex)
                     {
                         Debug.LogError($"[RoomCodeDiscovery] Listener error: {ex.Message}");
@@ -155,11 +158,9 @@ namespace DinoAlkkagi.Network
             }
             catch { }
 
-            if (listenThread != null && listenThread.IsAlive)
-            {
-                listenThread.Abort();
-                listenThread = null;
-            }
+            // Thread.Abort() 사용 안 함 — udpClient.Close()가 Receive()를 중단시켜서
+            // ObjectDisposedException이 발생하고 while(isListening)이 종료됨
+            listenThread = null;
         }
 
         private void ProcessMessage(string message, IPEndPoint sender, bool amHost)
