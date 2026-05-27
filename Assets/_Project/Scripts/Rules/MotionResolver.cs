@@ -23,6 +23,11 @@ namespace DinoAlkkagi.Rules
         public bool IsResolving => isResolving;
         public float ResolveTime => resolveTimer;
 
+        private void Awake()
+        {
+            settings ??= FindFirstObjectByType<GameSettings>();
+        }
+
         private void OnEnable()
         {
             GameEvents.OnGameStarted += HandleOnGameStarted;
@@ -46,6 +51,12 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnEggLaunched(EggController egg)
         {
+            if (settings == null)
+            {
+                Debug.LogError("[MotionResolver] GameSettings is missing. Resolve cannot start.", this);
+                return;
+            }
+
             isResolving = true;
             stopTimer = 0f;
             resolveTimer = 0f;
@@ -59,6 +70,13 @@ namespace DinoAlkkagi.Rules
 
             resolveTimer += Time.deltaTime;
 
+            if (settings.maxResolveTime > 0f && resolveTimer >= settings.maxResolveTime)
+            {
+                ForceStopAllEggs();
+                EndResolve($"Max resolve time reached ({settings.maxResolveTime:0.##}s). Ending resolve.");
+                return;
+            }
+
             bool allStopped = CheckAllEggsStopped();
 
             if (allStopped)
@@ -66,10 +84,7 @@ namespace DinoAlkkagi.Rules
                 stopTimer += Time.deltaTime;
                 if (stopTimer >= settings.stopHoldTime)
                 {
-                    Debug.Log("[MotionResolver] All eggs stopped. Ending resolve.");
-                    isResolving = false;
-                    Time.timeScale = 1f;
-                    GameEvents.TriggerAllEggsStopped();
+                    EndResolve("All eggs stopped. Ending resolve.");
                 }
             }
             else
@@ -95,6 +110,31 @@ namespace DinoAlkkagi.Rules
                     return false;
             }
             return true;
+        }
+
+        private void ForceStopAllEggs()
+        {
+            for (int i = trackedEggs.Count - 1; i >= 0; i--)
+            {
+                if (trackedEggs[i] == null)
+                {
+                    trackedEggs.RemoveAt(i);
+                    continue;
+                }
+
+                if (trackedEggs[i].IsAlive)
+                {
+                    trackedEggs[i].StopImmediately();
+                }
+            }
+        }
+
+        private void EndResolve(string reason)
+        {
+            Debug.Log($"[MotionResolver] {reason}");
+            isResolving = false;
+            Time.timeScale = 1f;
+            GameEvents.TriggerAllEggsStopped();
         }
 
         public void RegisterEgg(EggController egg)
