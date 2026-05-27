@@ -204,21 +204,32 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
-        string code = hostIpInput != null ? hostIpInput.text.Trim() : "";
-        if (string.IsNullOrEmpty(code))
+        string input = hostIpInput != null ? hostIpInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(input))
         {
-            ShowConnectionStatus("방 코드를 입력하세요.");
+            ShowConnectionStatus("방 코드 또는 IP를 입력하세요.");
             return;
         }
 
-        if (code.Length != 4 || !System.Text.RegularExpressions.Regex.IsMatch(code, @"^\d{4}$"))
+        // IP 주소 감지 (숫자.숫자.숫자.숫자 패턴)
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
         {
-            ShowConnectionStatus("방 코드는 4자리 숫자여야 합니다.");
+            ShowConnectionStatus($"서버 {input}에 직접 연결 중...");
+            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+            if (netMan != null)
+                netMan.StartNetworkClient(input);
             return;
         }
 
-        ShowConnectionStatus($"방 {code} 검색 중...");
-        roomDiscovery?.StartClientLookup(code);
+        // 방 코드 (4자리 숫자)
+        if (input.Length != 4 || !System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{4}$"))
+        {
+            ShowConnectionStatus("방 코드는 4자리 숫자, 또는 IP 주소를 입력하세요.");
+            return;
+        }
+
+        ShowConnectionStatus($"방 {input} 검색 중...");
+        roomDiscovery?.StartClientLookup(input);
     }
 
     public void OnClickCancelJoin()
