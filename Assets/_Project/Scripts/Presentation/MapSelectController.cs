@@ -1,4 +1,5 @@
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Network;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -18,11 +19,13 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private TMP_Text connectionStatusText;
 
     private DinoNetworkManager netMan;
+    private RoomCodeDiscovery roomDiscovery;
 
     private void Awake()
     {
         ResolveMissingReferences();
         RegisterButtonListeners();
+        roomDiscovery = gameObject.AddComponent<RoomCodeDiscovery>();
     }
 
     private void Start()
@@ -63,8 +66,14 @@ public class MapSelectController : MonoBehaviour
             if (NetworkServer.active)
             {
                 ShowHostIp();
+
+                // 방 코드 생성 및 브로드캐스트 시작
+                string code = roomDiscovery.StartHostBroadcast();
+                roomDiscovery.OnListenError += (err) =>
+                    Debug.LogWarning($"[MapSelectController] RoomCode listener warning: {err}");
+
                 SetMapButtonsEnabled(false);
-                SetStatusText("상대방 연결을 기다리는 중...\nLAN IP를 확인하려면 로그 파일을 참고하세요.");
+                SetStatusText($"🏠 방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
                 Debug.Log("[MapSelectController] Network host started. Waiting for player 2.");
             }
             else

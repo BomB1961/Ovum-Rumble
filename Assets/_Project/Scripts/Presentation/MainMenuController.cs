@@ -1,6 +1,7 @@
 using TMPro;
 using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
+using DinoAlkkagi.Network;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -49,6 +50,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private FeatureFlags featureFlags;
 
     private string pendingAutoJoinIp;
+    private RoomCodeDiscovery roomDiscovery;
 
     private void Awake()
     {
@@ -62,6 +64,11 @@ public class MainMenuController : MonoBehaviour
         RegisterButtonListeners();
         ShowMainMenu();
         UpdateNetworkButtons();
+
+        roomDiscovery = gameObject.AddComponent<RoomCodeDiscovery>();
+        roomDiscovery.OnRoomFound += HandleRoomFound;
+        roomDiscovery.OnListenError += (err) =>
+            ShowConnectionStatus($"방 검색 실패: {err}");
 
         // 커맨드라인 자동 접속: --auto-join 127.0.0.1
         string[] args = System.Environment.GetCommandLineArgs();
@@ -116,6 +123,17 @@ public class MainMenuController : MonoBehaviour
         if (hostGameButton != null) hostGameButton.interactable = lanEnabled;
         if (showJoinPanelButton != null) showJoinPanelButton.interactable = lanEnabled;
         if (testJoinButton != null) testJoinButton.interactable = lanEnabled;
+    }
+
+    private void HandleRoomFound(string ip, string code)
+    {
+        Debug.Log($"[MainMenu] Room found! Code: {code}, IP: {ip}");
+        ShowConnectionStatus($"방 {code} 찾음! {ip}에 연결 중...");
+        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        if (netMan != null)
+        {
+            netMan.StartNetworkClient(ip);
+        }
     }
 
     public void OnClickHostGame()
@@ -180,19 +198,21 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
-        string ip = hostIpInput != null ? hostIpInput.text.Trim() : "";
-        if (string.IsNullOrEmpty(ip))
-            ip = "127.0.0.1";
-
-        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
-        if (netMan != null)
+        string code = hostIpInput != null ? hostIpInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(code))
         {
-            ShowConnectionStatus($"서버 {ip}에 연결 중...");
-            netMan.StartNetworkClient(ip);
+            ShowConnectionStatus("방 코드를 입력하세요.");
             return;
         }
 
-        ShowMainMenu();
+        if (code.Length != 4 || !System.Text.RegularExpressions.Regex.IsMatch(code, @"^\d{4}$"))
+        {
+            ShowConnectionStatus("방 코드는 4자리 숫자여야 합니다.");
+            return;
+        }
+
+        ShowConnectionStatus($"방 {code} 검색 중...");
+        roomDiscovery?.StartClientLookup(code);
     }
 
     public void OnClickCancelJoin()
@@ -551,7 +571,7 @@ public class MainMenuController : MonoBehaviour
         GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform));
         placeholder.transform.SetParent(inputObj.transform, false);
         TMP_Text placeText = placeholder.AddComponent<TextMeshProUGUI>();
-        placeText.text = "호스트 IP (예: 192.168.0.5)";
+        placeText.text = "방 코드 4자리 (예: 2847)";
         placeText.fontSize = 18;
         placeText.color = Color.gray;
         placeText.alignment = TextAlignmentOptions.Center;
@@ -568,7 +588,8 @@ public class MainMenuController : MonoBehaviour
         inputField.textViewport = inputRt;
         inputField.textComponent = textComp;
         inputField.placeholder = placeText;
-        inputField.contentType = TMP_InputField.ContentType.Standard;
+        inputField.contentType = TMP_InputField.ContentType.IntegerNumber;
+        inputField.characterLimit = 4;
     }
 
     private void InitializeVolumeSliders()
