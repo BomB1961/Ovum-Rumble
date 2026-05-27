@@ -6,6 +6,7 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+// ReSharper disable once RedundantUsingDirective
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -102,7 +103,7 @@ public class MainMenuController : MonoBehaviour
 
     private void DoAutoHost()
     {
-        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        DinoNetworkManager netMan = FindDinoNetworkManager();
         if (netMan != null)
         {
             Debug.Log("[MainMenu] Auto-hosting...");
@@ -114,7 +115,7 @@ public class MainMenuController : MonoBehaviour
     private void DoAutoJoin()
     {
         string ip = string.IsNullOrEmpty(pendingAutoJoinIp) ? "127.0.0.1" : pendingAutoJoinIp;
-        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        DinoNetworkManager netMan = FindDinoNetworkManager();
         if (netMan != null)
         {
             ShowConnectionStatus($"자동 접속 중: {ip}");
@@ -135,7 +136,7 @@ public class MainMenuController : MonoBehaviour
     {
         Debug.Log($"[MainMenu] Room found! Code: {code}, IP: {ip}");
         ShowConnectionStatus($"방 {code} 찾음! {ip}에 연결 중...");
-        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        DinoNetworkManager netMan = FindDinoNetworkManager();
         if (netMan != null)
         {
             netMan.StartNetworkClient(ip);
@@ -144,7 +145,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickHostGame()
     {
-        DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+        DinoNetworkManager netMan = FindDinoNetworkManager();
         if (netMan != null)
         {
             GameLaunchContext.SetMode(GameMode.NetworkHost);
@@ -215,7 +216,7 @@ public class MainMenuController : MonoBehaviour
         if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
         {
             ShowConnectionStatus($"서버 {input}에 직접 연결 중...");
-            DinoNetworkManager netMan = FindFirstObjectByType<DinoNetworkManager>();
+            DinoNetworkManager netMan = FindDinoNetworkManager();
             if (netMan != null)
                 netMan.StartNetworkClient(input);
             return;
@@ -363,7 +364,7 @@ public class MainMenuController : MonoBehaviour
             cancelBtn.onClick.AddListener(() =>
             {
                 roomDiscovery?.Cancel();
-                var netMan = FindFirstObjectByType<DinoNetworkManager>();
+                var netMan = FindDinoNetworkManager();
                 if (netMan != null && NetworkClient.active)
                     netMan.StopClient();
                 ShowMainMenu();
@@ -437,6 +438,13 @@ public class MainMenuController : MonoBehaviour
 
         button.onClick.RemoveListener(action);
         button.onClick.AddListener(action);
+    }
+
+    // DinoNetworkManager가 DontDestroyOnLoad 씬에 있어서 FindObjectOfType 검색 안 됨
+    private static DinoNetworkManager FindDinoNetworkManager()
+    {
+        var go = UnityEngine.GameObject.Find("DinoNetworkManager");
+        return go != null ? go.GetComponent<DinoNetworkManager>() : null;
     }
 
     private void ResolveMissingReferences()
