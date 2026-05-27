@@ -144,14 +144,10 @@ public class DinoNetworkManager : NetworkManager
         lastRestartTime = Time.time;
 
         gameStarted = false;
-        GameSessionController session = FindFirstObjectByType<GameSessionController>();
-        if (session != null)
-        {
-            session.RestartGame();
-            // RestartGame → BeginGame → NotifyGameStarted()에서 gameStarted = true로 설정됨
-        }
-        RestartConfirmedMessage confirmMsg = new RestartConfirmedMessage { restartApproved = true };
-        NetworkServer.SendToAll(confirmMsg);
+
+        // 씬 리로드로 완전 초기화 — DinoNetworkManager는 DontDestroyOnLoad 유지
+        // 모든 게임 상태가 새 씬에서 초기화됨 (카메라, 알, UI, 이벤트 등)
+        ServerChangeScene("01_Game");
     }
 
     private void OnClientJoinAccepted(JoinAcceptedMessage msg)
@@ -196,14 +192,8 @@ public class DinoNetworkManager : NetworkManager
 
     private void OnClientRestartConfirmed(RestartConfirmedMessage msg)
     {
-        if (msg.restartApproved)
-        {
-            GameSessionController session = FindFirstObjectByType<GameSessionController>();
-            if (session != null)
-            {
-                session.RestartGame();
-            }
-        }
+        // ServerChangeScene이 재시작을 처리하므로 이 핸들러는 더 이상 사용되지 않음
+        // (호환성을 위해 유지, 아무 동작도 하지 않음)
     }
 
     public void StartNetworkHost()
