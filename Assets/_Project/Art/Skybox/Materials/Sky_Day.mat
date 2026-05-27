@@ -74,7 +74,7 @@ Material:
     - _Moon_color: {r: 0.906, g: 0.43, b: 0.117, a: 1}
     - _StarColorLut_ST: {r: 0.5, g: 1, b: 0, a: 0}
     - _SunAdditionColor: {r: 0.847, g: 0.887, b: 0.672, a: 1}
-    - _SunDirection: {r: -0, g: -0, b: -1, a: 0}
+    - _SunDirection: {r: -0, g: 0.2, b: -0.98, a: 0}
     - _downPartSkyColor: {r: 0.412, g: 0.706, b: 0.816, a: 1}
     - _downPartSunColor: {r: 0.757, g: 0.939, b: 0.933, a: 1}
     - _sun_color: {r: 0.994, g: 0.969, b: 0.939, a: 1}
