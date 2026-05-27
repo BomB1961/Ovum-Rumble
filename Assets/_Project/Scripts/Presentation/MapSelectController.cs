@@ -19,18 +19,6 @@ public class MapSelectController : MonoBehaviour
 
     private DinoNetworkManager netMan;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void CreateForMapSelectScene()
-    {
-        if (SceneManager.GetActiveScene().name != MapSelectSceneName
-            || FindFirstObjectByType<MapSelectController>() != null)
-        {
-            return;
-        }
-
-        new GameObject(nameof(MapSelectController)).AddComponent<MapSelectController>();
-    }
-
     private void Awake()
     {
         ResolveMissingReferences();

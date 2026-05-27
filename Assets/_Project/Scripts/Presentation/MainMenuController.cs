@@ -275,7 +275,7 @@ public class MainMenuController : MonoBehaviour
         ShowJoinPanel();
     }
 
-    private void ShowConnectionStatus(string message)
+    public void ShowConnectionStatus(string message)
     {
         if (connectionStatusPanel != null)
             connectionStatusPanel.SetActive(true);
