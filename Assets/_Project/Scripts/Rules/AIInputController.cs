@@ -207,19 +207,19 @@ namespace DinoAlkkagi.Rules
             List<EggController> myEggs, List<EggController> enemyEggs)
         {
             float dist = Vector3.Distance(egg.transform.position, target.transform.position);
-            float baseForce = dist * 1.2f;
+            float baseForce = dist * 1.5f;
 
-            // 타겟이 가장자리에 가까우면 약하게 쳐도 넘어감
+            // 타겟이 가장자리에 가까울수록 강하게 밀어냄 (적 제거 우선)
             float targetEdge = EdgeDanger(target.transform.position);
-            baseForce *= Mathf.Lerp(1.3f, 0.6f, targetEdge);
+            baseForce *= Mathf.Lerp(1.0f, 1.6f, targetEdge);
 
-            // 내 알이 가장자리에 가까우면 약하게 (자살 방지)
+            // 내 알이 위험하면 약하게 (자살 방지)
             float myEdge = EdgeDanger(egg.transform.position);
-            baseForce *= Mathf.Lerp(1.0f, 0.5f, myEdge);
+            baseForce *= Mathf.Lerp(1.0f, 0.7f, myEdge);
 
-            // 발사 경로에 아군이 있으면 약하게 (자해 방지)
+            // 발사 경로에 아군이 있으면 감소 (자해 방지)
             int friendliesInLine = CountFriendliesInLineOfFire(egg, target.transform.position, myEggs);
-            baseForce *= Mathf.Lerp(1.0f, 0.35f, Mathf.Clamp01(friendliesInLine * 0.4f));
+            baseForce *= Mathf.Lerp(1.0f, 0.6f, Mathf.Clamp01(friendliesInLine * 0.3f));
 
             // [Power 알 호환] EggController.Launch()에서 powerMultiplier를 곱하므로
             // AI는 나누기로 보정하여 의도한 force 유지 (기본 1.0, 없으면 무시)
