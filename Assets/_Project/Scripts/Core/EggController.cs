@@ -7,6 +7,9 @@ public class EggController : MonoBehaviour
     [SerializeField] private bool isAlive = true;
     [SerializeField] private Rigidbody cachedRigidbody;
 
+    [Header("Ability Egg")]
+    [SerializeField] private float powerMultiplier = 1f; // Power 알: >1.0
+
     private int networkEggId = -1;
 
     public event Action<EggController> Launched;
@@ -18,6 +21,7 @@ public class EggController : MonoBehaviour
     public Rigidbody Rigidbody => cachedRigidbody;
     public bool CanLaunch => isAlive && cachedRigidbody != null;
     public int NetworkEggId => networkEggId;
+    public float PowerMultiplier => powerMultiplier;
 
     public void SetNetworkEggId(int id) { networkEggId = id; }
 
@@ -47,7 +51,8 @@ public class EggController : MonoBehaviour
             return;
         }
 
-        cachedRigidbody.AddForce(impulse, ForceMode.Impulse);
+        // Power 알 배율 적용 (Prefab에서 powerMultiplier 설정)
+        cachedRigidbody.AddForce(impulse * powerMultiplier, ForceMode.Impulse);
         Launched?.Invoke(this);
     }
 

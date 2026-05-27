@@ -221,6 +221,12 @@ namespace DinoAlkkagi.Rules
             int friendliesInLine = CountFriendliesInLineOfFire(egg, target.transform.position, myEggs);
             baseForce *= Mathf.Lerp(1.0f, 0.35f, Mathf.Clamp01(friendliesInLine * 0.4f));
 
+            // [Power 알 호환] EggController.Launch()에서 powerMultiplier를 곱하므로
+            // AI는 나누기로 보정하여 의도한 force 유지 (기본 1.0, 없으면 무시)
+            float powerMult = egg.PowerMultiplier;
+            if (powerMult > 1.01f)
+                baseForce /= powerMult;
+
             return Mathf.Clamp(baseForce * Random.Range(0.85f, 1.15f), minForce, maxForce);
         }
 
