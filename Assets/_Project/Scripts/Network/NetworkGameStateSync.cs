@@ -4,11 +4,12 @@ using Mirror;
 using DinoAlkkagi.Core;
 using DinoAlkkagi.Rules;
 using DinoAlkkagi.Data;
+using DinoAlkkagi.Presentation;
 
 public class NetworkGameStateSync : MonoBehaviour
 {
     [SerializeField] private GameSettings settings;
-    [SerializeField] private float snapshotInterval = 0.1f;
+    [SerializeField] private float snapshotInterval = 0.05f;
 
     private GameSessionController session;
     private TurnController turnController;

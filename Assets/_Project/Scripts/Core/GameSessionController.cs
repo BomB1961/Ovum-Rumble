@@ -259,8 +259,22 @@ namespace DinoAlkkagi.Core
                 flickInputController.SetInputEnabled(playerId == GameLaunchContext.LocalPlayerId
                     && !turnController.IsInputLocked);
             }
+            else if (GameLaunchContext.IsNetworkHost)
+            {
+                // 호스트(네트워크): P1 턴만 직접 조종, P2 턴은 클라이언트 입력 대기
+                if (playerId == 1)
+                {
+                    flickInputController.SetActivePlayer(1);
+                    SyncInputAvailability();
+                }
+                else
+                {
+                    flickInputController.SetInputEnabled(false);
+                }
+            }
             else
             {
+                // 로컬 핫시트: 턴에 따라 자유롭게 조종
                 flickInputController.SetActivePlayer(playerId);
                 SyncInputAvailability();
             }
