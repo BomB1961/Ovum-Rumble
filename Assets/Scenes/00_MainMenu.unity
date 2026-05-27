@@ -4555,6 +4555,8 @@ GameObject:
   - component: {fileID: 1958357527}
   - component: {fileID: 1958357529}
   - component: {fileID: 1958357528}
+  - component: {fileID: 1958357530}
+  - component: {fileID: 1958357531}
   m_Layer: 5
   m_Name: Text_Subtitle
   m_TagString: Untagged
@@ -4682,6 +4684,33 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1958357526}
   m_CullTransparentMesh: 1
+--- !u!225 &1958357530
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1958357526}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &1958357531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1958357526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7048ed177154ce4b176f3f66c8143dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bounceOffsetY: 12
+  visibleSeconds: 2
+  fadeSeconds: 0.5
 --- !u!1 &1992013928
 GameObject:
   m_ObjectHideFlags: 0
