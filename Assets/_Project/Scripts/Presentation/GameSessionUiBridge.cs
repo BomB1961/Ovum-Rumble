@@ -163,6 +163,11 @@ public class GameSessionUiBridge : MonoBehaviour
 
     private string GetCurrentPlayerName()
     {
+        if (GameLaunchContext.IsVsComputer)
+        {
+            return currentPlayerId == 2 ? "AI" : "\ud50c\ub808\uc774\uc5b4";
+        }
+
         return $"P{currentPlayerId}";
     }
 }

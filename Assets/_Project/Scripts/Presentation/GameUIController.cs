@@ -28,6 +28,8 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private TMP_Text currentTurnText;
     [SerializeField] private TMP_Text p1EggCountText;
     [SerializeField] private TMP_Text p2EggCountText;
+    [SerializeField] private Image[] p1EggCountImages;
+    [SerializeField] private Image[] p2EggCountImages;
     [SerializeField] private TMP_Text turnTimeText;
     [SerializeField] private TMP_Text gameTimeText;
     [SerializeField] private TMP_Text guideText;
@@ -80,17 +82,19 @@ public class GameUIController : MonoBehaviour
 
     public void SetCurrentTurnText(string playerName)
     {
-        SetText(currentTurnText, $"\ud604\uc7ac \ucc28\ub840: {playerName}");
+        SetText(currentTurnText, playerName);
     }
 
     public void SetP1EggCountText(int eggCount)
     {
-        SetText(p1EggCountText, $"P1 \ub0a8\uc740 \uc54c: {eggCount}\uac1c");
+        SetPanelState(p1EggCountText != null ? p1EggCountText.gameObject : null, false);
+        SetP1EggCountImages(eggCount);
     }
 
     public void SetP2EggCountText(int eggCount)
     {
-        SetText(p2EggCountText, $"P2 \ub0a8\uc740 \uc54c: {eggCount}\uac1c");
+        SetPanelState(p2EggCountText != null ? p2EggCountText.gameObject : null, false);
+        SetP2EggCountImages(eggCount);
     }
 
     public void SetTurnTime(float remainingSeconds)
@@ -142,6 +146,18 @@ public class GameUIController : MonoBehaviour
         gameSessionController?.RestartGame();
     }
 
+    public void OnClickSettingsRetry()
+    {
+        Debug.Log("Settings Retry Button Clicked");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void OnClickSettingsMainMenu()
+    {
+        Debug.Log("Settings MainMenu Button Clicked");
+        SceneManager.LoadScene(MainMenuSceneName);
+    }
+
     public void OnClickMainMenu()
     {
         Debug.Log("Main Menu button clicked.");
@@ -187,7 +203,7 @@ public class GameUIController : MonoBehaviour
         SetPanelState(gameHudPanel, true);
         SetPanelState(settingsPanel, false);
         HideResult();
-        UpdateHUD("P1", 0, 0, 25f, 0f);
+        UpdateHUD("P1", 6, 6, 25f, 0f);
         SetGuideText("\uc54c\uc744 \uc870\uc900\ud558\uc138\uc694.");
     }
 
@@ -195,8 +211,8 @@ public class GameUIController : MonoBehaviour
     {
         AddClickListener(settingsButton, OnClickSettings);
         AddClickListener(settingsBackButton, OnClickSettingsBack);
-        AddClickListener(settingsMainMenuButton, OnClickMainMenu);
-        AddClickListener(settingsRetryButton, OnClickRetry);
+        AddClickListener(settingsMainMenuButton, OnClickSettingsMainMenu);
+        AddClickListener(settingsRetryButton, OnClickSettingsRetry);
         AddClickListener(retryButton, OnClickRetry);
         AddClickListener(mainMenuButton, OnClickMainMenu);
         AddClickListener(exitButton, OnClickExit);
@@ -224,6 +240,8 @@ public class GameUIController : MonoBehaviour
         currentTurnText ??= FindText("Text_CurrentTurn");
         p1EggCountText ??= FindText("Text_P1EggCount");
         p2EggCountText ??= FindText("Text_P2EggCount");
+        p1EggCountImages = EnsureImageArray(p1EggCountImages, "EggContainer_P1", "Image_Eggs-");
+        p2EggCountImages = EnsureImageArray(p2EggCountImages, "EggContainer_P2", "Image_Eggs-");
         turnTimeText ??= FindText("Text_TurnTime");
         gameTimeText ??= FindText("Text_GameTime");
         guideText ??= FindText("Text_Guide");
@@ -245,6 +263,42 @@ public class GameUIController : MonoBehaviour
         turnTimeText ??= CreateHudText("Text_TurnTime", "00:30", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(430f, 50f), TextAlignmentOptions.Center);
         gameTimeText ??= CreateHudText("Text_GameTime", "00:00", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -120f), new Vector2(520f, 50f), TextAlignmentOptions.Center);
         exitButton ??= CreateResultExitButton();
+        SetPanelState(p1EggCountText != null ? p1EggCountText.gameObject : null, false);
+        SetPanelState(p2EggCountText != null ? p2EggCountText.gameObject : null, false);
+    }
+
+    private void SetP1EggCountImages(int eggCount)
+    {
+        if (p1EggCountImages == null || p1EggCountImages.Length == 0)
+        {
+            return;
+        }
+
+        int visibleCount = Mathf.Clamp(eggCount, 0, p1EggCountImages.Length);
+        for (int i = 0; i < p1EggCountImages.Length; i++)
+        {
+            if (p1EggCountImages[i] != null)
+            {
+                p1EggCountImages[i].enabled = i < visibleCount;
+            }
+        }
+    }
+
+    private void SetP2EggCountImages(int eggCount)
+    {
+        if (p2EggCountImages == null || p2EggCountImages.Length == 0)
+        {
+            return;
+        }
+
+        int visibleCount = Mathf.Clamp(eggCount, 0, p2EggCountImages.Length);
+        for (int i = 0; i < p2EggCountImages.Length; i++)
+        {
+            if (p2EggCountImages[i] != null)
+            {
+                p2EggCountImages[i].enabled = i < visibleCount;
+            }
+        }
     }
 
     private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
@@ -411,7 +465,7 @@ public class GameUIController : MonoBehaviour
             return;
         }
 
-        button.onClick.RemoveAllListeners();
+        button.onClick.RemoveListener(action);
         button.onClick.AddListener(action);
     }
 
@@ -453,6 +507,29 @@ public class GameUIController : MonoBehaviour
     {
         GameObject found = FindGameObject(names);
         return found != null ? found.GetComponent<Slider>() : null;
+    }
+
+    private static Image[] EnsureImageArray(Image[] images, string containerName, string childPrefix)
+    {
+        if (images != null && images.Length > 0)
+        {
+            return images;
+        }
+
+        GameObject container = FindGameObject(containerName);
+        if (container == null)
+        {
+            return images;
+        }
+
+        Image[] foundImages = new Image[container.transform.childCount];
+        for (int i = 0; i < container.transform.childCount; i++)
+        {
+            Transform child = container.transform.GetChild(i);
+            foundImages[i] = child.name.StartsWith(childPrefix) ? child.GetComponent<Image>() : null;
+        }
+
+        return foundImages;
     }
 }
 }

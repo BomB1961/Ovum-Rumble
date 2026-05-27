@@ -283,14 +283,14 @@ public class MainMenuController : MonoBehaviour
         TMP_Text tmpLabel = buttonObject.GetComponentInChildren<TMP_Text>(true);
         if (tmpLabel != null)
         {
-            tmpLabel.text = "컴퓨터와 대결";
+            tmpLabel.text = "AI와 플레이";
             return;
         }
 
         Text legacyLabel = buttonObject.GetComponentInChildren<Text>(true);
         if (legacyLabel != null)
         {
-            legacyLabel.text = "컴퓨터와 대결";
+            legacyLabel.text = "AI와 플레이";
         }
     }
 
