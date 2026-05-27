@@ -206,38 +206,52 @@ public class DinoNetworkManager : NetworkManager
 
     public void StartNetworkHost()
     {
-        if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+        try
         {
-            Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-            return;
-        }
-        GameLaunchContext.SetMode(GameMode.NetworkHost);
-        GameLaunchContext.ServerIP = "0.0.0.0";
-        networkAddress = "localhost";
-        StartHost();
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
+            GameLaunchContext.ServerIP = "0.0.0.0";
+            networkAddress = "localhost";
+            StartHost();
 
-        // 서버 시작 직후 상태 로깅
-        if (NetworkServer.active)
-        {
-            Debug.Log($"[DinoNetworkManager] Host started on port 7777 (UDP). LAN IP 확인 후 클라이언트에서 입력하세요.");
+            // 서버 시작 직후 상태 로깅
+            if (NetworkServer.active)
+            {
+                Debug.Log($"[DinoNetworkManager] Host started on port 7777 (UDP).");
+            }
+            else
+            {
+                Debug.LogError("[DinoNetworkManager] Host FAILED to start! Port 7777 may be in use by another process.");
+            }
         }
-        else
+        catch (System.Exception ex)
         {
-            Debug.LogError("[DinoNetworkManager] Host FAILED to start! Port 7777 may be in use by another process.");
+            Debug.LogError($"[DinoNetworkManager] Host start failed: {ex.Message}");
         }
     }
 
     public void StartNetworkClient(string ip)
     {
-        if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+        try
         {
-            Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-            return;
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+            GameLaunchContext.SetMode(GameMode.NetworkClient);
+            GameLaunchContext.ServerIP = ip;
+            networkAddress = ip;
+            StartClient();
         }
-        GameLaunchContext.SetMode(GameMode.NetworkClient);
-        GameLaunchContext.ServerIP = ip;
-        networkAddress = ip;
-        StartClient();
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] Client start failed: {ex.Message}");
+        }
     }
 
     public override void OnStopServer()

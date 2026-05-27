@@ -460,20 +460,27 @@ public class MainMenuController : MonoBehaviour
 
     private void CleanupPreviousSession()
     {
-        // 이전 네트워크 세션이 남아있으면 정리 (재시작/재진입 대비)
-        Mirror.NetworkManager nm = FindDinoNetworkManager();
-        if (nm != null)
+        try
         {
-            if (Mirror.NetworkServer.active)
+            // 이전 네트워크 세션이 남아있으면 정리 (재시작/재진입 대비)
+            Mirror.NetworkManager nm = FindDinoNetworkManager();
+            if (nm != null)
             {
-                Debug.Log("[MainMenu] Cleaning up previous server session.");
-                nm.StopHost();
+                if (Mirror.NetworkServer.active)
+                {
+                    Debug.Log("[MainMenu] Cleaning up previous server session.");
+                    nm.StopHost();
+                }
+                else if (Mirror.NetworkClient.active)
+                {
+                    Debug.Log("[MainMenu] Cleaning up previous client session.");
+                    nm.StopClient();
+                }
             }
-            else if (Mirror.NetworkClient.active)
-            {
-                Debug.Log("[MainMenu] Cleaning up previous client session.");
-                nm.StopClient();
-            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[MainMenu] Cleanup warning: {ex.Message}");
         }
     }
 
