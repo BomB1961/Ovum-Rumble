@@ -375,6 +375,7 @@ namespace DinoAlkkagi.Core
         public void RestartGame()
         {
             Debug.Log("[GameSessionController] Restarting game...");
+            // BeginGame가 모든 정리 + 재생성을 처리함
             BeginGame();
         }
 
