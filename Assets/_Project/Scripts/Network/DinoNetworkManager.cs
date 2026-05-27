@@ -157,13 +157,8 @@ public class DinoNetworkManager : NetworkManager
     private void OnClientJoinAccepted(JoinAcceptedMessage msg)
     {
         GameLaunchContext.SetNetworkClientInfo(msg.assignedPlayerId);
+        GameLaunchContext.SetMode(GameMode.NetworkClient);
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
-
-        // 클라이언트(원격)만 MapSelect로 이동. 호스트는 이미 MapSelect에 있음
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "02_MapSelect")
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("02_MapSelect");
-        }
     }
 
     private void OnClientStateSnapshot(StateSnapshotMessage msg)
