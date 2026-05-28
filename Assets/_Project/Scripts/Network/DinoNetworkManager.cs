@@ -44,6 +44,8 @@ public class DinoNetworkManager : NetworkManager
     private Thread relayThread;
     private volatile bool relayRunning;
     private TcpClient vpsRelayClient;
+    private TcpListener clientRelayListener;
+    private int actualClientRelayPort = ClientRelayPort;
     private readonly ManualResetEventSlim relayReadySignal = new ManualResetEventSlim(false);
 
     public int HostPlayerId => hostPlayerId;
@@ -255,14 +257,14 @@ public class DinoNetworkManager : NetworkManager
             GameLaunchContext.SetMode(GameMode.NetworkClient);
             GameLaunchContext.ServerIP = VpsAddress;
 
-            // 2. ?�라?�언??릴레???�작 (로컬?�서 Mirror ?�속 ?��?
+            // 2. 클라이언트 릴레이 시작 (로컬에서 Mirror 접속 대기)
             StartClientRelay();
 
-            // 3. 로컬 릴레이로 Mirror 접속
+            // 3. 로컬 릴레이로 Mirror 접속 (fallback 포트 반영)
             networkAddress = "127.0.0.1";
-            networkPort = ClientRelayPort;
+            networkPort = actualClientRelayPort;
             if (transport is PortTransport pt)
-                pt.Port = (ushort)ClientRelayPort;
+                pt.Port = (ushort)actualClientRelayPort;
             StartClient();
         }
         catch (System.Exception ex)
@@ -278,7 +280,7 @@ public class DinoNetworkManager : NetworkManager
         {
             try
             {
-                // VPS??먼�? ?�결 + �?코드 ?�송
+                // VPS에 먼저 연결 + 방 코드 전송
                 vpsRelayClient = new TcpClient();
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
@@ -287,12 +289,27 @@ public class DinoNetworkManager : NetworkManager
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // 로컬?�서 Mirror ?�속 ?��?
-                var listener = new TcpListener(System.Net.IPAddress.Loopback, ClientRelayPort);
-                listener.Start();
+                // 로컬에서 Mirror 접속 대기 (포트 충돌 시 fallback)
+                int bindPort = ClientRelayPort;
+                for (int attempt = 0; attempt < 10; attempt++, bindPort++)
+                {
+                    try
+                    {
+                        clientRelayListener = new TcpListener(System.Net.IPAddress.Loopback, bindPort);
+                        clientRelayListener.Start();
+                        break;
+                    }
+                    catch (SocketException)
+                    {
+                        if (bindPort >= ClientRelayPort + 9)
+                            throw; // 모두 실패
+                    }
+                }
+                actualClientRelayPort = bindPort;
                 relayReadySignal.Set();
-                var mirrorConn = listener.AcceptTcpClient();
-                listener.Stop();
+                var mirrorConn = clientRelayListener.AcceptTcpClient();
+                clientRelayListener.Stop();
+                clientRelayListener = null;
                 var mirrorStream = mirrorConn.GetStream();
 
                 Debug.Log("[DinoNetworkManager] Client relay bridged.");
@@ -306,12 +323,17 @@ public class DinoNetworkManager : NetworkManager
             {
                 Debug.LogError($"[DinoNetworkManager] Client relay error: {ex.Message}");
             }
-            finally { relayRunning = false; }
+            finally
+            {
+                relayRunning = false;
+                try { clientRelayListener?.Stop(); } catch { }
+                clientRelayListener = null;
+            }
         })
         { IsBackground = true };
         relayThread.Start();
 
-        // 릴레??리스??준�??�료�?기다�?(최�? 5�?
+        // 릴레이 리스너 준비 완료를 기다림 (최대 5초)
         if (!relayReadySignal.Wait(5000))
         {
             Debug.LogWarning("[DinoNetworkManager] Client relay listener not ready within 5s, proceeding anyway.");
@@ -340,7 +362,9 @@ public class DinoNetworkManager : NetworkManager
     {
         relayRunning = false;
         try { vpsRelayClient?.Close(); } catch { }
+        try { clientRelayListener?.Stop(); } catch { }
         vpsRelayClient = null;
+        clientRelayListener = null;
         relayThread = null;
     }
 
