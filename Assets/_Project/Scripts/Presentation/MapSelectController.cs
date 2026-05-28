@@ -72,8 +72,22 @@ public class MapSelectController : MonoBehaviour
 
     private void HandleRoomCreated(string code)
     {
-        SetStatusText($"🏠 방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
-        Debug.Log($"[MapSelectController] Room code: {code}");
+        string msg = $"🏠 방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.";
+        if (connectionStatusText != null)
+        {
+            connectionStatusText.text = msg;
+            connectionStatusText.fontSize = 48;
+            connectionStatusText.gameObject.SetActive(true);
+            connectionStatusText.transform.SetAsLastSibling();
+        }
+        else
+        {
+            // 백업: 동적으로 생성
+            connectionStatusText = CreateStatusText();
+            connectionStatusText.text = msg;
+            connectionStatusText.fontSize = 48;
+        }
+        Debug.Log($"[MapSelectController] ★★★ 방 코드: {code} ★★★");
     }
 
     private string GetLocalIp()
