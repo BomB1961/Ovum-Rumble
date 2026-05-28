@@ -240,9 +240,8 @@ public class DinoNetworkManager : NetworkManager
             // 2. ?�라?�언??릴레???�작 (로컬?�서 Mirror ?�속 ?��?
             StartClientRelay();
 
-            // 3. 로컬 릴레이로 Mirror 접속
+            // 3. 로컬 릴레이로 Mirror 접속 (ClientRelayPort = 17777)
             networkAddress = "127.0.0.1";
-            networkPort = ClientRelayPort;
             if (transport is PortTransport pt)
                 pt.Port = (ushort)ClientRelayPort;
             StartClient();
