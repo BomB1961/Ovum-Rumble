@@ -41,6 +41,12 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private GameObject resultPanel;
     [SerializeField] private GameObject resultTitleVictory;
     [SerializeField] private GameObject resultTitleDefeat;
+    // [RESULT_TITLE_ADDED] begin
+    [SerializeField] private GameObject resultTitleP1;
+    [SerializeField] private GameObject resultTitleP2;
+    [SerializeField] private GameObject resultTitleAiVictory;
+    [SerializeField] private GameObject resultTitleAiDefeat;
+    // [RESULT_TITLE_ADDED] end
     [SerializeField] private TMP_Text resultTitleText;
     [SerializeField] private TMP_Text victoryTitleText;
     [SerializeField] private TMP_Text resultDetailText;
@@ -54,6 +60,7 @@ public class GameUIController : MonoBehaviour
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private Slider bgmSlider;
     [SerializeField] private Slider sfxSlider;
+    [SerializeField] private TMP_Text settingsServerAddressText;
     [SerializeField] private Button settingsBackButton;
     [SerializeField] private Button settingsMainMenuButton;
     [SerializeField] private Button settingsRetryButton;
@@ -76,6 +83,7 @@ public class GameUIController : MonoBehaviour
         gameSessionController ??= FindFirstObjectByType<GameSessionController>();
         audioManager ??= FindFirstObjectByType<AudioManager>();
         InitializeVolumeSliders();
+        UpdateSettingsServerAddressText();
         RegisterListeners();
         ResetGameUI();
         PlaySubtitleOnce();
@@ -169,6 +177,12 @@ public class GameUIController : MonoBehaviour
         PrepareResultButtons();
         SetPanelState(resultTitleVictory, true);
         SetPanelState(resultTitleDefeat, false);
+        // [RESULT_TITLE_ADDED] begin
+        SetPanelState(resultTitleAiVictory, false);
+        SetPanelState(resultTitleAiDefeat, false);
+        SetPanelState(resultTitleP1, false);
+        SetPanelState(resultTitleP2, false);
+        // [RESULT_TITLE_ADDED] end
         SetText(resultTitleText, "\ubb34\uc2b9\ubd80!");
         SetText(victoryTitleText, "\ubb34\uc2b9\ubd80!");
         SetText(resultDetailText, "\uac8c\uc784 \uc885\ub8cc");
@@ -220,6 +234,7 @@ public class GameUIController : MonoBehaviour
     public void OnClickSettings()
     {
         Debug.Log("Settings button clicked.");
+        UpdateSettingsServerAddressText();
         SetPanelState(settingsPanel, true);
     }
 
@@ -291,6 +306,13 @@ public class GameUIController : MonoBehaviour
         subtitleGraphic ??= FindInactiveGraphic("Image_Subtitle");
         resultTitleVictory ??= FindInactiveGameObject("Image_ResultTitle_Victory");
         resultTitleDefeat ??= FindInactiveGameObject("Image_ResultTitle_Defeat");
+        // [RESULT_TITLE_ADDED] begin
+        resultTitleVictory ??= FindInactiveGameObject("Image_ResultTitle");
+        resultTitleP1 ??= FindInactiveGameObject("Image_ResultTitle_p1");
+        resultTitleP2 ??= FindInactiveGameObject("Image_ResultTitle_p2");
+        resultTitleAiVictory ??= FindInactiveGameObject("Image_ResultTitle_AIVictory");
+        resultTitleAiDefeat ??= FindInactiveGameObject("Image_ResultTitle_AIDefeat");
+        // [RESULT_TITLE_ADDED] end
         resultTitleText ??= FindText("Text_ResultTitle");
         victoryTitleText ??= FindChildText(resultTitleVictory);
         resultDetailText ??= FindText("Text_ResultDetail");
@@ -305,6 +327,7 @@ public class GameUIController : MonoBehaviour
         settingsMainMenuButton ??= FindButton("Button_SettingsMainMenu");
         settingsRetryButton ??= FindButton("Button_SettingsRetry");
         settingsExitButton ??= FindButton("Button_SettingsExit");
+        settingsServerAddressText ??= FindText("Text_ServerAddress");
 
         bgmSlider ??= FindSlider("Slider_BGM");
         sfxSlider ??= FindSlider("Slider_SFX");
@@ -316,8 +339,27 @@ public class GameUIController : MonoBehaviour
         SetPanelState(p2EggCountText != null ? p2EggCountText.gameObject : null, false);
         WarnMissingResultReference(resultTitleVictory, nameof(resultTitleVictory), "Image_ResultTitle_Victory");
         WarnMissingResultReference(resultTitleDefeat, nameof(resultTitleDefeat), "Image_ResultTitle_Defeat");
+        // [RESULT_TITLE_ADDED] begin
+        WarnMissingResultReference(resultTitleP1, nameof(resultTitleP1), "Image_ResultTitle_p1");
+        WarnMissingResultReference(resultTitleP2, nameof(resultTitleP2), "Image_ResultTitle_p2");
+        WarnMissingResultReference(resultTitleAiVictory, nameof(resultTitleAiVictory), "Image_ResultTitle_AIVictory");
+        WarnMissingResultReference(resultTitleAiDefeat, nameof(resultTitleAiDefeat), "Image_ResultTitle_AIDefeat");
+        // [RESULT_TITLE_ADDED] end
         WarnMissingResultReference(resultDetailP1Text, nameof(resultDetailP1Text), "Image_ResultDetail_p1/Text_ResultDetail");
         WarnMissingResultReference(resultDetailP2Text, nameof(resultDetailP2Text), "Image_ResultDetail_p2/Text_ResultDetail");
+    }
+
+    private void UpdateSettingsServerAddressText()
+    {
+        settingsServerAddressText ??= FindText("Text_ServerAddress");
+        if (settingsServerAddressText == null)
+        {
+            Debug.LogWarning("[GameUIController] Text_ServerAddress not found.");
+            return;
+        }
+
+        string serverAddress = string.IsNullOrWhiteSpace(GameLaunchContext.ServerAddress) ? "-" : GameLaunchContext.ServerAddress;
+        SetText(settingsServerAddressText, $"\uc11c\ubc84 \uc8fc\uc18c : {serverAddress}");
     }
 
     private void SetP1EggCountImages(int eggCount)
@@ -357,13 +399,23 @@ public class GameUIController : MonoBehaviour
     private void SetResultTitle(string winnerName)
     {
         bool isP1Winner = winnerName == "P1";
-        bool showDefeat = GameLaunchContext.IsVsComputer && !isP1Winner;
         string titleText = $"{winnerName} \uc2b9\ub9ac";
+        // [RESULT_TITLE_ADDED] begin
+        bool showAiVictory = GameLaunchContext.IsVsComputer && isP1Winner;
+        bool showAiDefeat = GameLaunchContext.IsVsComputer && !isP1Winner;
+        bool showP1Title = !GameLaunchContext.IsVsComputer && isP1Winner;
+        bool showP2Title = !GameLaunchContext.IsVsComputer && !isP1Winner;
+        bool showLocalTitle = !GameLaunchContext.IsVsComputer && resultTitleP1 == null && resultTitleP2 == null;
 
-        SetPanelState(resultTitleVictory, !showDefeat);
-        SetPanelState(resultTitleDefeat, showDefeat);
-        SetText(resultTitleText, showDefeat ? "\ud328\ubc30" : titleText);
-        SetText(victoryTitleText, titleText);
+        SetPanelState(resultTitleVictory, showLocalTitle);
+        SetPanelState(resultTitleDefeat, false);
+        SetPanelState(resultTitleP1, showP1Title);
+        SetPanelState(resultTitleP2, showP2Title);
+        SetPanelState(resultTitleAiVictory, showAiVictory);
+        SetPanelState(resultTitleAiDefeat, showAiDefeat);
+        SetText(resultTitleText, showAiDefeat ? "\ud328\ubc30" : titleText);
+        SetText(victoryTitleText, showLocalTitle ? titleText : string.Empty);
+        // [RESULT_TITLE_ADDED] end
     }
 
     private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount)

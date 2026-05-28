@@ -19,6 +19,8 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject joinPanel;
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject createRoomDetailPanel;
+    [SerializeField] private GameObject joinIpPopupPanel;
 
     [Header("Main Menu")]
     [SerializeField] private Button hostGameButton;
@@ -30,9 +32,14 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Join")]
     [SerializeField] private TMP_InputField hostIpInput;
+    [SerializeField] private TMP_InputField joinIpInput;
     [SerializeField] private TMP_Text controlsGuideText;
     [SerializeField] private Button joinGameButton;
     [SerializeField] private Button cancelJoinButton;
+    [SerializeField] private Button directConnectButton;
+    [SerializeField] private Button inviteCodeButton;
+    [SerializeField] private Button serverJoinButton;
+    [SerializeField] private Button cancelJoinIpPopupButton;
 
     [Header("Settings")]
     [SerializeField] private Slider bgmSlider;
@@ -44,6 +51,7 @@ public class MainMenuController : MonoBehaviour
     {
         GameLaunchContext.ResetToDefault();
         ResolveMissingReferences();
+        EnsureJoinIpInputTextComponent();
         EnsureVsComputerButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
         InitializeVolumeSliders();
@@ -64,7 +72,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickCreateRoom()
     {
-        OnClickHostGame();
+        ShowCreateRoomDetailPanel();
     }
 
     public void OnClickCreateAiRoom()
@@ -97,12 +105,40 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
-        ShowMainMenu();
+        ShowJoinIpPopupPanel();
+    }
+
+    public void OnClickJoinIpSubmit()
+    {
+        string serverAddress = joinIpInput != null ? joinIpInput.text.Trim() : string.Empty;
+        if (string.IsNullOrWhiteSpace(serverAddress))
+        {
+            ShowJoinIpPopupPanel();
+            joinIpInput?.Select();
+            joinIpInput?.ActivateInputField();
+            return;
+        }
+
+        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+        GameLaunchContext.SetServerAddress(serverAddress);
+        SceneManager.LoadScene(MapSelectSceneName);
     }
 
     public void OnClickCancelJoin()
     {
         ShowMainMenu();
+    }
+
+    public void OnClickDirectConnect()
+    {
+        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+        GameLaunchContext.SetServerAddress("127.0.0.1");
+        SceneManager.LoadScene(MapSelectSceneName);
+    }
+
+    public void OnClickInviteCode()
+    {
+        ShowJoinIpPopupPanel();
     }
 
     public void OnClickSettings()
@@ -145,6 +181,8 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
+        SetPanelState(createRoomDetailPanel, false);
+        SetPanelState(joinIpPopupPanel, false);
     }
 
     private void ShowJoinPanel()
@@ -152,6 +190,8 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, true);
         SetPanelState(settingsPanel, false);
+        SetPanelState(createRoomDetailPanel, false);
+        SetPanelState(joinIpPopupPanel, false);
     }
 
     private void ShowControlsPanel()
@@ -177,6 +217,28 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, true);
+        SetPanelState(createRoomDetailPanel, false);
+        SetPanelState(joinIpPopupPanel, false);
+    }
+
+    private void ShowCreateRoomDetailPanel()
+    {
+        SetPanelState(mainMenuPanel, true);
+        SetPanelState(joinPanel, false);
+        SetPanelState(settingsPanel, false);
+        SetPanelState(createRoomDetailPanel, true);
+        SetPanelState(joinIpPopupPanel, false);
+    }
+
+    private void ShowJoinIpPopupPanel()
+    {
+        SetPanelState(mainMenuPanel, true);
+        SetPanelState(joinPanel, false);
+        SetPanelState(settingsPanel, false);
+        SetPanelState(createRoomDetailPanel, false);
+        SetPanelState(joinIpPopupPanel, true);
+        joinIpInput?.Select();
+        joinIpInput?.ActivateInputField();
     }
 
     private static void SetPanelState(GameObject panel, bool active)
@@ -189,7 +251,7 @@ public class MainMenuController : MonoBehaviour
 
     private void RegisterButtonListeners()
     {
-        AddClickListener(hostGameButton, OnClickHostGame);
+        AddClickListener(hostGameButton, hostGameButton != null && hostGameButton.name == "Button_CreateRoom" ? OnClickCreateRoom : OnClickHostGame);
         AddClickListener(showJoinPanelButton, OnClickJoinRoom);
         AddClickListener(testJoinButton, OnClickTestJoin);
         AddClickListener(vsComputerButton, OnClickVsComputer);
@@ -197,6 +259,10 @@ public class MainMenuController : MonoBehaviour
         AddClickListener(quitGameButton, OnClickQuitGame);
         AddClickListener(joinGameButton, OnClickJoinGame);
         AddClickListener(cancelJoinButton, OnClickCancelJoin);
+        AddClickListener(directConnectButton, OnClickDirectConnect);
+        AddClickListener(inviteCodeButton, OnClickInviteCode);
+        AddClickListener(serverJoinButton, OnClickJoinIpSubmit);
+        AddClickListener(cancelJoinIpPopupButton, OnClickCancelJoin);
         AddClickListener(closeSettingsButton, OnClickCloseSettings);
 
         if (bgmSlider != null)
@@ -228,6 +294,8 @@ public class MainMenuController : MonoBehaviour
         mainMenuPanel ??= FindInactiveGameObject("UI_MainMenuPanel");
         joinPanel ??= FindInactiveGameObject("UI_JoinRoomPanel", "Panel_join", "Panel_Join");
         settingsPanel ??= FindInactiveGameObject("UI_SettingsPanel");
+        createRoomDetailPanel ??= FindInactiveGameObject("CreateRoom_detail");
+        joinIpPopupPanel ??= FindInactiveGameObject("Popup_Panel_JoinIP");
 
         hostGameButton ??= FindInactiveComponent<Button>("Button_HostGame", "Button_CreateRoom");
         showJoinPanelButton ??= FindInactiveComponent<Button>("Button_ShowJoinPanel", "Button_JoinRoom");
@@ -237,13 +305,50 @@ public class MainMenuController : MonoBehaviour
         quitGameButton ??= FindInactiveComponent<Button>("Button_QuitGame");
 
         hostIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_HostIP");
+        joinIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_JoinIP");
         controlsGuideText ??= FindInactiveComponent<TMP_Text>("Text_InputField_IP");
         joinGameButton ??= FindInactiveComponent<Button>("Button_JoinGame", "Button_JoinRoom (1)");
         cancelJoinButton ??= FindInactiveComponent<Button>("Button_CancelJoin", "Button_JoinRoom (2)");
+        directConnectButton ??= FindInactiveButtonInParent("CreateRoom_detail", "Button_Host");
+        inviteCodeButton ??= FindInactiveButtonInParent("CreateRoom_detail", "Button_Join");
+        serverJoinButton ??= FindInactiveButtonInParent("Popup_Panel_JoinIP", "Button_Join");
+        cancelJoinIpPopupButton ??= FindInactiveButtonInParent("Popup_Panel_JoinIP", "Button_Cancel");
 
         bgmSlider ??= FindInactiveComponent<Slider>("Slider_BGM");
         sfxSlider ??= FindInactiveComponent<Slider>("Slider_SFX");
         closeSettingsButton ??= FindInactiveComponent<Button>("Button_CloseSettings");
+    }
+
+    private void EnsureJoinIpInputTextComponent()
+    {
+        if (joinIpInput == null || joinIpInput.textComponent != null)
+        {
+            return;
+        }
+
+        Transform viewport = joinIpInput.textViewport != null ? joinIpInput.textViewport : joinIpInput.transform;
+        GameObject textObject = new GameObject("Text (TMP)", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(viewport, false);
+
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI inputText = textObject.GetComponent<TextMeshProUGUI>();
+        TMP_Text templateText = joinIpInput.placeholder as TMP_Text;
+        if (templateText != null)
+        {
+            inputText.font = templateText.font;
+            inputText.fontSize = templateText.fontSize;
+            inputText.alignment = templateText.alignment;
+        }
+
+        inputText.color = new Color(0.196f, 0.196f, 0.196f, 1f);
+        inputText.raycastTarget = false;
+        joinIpInput.textComponent = inputText;
+        joinIpInput.ForceLabelUpdate();
     }
 
     private void EnsureVsComputerButton()
@@ -327,6 +432,25 @@ public class MainMenuController : MonoBehaviour
     {
         GameObject gameObject = FindInactiveGameObject(names);
         return gameObject != null ? gameObject.GetComponent<T>() : null;
+    }
+
+    private static Button FindInactiveButtonInParent(string parentName, string buttonName)
+    {
+        GameObject parent = FindInactiveGameObject(parentName);
+        if (parent == null)
+        {
+            return null;
+        }
+
+        foreach (Button button in Resources.FindObjectsOfTypeAll<Button>())
+        {
+            if (button.name == buttonName && button.hideFlags == HideFlags.None && button.transform.IsChildOf(parent.transform))
+            {
+                return button;
+            }
+        }
+
+        return null;
     }
 }
 }

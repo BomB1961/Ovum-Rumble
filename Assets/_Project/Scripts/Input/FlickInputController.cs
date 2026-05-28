@@ -15,6 +15,11 @@ public class FlickInputController : MonoBehaviour
     [SerializeField] private float maxDragDistance = 2f;
     [SerializeField] private int activePlayerId = 1;
     [SerializeField] private bool inputEnabled = true;
+    // [AIM_TRAJECTORY_ADDED] begin
+    [SerializeField] private AimTrajectoryVisual aimTrajectoryVisual;
+    [SerializeField] private float minAimDragDistance = 0.15f;
+    [SerializeField] private float maxAimDragDistance = 2.5f;
+    // [AIM_TRAJECTORY_ADDED] end
 
     private EggController selectedEgg;
     private Vector3 dragStartWorld;
@@ -41,6 +46,9 @@ public class FlickInputController : MonoBehaviour
     {
         if (!inputEnabled)
         {
+            // [AIM_TRAJECTORY_ADDED] begin
+            HideAimTrajectory();
+            // [AIM_TRAJECTORY_ADDED] end
             return;
         }
 
@@ -48,6 +56,10 @@ public class FlickInputController : MonoBehaviour
         {
             TryBeginDrag();
         }
+
+        // [AIM_TRAJECTORY_ADDED] begin
+        UpdateAimTrajectory();
+        // [AIM_TRAJECTORY_ADDED] end
 
         if (WasPrimaryButtonReleasedThisFrame())
         {
@@ -73,6 +85,9 @@ public class FlickInputController : MonoBehaviour
 
     public void ClearSelection()
     {
+        // [AIM_TRAJECTORY_ADDED] begin
+        HideAimTrajectory();
+        // [AIM_TRAJECTORY_ADDED] end
         selectedEgg = null;
         isDragging = false;
         dragStartWorld = Vector3.zero;
@@ -144,6 +159,56 @@ public class FlickInputController : MonoBehaviour
         EggLaunched?.Invoke(selectedEgg);
         ClearSelection();
     }
+
+    // [AIM_TRAJECTORY_ADDED] begin
+    private void UpdateAimTrajectory()
+    {
+        if (!isDragging || selectedEgg == null || inputCamera == null)
+        {
+            HideAimTrajectory();
+            return;
+        }
+
+        Ray ray = inputCamera.ScreenPointToRay(GetPointerPosition());
+        Vector3 currentDragWorld = GetBoardPoint(ray, dragStartWorld);
+        Vector3 pullVector = currentDragWorld - dragStartWorld;
+        pullVector.y = 0f;
+
+        float dragDistance = pullVector.magnitude;
+
+        if (dragDistance < minAimDragDistance)
+        {
+            HideAimTrajectory();
+        }
+        else
+        {
+            Vector3 fireDirection = -pullVector.normalized;
+
+            float power01 = Mathf.InverseLerp(
+                minAimDragDistance,
+                maxAimDragDistance,
+                dragDistance
+            );
+
+            if (aimTrajectoryVisual != null)
+            {
+                aimTrajectoryVisual.Show(
+                    selectedEgg.transform.position,
+                    fireDirection,
+                    power01
+                );
+            }
+        }
+    }
+
+    private void HideAimTrajectory()
+    {
+        if (aimTrajectoryVisual != null)
+        {
+            aimTrajectoryVisual.Hide();
+        }
+    }
+    // [AIM_TRAJECTORY_ADDED] end
 
     private bool CanSelect(EggController egg)
     {

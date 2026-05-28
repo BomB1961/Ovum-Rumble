@@ -1,4 +1,5 @@
 using DinoAlkkagi.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,6 +14,7 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private Button terrianButton;
     [SerializeField] private Button iceButton;
     [SerializeField] private Button desertButton;
+    [SerializeField] private TMP_Text serverAddressText;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void CreateForMapSelectScene()
@@ -30,6 +32,7 @@ public class MapSelectController : MonoBehaviour
     {
         ResolveMissingReferences();
         RegisterButtonListeners();
+        UpdateServerAddressText();
     }
 
     public void OnClickTerrian()
@@ -65,6 +68,7 @@ public class MapSelectController : MonoBehaviour
         terrianButton ??= FindButton("Button_Terrian", "button_terrian");
         iceButton ??= FindButton("Button_Ice", "button_ice");
         desertButton ??= FindButton("Button_Desert", "button_Desert");
+        serverAddressText ??= FindText("Text_ServerAddress");
     }
 
     private static void AddClickListener(Button button, UnityEngine.Events.UnityAction action)
@@ -90,6 +94,58 @@ public class MapSelectController : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void UpdateServerAddressText()
+    {
+        serverAddressText ??= CreateServerAddressText();
+        if (serverAddressText == null)
+        {
+            Debug.LogWarning("[MapSelectController] Text_ServerAddress not found and could not be created.");
+            return;
+        }
+
+        serverAddressText.gameObject.SetActive(true);
+        string serverAddress = string.IsNullOrWhiteSpace(GameLaunchContext.ServerAddress) ? "-" : GameLaunchContext.ServerAddress;
+        serverAddressText.text = $"서버 주소 : {serverAddress}";
+    }
+
+    private TMP_Text CreateServerAddressText()
+    {
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null)
+        {
+            return null;
+        }
+
+        GameObject textObject = new GameObject("Text_ServerAddress", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(canvas.transform, false);
+
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = new Vector2(0f, 115f);
+        rectTransform.sizeDelta = new Vector2(900f, 80f);
+
+        TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        TMP_Text template = canvas.GetComponentInChildren<TMP_Text>(true);
+        if (template != null)
+        {
+            text.font = template.font;
+        }
+
+        text.fontSize = 34f;
+        text.alignment = TextAlignmentOptions.Center;
+        text.color = new Color(0.196f, 0.196f, 0.196f, 1f);
+        text.raycastTarget = false;
+        return text;
+    }
+
+    private static TMP_Text FindText(string objectName)
+    {
+        GameObject found = GameObject.Find(objectName);
+        return found != null ? found.GetComponent<TMP_Text>() : null;
     }
 }
 }
