@@ -39,8 +39,13 @@ public class GameUIController : MonoBehaviour
 
     [Header("Result")]
     [SerializeField] private GameObject resultPanel;
+    [SerializeField] private GameObject resultTitleVictory;
+    [SerializeField] private GameObject resultTitleDefeat;
     [SerializeField] private TMP_Text resultTitleText;
+    [SerializeField] private TMP_Text victoryTitleText;
     [SerializeField] private TMP_Text resultDetailText;
+    [SerializeField] private TMP_Text resultDetailP1Text;
+    [SerializeField] private TMP_Text resultDetailP2Text;
     [SerializeField] private Button retryButton;
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button exitButton;
@@ -154,16 +159,21 @@ public class GameUIController : MonoBehaviour
     {
         SetPanelState(resultPanel, true);
         PrepareResultButtons();
-        SetText(resultTitleText, $"{winnerName} \uc2b9\ub9ac!");
-        SetResultDetail(winnerName, p1EggCount, p2EggCount, p1WinCount, p2WinCount);
+        SetResultTitle(winnerName);
+        SetResultDetail(winnerName, p1EggCount, p2EggCount);
     }
 
     public void ShowDrawResult(int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
     {
         SetPanelState(resultPanel, true);
         PrepareResultButtons();
+        SetPanelState(resultTitleVictory, true);
+        SetPanelState(resultTitleDefeat, false);
         SetText(resultTitleText, "\ubb34\uc2b9\ubd80!");
+        SetText(victoryTitleText, "\ubb34\uc2b9\ubd80!");
         SetText(resultDetailText, "\uac8c\uc784 \uc885\ub8cc");
+        SetPanelState(resultDetailP1Text != null ? resultDetailP1Text.transform.parent.gameObject : null, false);
+        SetPanelState(resultDetailP2Text != null ? resultDetailP2Text.transform.parent.gameObject : null, false);
     }
 
     public void HideResult()
@@ -279,8 +289,13 @@ public class GameUIController : MonoBehaviour
         gameTimeText ??= FindText("Text_GameTime");
         guideText ??= FindText("Text_Guide");
         subtitleGraphic ??= FindInactiveGraphic("Image_Subtitle");
+        resultTitleVictory ??= FindInactiveGameObject("Image_ResultTitle_Victory");
+        resultTitleDefeat ??= FindInactiveGameObject("Image_ResultTitle_Defeat");
         resultTitleText ??= FindText("Text_ResultTitle");
+        victoryTitleText ??= FindChildText(resultTitleVictory);
         resultDetailText ??= FindText("Text_ResultDetail");
+        resultDetailP1Text ??= FindChildText(FindInactiveGameObject("Image_ResultDetail_p1"));
+        resultDetailP2Text ??= FindChildText(FindInactiveGameObject("Image_ResultDetail_p2"));
 
         settingsButton ??= FindButton("Button_Settings");
         retryButton ??= FindButton("Button_Retry", " Button_Retry");
@@ -299,6 +314,10 @@ public class GameUIController : MonoBehaviour
         exitButton ??= CreateResultExitButton();
         SetPanelState(p1EggCountText != null ? p1EggCountText.gameObject : null, false);
         SetPanelState(p2EggCountText != null ? p2EggCountText.gameObject : null, false);
+        WarnMissingResultReference(resultTitleVictory, nameof(resultTitleVictory), "Image_ResultTitle_Victory");
+        WarnMissingResultReference(resultTitleDefeat, nameof(resultTitleDefeat), "Image_ResultTitle_Defeat");
+        WarnMissingResultReference(resultDetailP1Text, nameof(resultDetailP1Text), "Image_ResultDetail_p1/Text_ResultDetail");
+        WarnMissingResultReference(resultDetailP2Text, nameof(resultDetailP2Text), "Image_ResultDetail_p2/Text_ResultDetail");
     }
 
     private void SetP1EggCountImages(int eggCount)
@@ -335,12 +354,28 @@ public class GameUIController : MonoBehaviour
         }
     }
 
-    private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount, int p1WinCount, int p2WinCount)
+    private void SetResultTitle(string winnerName)
+    {
+        bool isP1Winner = winnerName == "P1";
+        bool showDefeat = GameLaunchContext.IsVsComputer && !isP1Winner;
+        string titleText = $"{winnerName} \uc2b9\ub9ac";
+
+        SetPanelState(resultTitleVictory, !showDefeat);
+        SetPanelState(resultTitleDefeat, showDefeat);
+        SetText(resultTitleText, showDefeat ? "\ud328\ubc30" : titleText);
+        SetText(victoryTitleText, titleText);
+    }
+
+    private void SetResultDetail(string winnerName, int p1EggCount, int p2EggCount)
     {
         bool isP1Winner = winnerName == "P1";
         int winnerEggCount = isP1Winner ? p1EggCount : p2EggCount;
-        int winnerWinCount = isP1Winner ? p1WinCount : p2WinCount;
-        SetText(resultDetailText, $"\ub0a8\uc740 \uc54c {winnerEggCount}\n{winnerWinCount}\uc2b9");
+        string detailText = $"\ub0a8\uc740 \uc54c : {winnerEggCount}";
+
+        SetPanelState(resultDetailP1Text != null ? resultDetailP1Text.transform.parent.gameObject : null, isP1Winner);
+        SetPanelState(resultDetailP2Text != null ? resultDetailP2Text.transform.parent.gameObject : null, !isP1Winner);
+        SetText(isP1Winner ? resultDetailP1Text : resultDetailP2Text, detailText);
+        SetText(resultDetailText, detailText);
     }
 
     private void PrepareResultButtons()
@@ -579,6 +614,35 @@ public class GameUIController : MonoBehaviour
     {
         GameObject found = FindGameObject(names);
         return found != null ? found.GetComponent<TMP_Text>() : null;
+    }
+
+    private static GameObject FindInactiveGameObject(params string[] names)
+    {
+        foreach (Transform transform in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            foreach (string objectName in names)
+            {
+                if (transform.name == objectName && transform.hideFlags == HideFlags.None)
+                {
+                    return transform.gameObject;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static TMP_Text FindChildText(GameObject parent)
+    {
+        return parent != null ? parent.GetComponentInChildren<TMP_Text>(true) : null;
+    }
+
+    private static void WarnMissingResultReference(Object reference, string fieldName, string objectName)
+    {
+        if (reference == null)
+        {
+            Debug.LogWarning($"[GameUIController] {fieldName} is not assigned and '{objectName}' was not found. Result UI will continue with available references.");
+        }
     }
 
     private static Graphic FindInactiveGraphic(params string[] names)
