@@ -23,9 +23,9 @@ public class DinoNetworkManager : NetworkManager
     private const float RestartCooldown = 2f;
     private bool disconnectIntended;
 
-    // VPS ë¦´ë ˆ??(?ï¿½ë…?? ?ï¿½ìŠ¤?ï¿½í„° ë¯¸ë…¸ï¿½?
+    // VPS ë¦´ë ˆ??(?ï¿½ë…?? ?ï¿½ìŠ¤?ï¿½í„° ë¯¸ë…¸ï¿?
     private const int VpsRelayPort = 7777;
-    private const int ClientRelayPort = 17777; // ê°™ì€ PC í…ŒìŠ¤íŠ¸ ì‹œ ì¶©ëŒ ë°©ì§€
+    private const int ClientRelayPort = 17777; // ê°™ì? PC ?ŒìŠ¤????ì¶©ëŒ ë°©ì?
     private const byte _xorKey = 0xAB;
     private static byte[] _vpsAddr = { 0x9f, 0x9e, 0x85, 0x9e, 0x92, 0x85, 0x9a, 0x9b, 0x9a, 0x85, 0x9a, 0x9e, 0x9e };
     private static byte[] _vpsToken = { 0xd2, 0xda, 0x9a, 0xc1, 0xc4, 0x99, 0xdb, 0xcf, 0xc7, 0x99, 0xd2, 0xc2 };
@@ -69,8 +69,8 @@ public class DinoNetworkManager : NetworkManager
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
         Application.quitting += () => disconnectIntended = true;
 
-        // KcpTransport(UDP) â†’ TelepathyTransport(TCP) ìë™ ë³€í™˜
-        // VPS TCP ë¦´ë ˆì´ì™€ì˜ í˜¸í™˜ì„±ì„ ìœ„í•´ (kcp2këŠ” UDP ê¸°ë°˜ì´ë¼ ë¦´ë ˆì´ì™€ ë¶ˆì¼ì¹˜)
+        // KcpTransport(UDP) ??TelepathyTransport(TCP) ?ë™ ë³€??
+        // VPS TCP ë¦´ë ˆ?´ì????¸í™˜?±ì„ ?„í•´ (kcp2k??UDP ê¸°ë°˜?´ë¼ ë¦´ë ˆ?´ì? ë¶ˆì¼ì¹?
         EnsureTelepathyTransport();
     }
 
@@ -90,12 +90,12 @@ public class DinoNetworkManager : NetworkManager
         transport = telepathy;
         DestroyImmediate(cur);
 
-        Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport â†’ TelepathyTransport (port {port})");
+        Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport ??TelepathyTransport (port {port})");
     }
 
     void OnDestroy() { StopRelay(); }
 
-    // ?ï¿½?ï¿½?ï¿½ VPS TCP ?ï¿½ì–´ ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
+    // ?ï¿?ï¿?ï¿?VPS TCP ?ï¿½ì–´ ?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?
 
     string TcpCommand(string command)
     {
@@ -120,7 +120,7 @@ public class DinoNetworkManager : NetworkManager
         }
     }
 
-    // ?ï¿½?ï¿½?ï¿½ ?ï¿½ìŠ¤???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
+    // ?ï¿?ï¿?ï¿??ï¿½ìŠ¤???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?
 
     public void StartNetworkHost()
     {
@@ -132,7 +132,7 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 1. VPS??ï¿½??ï¿½ì„±
+            // 1. VPS??ï¿??ï¿½ì„±
             string resp = TcpCommand("CREATE_ROOM");
             if (resp == null || !resp.StartsWith("CODE:"))
             {
@@ -142,8 +142,8 @@ public class DinoNetworkManager : NetworkManager
             roomCode = resp.Substring(5).Trim();
             Debug.Log($"[DinoNetworkManager] Room created: {roomCode}");
 
-            // 2. ë¡œì»¬ Mirror ì„œë²„ ì‹œì‘ (TelepathyTransport, 127.0.0.1:7777)
-            networkPort = 7777;
+            // 2. ë¡œì»¬ Mirror ?œë²„ ?œì‘ (TelepathyTransport, 127.0.0.1:7777)
+            // ?¬íŠ¸??EnsureTelepathyTransport()?ì„œ ?´ë? 7777ë¡??¤ì •??
             GameLaunchContext.SetMode(GameMode.NetworkHost);
             GameLaunchContext.ServerIP = VpsAddress;
             networkAddress = "127.0.0.1";
@@ -155,14 +155,14 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 3. VPS TCP ë¦´ë ˆ???ï¿½ì‘ (VPS?ï¿½ë¡œì»¬ì„œï¿½?ë¸Œë¦¿ï¿½?
+            // 3. VPS TCP ë¦´ë ˆ???ï¿½ì‘ (VPS?ï¿½ë¡œì»¬ì„œï¿?ë¸Œë¦¿ï¿?
             StartHostRelay();
 
             // 4. ë¡œì»¬ ?ï¿½ë¼?ï¿½ì–¸???ï¿½ì† (?ï¿½ìŠ¤???ï¿½ë ˆ?ï¿½ì–´)
             networkAddress = "127.0.0.1";
             StartClient();
 
-            // 5. ï¿½?ì½”ë“œ ?ï¿½ë¦¼
+            // 5. ï¿?ì½”ë“œ ?ï¿½ë¦¼
             OnRoomCreated?.Invoke(roomCode);
             Debug.Log($"[DinoNetworkManager] Host ready. Room: {roomCode}");
         }
@@ -183,7 +183,7 @@ public class DinoNetworkManager : NetworkManager
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
 
-                // ï¿½?ì½”ë“œï¿½??ï¿½ìŠ¤???ï¿½ë³„
+                // ï¿?ì½”ë“œï¿??ï¿½ìŠ¤???ï¿½ë³„
                 byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}:{VpsAuthToken}\n");
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
@@ -211,7 +211,7 @@ public class DinoNetworkManager : NetworkManager
         relayThread.Start();
     }
 
-    // ?ï¿½?ï¿½?ï¿½ ?ï¿½ë¼?ï¿½ì–¸???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
+    // ?ï¿?ï¿?ï¿??ï¿½ë¼?ï¿½ì–¸???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?
 
     public void StartNetworkClient(string code)
     {
@@ -223,13 +223,13 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 1. VPS??ï¿½?ì°¸ì—¬ ?ï¿½ì²­
+            // 1. VPS??ï¿?ì°¸ì—¬ ?ï¿½ì²­
             string resp = TcpCommand($"JOIN:{code}");
             if (resp == null || !resp.StartsWith("OK"))
             {
                 Debug.LogError($"[DinoNetworkManager] Failed to join room {code}.");
                 var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-                mmc?.ShowConnectionStatus($"ï¿½?{code}ï¿½?ì°¾ì„ ???ï¿½ìŠµ?ï¿½ë‹¤.");
+                mmc?.ShowConnectionStatus($"ï¿?{code}ï¿?ì°¾ì„ ???ï¿½ìŠµ?ï¿½ë‹¤.");
                 return;
             }
 
@@ -242,7 +242,8 @@ public class DinoNetworkManager : NetworkManager
 
             // 3. ë¡œì»¬ ë¦´ë ˆ?ï¿½ë¡œ Mirror ?ï¿½ì†
             networkAddress = "127.0.0.1";
-            networkPort = ClientRelayPort;
+            if (transport is Mirror.PortTransport pt)
+                pt.Port = (ushort)ClientRelayPort;
             StartClient();
         }
         catch (System.Exception ex)
@@ -258,7 +259,7 @@ public class DinoNetworkManager : NetworkManager
         {
             try
             {
-                // VPS??ë¨¼ï¿½? ?ï¿½ê²° + ï¿½?ì½”ë“œ ?ï¿½ì†¡
+                // VPS??ë¨¼ï¿½? ?ï¿½ê²° + ï¿?ì½”ë“œ ?ï¿½ì†¡
                 vpsRelayClient = new TcpClient();
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
@@ -267,7 +268,7 @@ public class DinoNetworkManager : NetworkManager
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // ë¡œì»¬ì—ì„œ Mirror ì ‘ì† ëŒ€ê¸°
+                // ë¡œì»¬?ì„œ Mirror ?‘ì† ?€ê¸?
                 var listener = new TcpListener(System.Net.IPAddress.Loopback, ClientRelayPort);
                 listener.Start();
                 relayReadySignal.Set();
@@ -291,7 +292,7 @@ public class DinoNetworkManager : NetworkManager
         { IsBackground = true };
         relayThread.Start();
 
-        // ë¦´ë ˆì´ ë¦¬ìŠ¤ë„ˆ ì¤€ë¹„ ì™„ë£Œë¥¼ ê¸°ë‹¤ë¦¼ (ìµœëŒ€ 5ì´ˆ)
+        // ë¦´ë ˆ??ë¦¬ìŠ¤??ì¤€ë¹??„ë£Œë¥?ê¸°ë‹¤ë¦?(ìµœë? 5ì´?
         if (!relayReadySignal.Wait(5000))
         {
             Debug.LogWarning("[DinoNetworkManager] Client relay listener not ready within 5s, proceeding anyway.");
@@ -299,7 +300,7 @@ public class DinoNetworkManager : NetworkManager
         relayReadySignal.Reset();
     }
 
-    // ?ï¿½?ï¿½?ï¿½ TCP ?ï¿½ì›Œ???ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
+    // ?ï¿?ï¿?ï¿?TCP ?ï¿½ì›Œ???ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?
 
     static void Forward(Stream src, Stream dst)
     {
@@ -324,7 +325,7 @@ public class DinoNetworkManager : NetworkManager
         relayThread = null;
     }
 
-    // ?ï¿½?ï¿½?ï¿½ Mirror ?ï¿½íŠ¸?ï¿½í¬ ?ï¿½ë²¤???ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
+    // ?ï¿?ï¿?ï¿?Mirror ?ï¿½íŠ¸?ï¿½í¬ ?ï¿½ë²¤???ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?ï¿?
 
     public override void OnStartServer()
     {
@@ -344,10 +345,10 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
 
-        // VPS ë¦´ë ˆ??ëª¨ë“œ(roomCode != null): host client(1) + relay bridge(1) = 2ï¿½?ê¸°ë³¸
-        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??3ê°œï¿½? ?ï¿½ï¿½?ï¿½?>= 3
-        // ì§ì ‘ LAN ëª¨ë“œ(roomCode == null): host client(1) = 1ï¿½?ê¸°ë³¸
-        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??2ê°œï¿½? ?ï¿½ï¿½?ï¿½?>= 2
+        // VPS ë¦´ë ˆ??ëª¨ë“œ(roomCode != null): host client(1) + relay bridge(1) = 2ï¿?ê¸°ë³¸
+        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??3ê°œï¿½? ?ï¿½ï¿½?ï¿?>= 3
+        // ì§ì ‘ LAN ëª¨ë“œ(roomCode == null): host client(1) = 1ï¿?ê¸°ë³¸
+        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??2ê°œï¿½? ?ï¿½ï¿½?ï¿?>= 2
         bool isRelayMode = roomCode != null;
         int remoteThreshold = isRelayMode ? 3 : 2;
         if (playerCount >= remoteThreshold)
@@ -439,7 +440,7 @@ public class DinoNetworkManager : NetworkManager
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
         var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}ï¿½??ï¿½ì†?? ?ï¿½ìŠ¤?ï¿½ï¿½? ë§µì„ ?ï¿½íƒ ì¤‘ì…?ï¿½ë‹¤...");
+        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}ï¿??ï¿½ì†?? ?ï¿½ìŠ¤?ï¿½ï¿½? ë§µì„ ?ï¿½íƒ ì¤‘ì…?ï¿½ë‹¤...");
     }
 
     void OnClientStateSnapshot(StateSnapshotMessage msg)
@@ -507,3 +508,4 @@ public class DinoNetworkManager : NetworkManager
     public void StopClientSafe() { disconnectIntended = true; StopClient(); }
     public void StopHostSafe() { disconnectIntended = true; StopHost(); }
 }
+
