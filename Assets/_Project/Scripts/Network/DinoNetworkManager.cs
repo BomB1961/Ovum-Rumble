@@ -23,7 +23,7 @@ public class DinoNetworkManager : NetworkManager
     private const float RestartCooldown = 2f;
     private bool disconnectIntended;
 
-    // VPS ë¦´ë ˆ??(?œë…?? ?¸ìŠ¤?™í„° ë¯¸ë…¸ì¶?
+    // VPS ë¦´ë ˆ??(?ï¿½ë…?? ?ï¿½ìŠ¤?ï¿½í„° ë¯¸ë…¸ï¿½?
     private const int VpsRelayPort = 7777;
     private const byte _xorKey = 0xAB;
     private static byte[] _vpsAddr = { 0x9f, 0x9e, 0x85, 0x9e, 0x92, 0x85, 0x9a, 0x9b, 0x9a, 0x85, 0x9a, 0x9e, 0x9e };
@@ -72,9 +72,28 @@ public class DinoNetworkManager : NetworkManager
         EnsureTelepathyTransport();
     }
 
+    private void EnsureTelepathyTransport()
+    {
+        var cur = transport;
+        if (cur == null) return;
+        if (cur.GetType().Name != "KcpTransport") return;
+
+        ushort port = 7777;
+        if (cur is PortTransport pt)
+            port = pt.Port;
+
+        var telepathy = gameObject.AddComponent<TelepathyTransport>();
+        telepathy.port = port;
+        telepathy.NoDelay = true;
+        transport = telepathy;
+        DestroyImmediate(cur);
+
+        Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport â†’ TelepathyTransport (port {port})");
+    }
+
     void OnDestroy() { StopRelay(); }
 
-    // ?€?€?€ VPS TCP ?œì–´ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+    // ?ï¿½?ï¿½?ï¿½ VPS TCP ?ï¿½ì–´ ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
 
     string TcpCommand(string command)
     {
@@ -99,7 +118,7 @@ public class DinoNetworkManager : NetworkManager
         }
     }
 
-    // ?€?€?€ ?¸ìŠ¤???œì‘ (VPS ë¦´ë ˆ?? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+    // ?ï¿½?ï¿½?ï¿½ ?ï¿½ìŠ¤???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
 
     public void StartNetworkHost()
     {
@@ -111,7 +130,7 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 1. VPS??ë°??ì„±
+            // 1. VPS??ï¿½??ï¿½ì„±
             string resp = TcpCommand("CREATE_ROOM");
             if (resp == null || !resp.StartsWith("CODE:"))
             {
@@ -121,7 +140,7 @@ public class DinoNetworkManager : NetworkManager
             roomCode = resp.Substring(5).Trim();
             Debug.Log($"[DinoNetworkManager] Room created: {roomCode}");
 
-            // 2. ë¡œì»¬ Mirror ?œë²„ ?œì‘ (TelepathyTransport, 127.0.0.1:7777)
+            // 2. ë¡œì»¬ Mirror ?ï¿½ë²„ ?ï¿½ì‘ (TelepathyTransport, 127.0.0.1:7777)
             GameLaunchContext.SetMode(GameMode.NetworkHost);
             GameLaunchContext.ServerIP = VpsAddress;
             networkAddress = "127.0.0.1";
@@ -133,14 +152,14 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 3. VPS TCP ë¦´ë ˆ???œì‘ (VPS?”ë¡œì»¬ì„œë²?ë¸Œë¦¿ì§?
+            // 3. VPS TCP ë¦´ë ˆ???ï¿½ì‘ (VPS?ï¿½ë¡œì»¬ì„œï¿½?ë¸Œë¦¿ï¿½?
             StartHostRelay();
 
-            // 4. ë¡œì»¬ ?´ë¼?´ì–¸???‘ì† (?¸ìŠ¤???Œë ˆ?´ì–´)
+            // 4. ë¡œì»¬ ?ï¿½ë¼?ï¿½ì–¸???ï¿½ì† (?ï¿½ìŠ¤???ï¿½ë ˆ?ï¿½ì–´)
             networkAddress = "127.0.0.1";
             StartClient();
 
-            // 5. ë°?ì½”ë“œ ?Œë¦¼
+            // 5. ï¿½?ì½”ë“œ ?ï¿½ë¦¼
             OnRoomCreated?.Invoke(roomCode);
             Debug.Log($"[DinoNetworkManager] Host ready. Room: {roomCode}");
         }
@@ -161,19 +180,19 @@ public class DinoNetworkManager : NetworkManager
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
 
-                // ë°?ì½”ë“œë¡??¸ìŠ¤???ë³„
+                // ï¿½?ì½”ë“œï¿½??ï¿½ìŠ¤???ï¿½ë³„
                 byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}:{VpsAuthToken}\n");
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // ë¡œì»¬ Mirror ?œë²„???°ê²° (Virtual Client ??• )
+                // ë¡œì»¬ Mirror ?ï¿½ë²„???ï¿½ê²° (Virtual Client ??ï¿½ï¿½)
                 var localClient = new TcpClient();
                 localClient.Connect("127.0.0.1", 7777);
                 var localStream = localClient.GetStream();
 
                 Debug.Log("[DinoNetworkManager] VPS relay bridged.");
 
-                // ?‘ë°©???¬ì›Œ??
+                // ?ï¿½ë°©???ï¿½ì›Œ??
                 var t1 = new Thread(() => Forward(localStream, vpsStream)) { IsBackground = true };
                 var t2 = new Thread(() => Forward(vpsStream, localStream)) { IsBackground = true };
                 t1.Start(); t2.Start();
@@ -189,7 +208,7 @@ public class DinoNetworkManager : NetworkManager
         relayThread.Start();
     }
 
-    // ?€?€?€ ?´ë¼?´ì–¸???œì‘ (VPS ë¦´ë ˆ?? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+    // ?ï¿½?ï¿½?ï¿½ ?ï¿½ë¼?ï¿½ì–¸???ï¿½ì‘ (VPS ë¦´ë ˆ?? ?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
 
     public void StartNetworkClient(string code)
     {
@@ -201,13 +220,13 @@ public class DinoNetworkManager : NetworkManager
                 return;
             }
 
-            // 1. VPS??ë°?ì°¸ì—¬ ?”ì²­
+            // 1. VPS??ï¿½?ì°¸ì—¬ ?ï¿½ì²­
             string resp = TcpCommand($"JOIN:{code}");
             if (resp == null || !resp.StartsWith("OK"))
             {
                 Debug.LogError($"[DinoNetworkManager] Failed to join room {code}.");
                 var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-                mmc?.ShowConnectionStatus($"ë°?{code}ë¥?ì°¾ì„ ???†ìŠµ?ˆë‹¤.");
+                mmc?.ShowConnectionStatus($"ï¿½?{code}ï¿½?ì°¾ì„ ???ï¿½ìŠµ?ï¿½ë‹¤.");
                 return;
             }
 
@@ -215,10 +234,10 @@ public class DinoNetworkManager : NetworkManager
             GameLaunchContext.SetMode(GameMode.NetworkClient);
             GameLaunchContext.ServerIP = VpsAddress;
 
-            // 2. ?´ë¼?´ì–¸??ë¦´ë ˆ???œì‘ (ë¡œì»¬?ì„œ Mirror ?‘ì† ?€ê¸?
+            // 2. ?ï¿½ë¼?ï¿½ì–¸??ë¦´ë ˆ???ï¿½ì‘ (ë¡œì»¬?ï¿½ì„œ Mirror ?ï¿½ì† ?ï¿½ï¿½?
             StartClientRelay();
 
-            // 3. ë¡œì»¬ ë¦´ë ˆ?´ë¡œ Mirror ?‘ì†
+            // 3. ë¡œì»¬ ë¦´ë ˆ?ï¿½ë¡œ Mirror ?ï¿½ì†
             networkAddress = "127.0.0.1";
             StartClient();
         }
@@ -235,7 +254,7 @@ public class DinoNetworkManager : NetworkManager
         {
             try
             {
-                // VPS??ë¨¼ì? ?°ê²° + ë°?ì½”ë“œ ?„ì†¡
+                // VPS??ë¨¼ï¿½? ?ï¿½ê²° + ï¿½?ì½”ë“œ ?ï¿½ì†¡
                 vpsRelayClient = new TcpClient();
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
@@ -244,7 +263,7 @@ public class DinoNetworkManager : NetworkManager
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // ë¡œì»¬?ì„œ Mirror ?‘ì† ?€ê¸?
+                // ë¡œì»¬?ï¿½ì„œ Mirror ?ï¿½ì† ?ï¿½ï¿½?
                 var listener = new TcpListener(System.Net.IPAddress.Loopback, 7777);
                 listener.Start();
                 var mirrorConn = listener.AcceptTcpClient();
@@ -267,10 +286,10 @@ public class DinoNetworkManager : NetworkManager
         { IsBackground = true };
         relayThread.Start();
 
-        Thread.Sleep(100); // ë¦´ë ˆ??ë¦¬ìŠ¤??ì¤€ë¹??€ê¸?
+        Thread.Sleep(100); // ë¦´ë ˆ??ë¦¬ìŠ¤??ì¤€ï¿½??ï¿½ï¿½?
     }
 
-    // ?€?€?€ TCP ?¬ì›Œ???€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+    // ?ï¿½?ï¿½?ï¿½ TCP ?ï¿½ì›Œ???ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
 
     static void Forward(Stream src, Stream dst)
     {
@@ -295,7 +314,7 @@ public class DinoNetworkManager : NetworkManager
         relayThread = null;
     }
 
-    // ?€?€?€ Mirror ?¤íŠ¸?Œí¬ ?´ë²¤???€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+    // ?ï¿½?ï¿½?ï¿½ Mirror ?ï¿½íŠ¸?ï¿½í¬ ?ï¿½ë²¤???ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½?ï¿½
 
     public override void OnStartServer()
     {
@@ -315,10 +334,10 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
 
-        // VPS ë¦´ë ˆ??ëª¨ë“œ(roomCode != null): host client(1) + relay bridge(1) = 2ê°?ê¸°ë³¸
-        //   ???ê²© ?Œë ˆ?´ì–´ ?‘ì† ??3ê°œê? ?˜ë?ë¡?>= 3
-        // ì§ì ‘ LAN ëª¨ë“œ(roomCode == null): host client(1) = 1ê°?ê¸°ë³¸
-        //   ???ê²© ?Œë ˆ?´ì–´ ?‘ì† ??2ê°œê? ?˜ë?ë¡?>= 2
+        // VPS ë¦´ë ˆ??ëª¨ë“œ(roomCode != null): host client(1) + relay bridge(1) = 2ï¿½?ê¸°ë³¸
+        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??3ê°œï¿½? ?ï¿½ï¿½?ï¿½?>= 3
+        // ì§ì ‘ LAN ëª¨ë“œ(roomCode == null): host client(1) = 1ï¿½?ê¸°ë³¸
+        //   ???ï¿½ê²© ?ï¿½ë ˆ?ï¿½ì–´ ?ï¿½ì† ??2ê°œï¿½? ?ï¿½ï¿½?ï¿½?>= 2
         bool isRelayMode = roomCode != null;
         int remoteThreshold = isRelayMode ? 3 : 2;
         if (playerCount >= remoteThreshold)
@@ -414,7 +433,7 @@ public class DinoNetworkManager : NetworkManager
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
         var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}ë¡??‘ì†?? ?¸ìŠ¤?¸ê? ë§µì„ ? íƒ ì¤‘ì…?ˆë‹¤...");
+        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}ï¿½??ï¿½ì†?? ?ï¿½ìŠ¤?ï¿½ï¿½? ë§µì„ ?ï¿½íƒ ì¤‘ì…?ï¿½ë‹¤...");
     }
 
     void OnClientStateSnapshot(StateSnapshotMessage msg)
@@ -450,7 +469,7 @@ public class DinoNetworkManager : NetworkManager
         {
             Debug.LogError("[DinoNetworkManager] VPS relay connection lost.");
             var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-            mmc?.ShowConnectionStatus("VPS ë¦´ë ˆ???°ê²° ?¤íŒ¨");
+            mmc?.ShowConnectionStatus("VPS ë¦´ë ˆ???ï¿½ê²° ?ï¿½íŒ¨");
         }
         disconnectIntended = false;
     }
