@@ -18,6 +18,7 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private TMP_Text connectionStatusText;
 
     private DinoNetworkManager netMan;
+    private bool hadRemotePlayer; // 실제 원격 플레이어 접속 여부 (릴레이 브릿지 가짜 이벤트 구분)
 
     private void Awake()
     {
@@ -34,6 +35,10 @@ public class MapSelectController : MonoBehaviour
 
             netMan.OnRemotePlayerConnected += HandleRemotePlayerConnected;
             netMan.OnRemotePlayerDisconnected += HandleRemotePlayerDisconnected;
+            netMan.OnRoomCreated += HandleRoomCreated;
+
+            SetMapButtonsEnabled(false);
+            SetStatusText("VPS 릴레이에 연결 중...");
 
             if (!NetworkServer.active && !NetworkClient.active)
             {
@@ -41,6 +46,8 @@ public class MapSelectController : MonoBehaviour
                 try
                 {
                     netMan.StartNetworkHost();
+                    // StartNetworkHost() 내부에서 OnRoomCreated 이벤트 발생 →
+                    // HandleRoomCreated가 SetStatusText를 방 코드(CODE:XXXX)로 덮어씀
                 }
                 catch (System.Exception ex)
                 {
@@ -51,25 +58,12 @@ public class MapSelectController : MonoBehaviour
             }
             else
             {
-                // 이미 서버가 실행 중인 경우: 현재 접속자 수 확인
+                // 이미 서버 실행 중 (재진입)
                 if (NetworkServer.connections.Count >= 2)
                 {
                     HandleRemotePlayerConnected();
                     return;
                 }
-            }
-
-            // 서버가 정상 시작되었는지 확인
-            if (NetworkServer.active)
-            {
-                string localIp = GetLocalIp();
-                SetMapButtonsEnabled(false);
-                SetStatusText($"호스트 IP: {localIp}\n상대방이 이 IP를 입력하면 연결됩니다.\n(같은 PC: 127.0.0.1)");
-                Debug.Log($"[MapSelectController] Network host started. IP: {localIp}:7777. Waiting for player 2.");
-            }
-            else
-            {
-                FallbackToLocalMode();
             }
         }
         else if (GameLaunchContext.IsNetworkClient)
@@ -78,6 +72,28 @@ public class MapSelectController : MonoBehaviour
             SetStatusText("호스트가 맵을 선택 중입니다...");
             Debug.Log("[MapSelectController] Client waiting for host map selection.");
         }
+    }
+
+    private void HandleRoomCreated(string code)
+    {
+        string msg = $"방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.";
+        if (connectionStatusText == null)
+            connectionStatusText = CreateStatusText();
+
+        connectionStatusText.text = msg;
+        connectionStatusText.fontSize = 48;
+        connectionStatusText.gameObject.SetActive(true);
+        connectionStatusText.transform.SetAsLastSibling();
+
+        // 폰트 보장 (동적 생성 시 누락될 수 있음)
+        if (connectionStatusText.font == null)
+        {
+            TMPro.TMP_FontAsset font = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/BlackHanSans-Regular SDF");
+            if (font != null)
+                connectionStatusText.font = font;
+        }
+
+        Debug.Log($"[MapSelectController] ★★★ 방 코드: {code} ★★★");
     }
 
     private string GetLocalIp()
@@ -106,11 +122,13 @@ public class MapSelectController : MonoBehaviour
         {
             netMan.OnRemotePlayerConnected -= HandleRemotePlayerConnected;
             netMan.OnRemotePlayerDisconnected -= HandleRemotePlayerDisconnected;
+            netMan.OnRoomCreated -= HandleRoomCreated;
         }
     }
 
     private void HandleRemotePlayerConnected()
     {
+        hadRemotePlayer = true;
         SetMapButtonsEnabled(true);
         SetStatusText("");
         connectionStatusText?.gameObject.SetActive(false);
@@ -119,6 +137,12 @@ public class MapSelectController : MonoBehaviour
 
     private void HandleRemotePlayerDisconnected()
     {
+        if (!hadRemotePlayer)
+        {
+            Debug.Log("[MapSelectController] Ignoring spurious disconnect event (no remote player was connected).");
+            return;
+        }
+        hadRemotePlayer = false;
         SetMapButtonsEnabled(false);
         SetStatusText("상대방 연결이 끊어졌습니다. 다시 기다리는 중...");
         Debug.Log("[MapSelectController] Remote player disconnected. Waiting again.");
@@ -189,6 +213,11 @@ public class MapSelectController : MonoBehaviour
         text.fontSize = 36;
         text.alignment = TextAlignmentOptions.Center;
         text.color = Color.white;
+
+        // 폰트 할당 (Resources 폴더의 BlackHanSans)
+        TMPro.TMP_FontAsset font = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/BlackHanSans-Regular SDF");
+        if (font != null)
+            text.font = font;
 
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0, 0.5f);

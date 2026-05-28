@@ -4,6 +4,10 @@ using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
 using DinoAlkkagi.Presentation;
 using UnityEngine.SceneManagement;
+using System.Net.Sockets;
+using System.Threading;
+using System.Text;
+using System.IO;
 
 public class DinoNetworkManager : NetworkManager
 {
@@ -19,29 +23,275 @@ public class DinoNetworkManager : NetworkManager
     private const float RestartCooldown = 2f;
     private bool disconnectIntended;
 
+    // VPS ë¦´ë ˆ??(?œë…?? ?¸ìŠ¤?™í„° ë¯¸ë…¸ì¶?
+    private const int VpsRelayPort = 7777;
+    private const byte _xorKey = 0xAB;
+    private static byte[] _vpsAddr = { 0x9f, 0x9e, 0x85, 0x9e, 0x92, 0x85, 0x9a, 0x9b, 0x9a, 0x85, 0x9a, 0x9e, 0x9e };
+    private static byte[] _vpsToken = { 0xd2, 0xda, 0x9a, 0xc1, 0xc4, 0x99, 0xdb, 0xcf, 0xc7, 0x99, 0xd2, 0xc2 };
+    private static string VpsAddress => Deobfuscate(_vpsAddr);
+    private static string VpsAuthToken => Deobfuscate(_vpsToken);
+
+    private static string Deobfuscate(byte[] data)
+    {
+        char[] chars = new char[data.Length];
+        for (int i = 0; i < data.Length; i++)
+            chars[i] = (char)(data[i] ^ _xorKey);
+        return new string(chars);
+    }
+
+    private string roomCode;
+    private Thread relayThread;
+    private volatile bool relayRunning;
+    private TcpClient vpsRelayClient;
+
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
     public int PlayerCount => playerCount;
     public bool IsRemotePlayerConnected => playerCount >= 2;
+    public string RoomCode => roomCode;
 
     public event System.Action OnRemotePlayerConnected;
     public event System.Action OnRemotePlayerDisconnected;
+    public event System.Action<string> OnRoomCreated;
 
     public override void Awake()
     {
-        // ì¤‘ë³µ ì¸ìŠ¤í„´ìŠ¤ ë°©ì§€: ì´ë¯¸ singletonì´ ìˆìœ¼ë©´ íŒŒê´´
         if (singleton != null && singleton != this)
         {
             Debug.Log("[DinoNetworkManager] Duplicate detected. Destroying self.");
             Destroy(gameObject);
             return;
         }
-
         base.Awake();
         if (featureFlags == null)
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
         Application.quitting += () => disconnectIntended = true;
     }
+
+    void OnDestroy() { StopRelay(); }
+
+    // ?€?€?€ VPS TCP ?œì–´ ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+    string TcpCommand(string command)
+    {
+        try
+        {
+            using (var tcp = new TcpClient())
+            {
+                tcp.Connect(VpsAddress, VpsRelayPort + 1);
+                tcp.ReceiveTimeout = 5000;
+                var stream = tcp.GetStream();
+                byte[] req = Encoding.UTF8.GetBytes(command + "\n");
+                stream.Write(req, 0, req.Length);
+                byte[] buf = new byte[256];
+                int len = stream.Read(buf, 0, buf.Length);
+                return Encoding.UTF8.GetString(buf, 0, len).Trim();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] VPS command failed ({command}): {ex.Message}");
+            return null;
+        }
+    }
+
+    // ?€?€?€ ?¸ìŠ¤???œì‘ (VPS ë¦´ë ˆ?? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+    public void StartNetworkHost()
+    {
+        try
+        {
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+
+            // 1. VPS??ë°??ì„±
+            string resp = TcpCommand("CREATE_ROOM");
+            if (resp == null || !resp.StartsWith("CODE:"))
+            {
+                Debug.LogError("[DinoNetworkManager] Failed to create room on VPS.");
+                return;
+            }
+            roomCode = resp.Substring(5).Trim();
+            Debug.Log($"[DinoNetworkManager] Room created: {roomCode}");
+
+            // 2. ë¡œì»¬ Mirror ?œë²„ ?œì‘ (TelepathyTransport, 127.0.0.1:7777)
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
+            GameLaunchContext.ServerIP = VpsAddress;
+            networkAddress = "127.0.0.1";
+            StartServer();
+
+            if (!NetworkServer.active)
+            {
+                Debug.LogError("[DinoNetworkManager] Server failed to start.");
+                return;
+            }
+
+            // 3. VPS TCP ë¦´ë ˆ???œì‘ (VPS?”ë¡œì»¬ì„œë²?ë¸Œë¦¿ì§?
+            StartHostRelay();
+
+            // 4. ë¡œì»¬ ?´ë¼?´ì–¸???‘ì† (?¸ìŠ¤???Œë ˆ?´ì–´)
+            networkAddress = "127.0.0.1";
+            StartClient();
+
+            // 5. ë°?ì½”ë“œ ?Œë¦¼
+            OnRoomCreated?.Invoke(roomCode);
+            Debug.Log($"[DinoNetworkManager] Host ready. Room: {roomCode}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] Host start failed: {ex.Message}");
+        }
+    }
+
+    void StartHostRelay()
+    {
+        relayRunning = true;
+        relayThread = new Thread(() =>
+        {
+            try
+            {
+                vpsRelayClient = new TcpClient();
+                vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
+                var vpsStream = vpsRelayClient.GetStream();
+
+                // ë°?ì½”ë“œë¡??¸ìŠ¤???ë³„
+                byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}:{VpsAuthToken}\n");
+                vpsStream.Write(ident, 0, ident.Length);
+                vpsStream.Flush();
+
+                // ë¡œì»¬ Mirror ?œë²„???°ê²° (Virtual Client ??• )
+                var localClient = new TcpClient();
+                localClient.Connect("127.0.0.1", 7777);
+                var localStream = localClient.GetStream();
+
+                Debug.Log("[DinoNetworkManager] VPS relay bridged.");
+
+                // ?‘ë°©???¬ì›Œ??
+                var t1 = new Thread(() => Forward(localStream, vpsStream)) { IsBackground = true };
+                var t2 = new Thread(() => Forward(vpsStream, localStream)) { IsBackground = true };
+                t1.Start(); t2.Start();
+                t1.Join(); t2.Join();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DinoNetworkManager] Host relay error: {ex.Message}");
+            }
+            finally { relayRunning = false; }
+        })
+        { IsBackground = true };
+        relayThread.Start();
+    }
+
+    // ?€?€?€ ?´ë¼?´ì–¸???œì‘ (VPS ë¦´ë ˆ?? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+    public void StartNetworkClient(string code)
+    {
+        try
+        {
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+
+            // 1. VPS??ë°?ì°¸ì—¬ ?”ì²­
+            string resp = TcpCommand($"JOIN:{code}");
+            if (resp == null || !resp.StartsWith("OK"))
+            {
+                Debug.LogError($"[DinoNetworkManager] Failed to join room {code}.");
+                var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
+                mmc?.ShowConnectionStatus($"ë°?{code}ë¥?ì°¾ì„ ???†ìŠµ?ˆë‹¤.");
+                return;
+            }
+
+            roomCode = code;
+            GameLaunchContext.SetMode(GameMode.NetworkClient);
+            GameLaunchContext.ServerIP = VpsAddress;
+
+            // 2. ?´ë¼?´ì–¸??ë¦´ë ˆ???œì‘ (ë¡œì»¬?ì„œ Mirror ?‘ì† ?€ê¸?
+            StartClientRelay();
+
+            // 3. ë¡œì»¬ ë¦´ë ˆ?´ë¡œ Mirror ?‘ì†
+            networkAddress = "127.0.0.1";
+            StartClient();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] Client start failed: {ex.Message}");
+        }
+    }
+
+    void StartClientRelay()
+    {
+        relayRunning = true;
+        relayThread = new Thread(() =>
+        {
+            try
+            {
+                // VPS??ë¨¼ì? ?°ê²° + ë°?ì½”ë“œ ?„ì†¡
+                vpsRelayClient = new TcpClient();
+                vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
+                var vpsStream = vpsRelayClient.GetStream();
+
+                byte[] ident = Encoding.UTF8.GetBytes($"CLNT:{roomCode}:{VpsAuthToken}\n");
+                vpsStream.Write(ident, 0, ident.Length);
+                vpsStream.Flush();
+
+                // ë¡œì»¬?ì„œ Mirror ?‘ì† ?€ê¸?
+                var listener = new TcpListener(System.Net.IPAddress.Loopback, 7777);
+                listener.Start();
+                var mirrorConn = listener.AcceptTcpClient();
+                listener.Stop();
+                var mirrorStream = mirrorConn.GetStream();
+
+                Debug.Log("[DinoNetworkManager] Client relay bridged.");
+
+                var t1 = new Thread(() => Forward(mirrorStream, vpsStream)) { IsBackground = true };
+                var t2 = new Thread(() => Forward(vpsStream, mirrorStream)) { IsBackground = true };
+                t1.Start(); t2.Start();
+                t1.Join(); t2.Join();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DinoNetworkManager] Client relay error: {ex.Message}");
+            }
+            finally { relayRunning = false; }
+        })
+        { IsBackground = true };
+        relayThread.Start();
+
+        Thread.Sleep(100); // ë¦´ë ˆ??ë¦¬ìŠ¤??ì¤€ë¹??€ê¸?
+    }
+
+    // ?€?€?€ TCP ?¬ì›Œ???€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
+
+    static void Forward(Stream src, Stream dst)
+    {
+        try
+        {
+            byte[] buffer = new byte[65536];
+            int bytesRead;
+            while ((bytesRead = src.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                dst.Write(buffer, 0, bytesRead);
+                dst.Flush();
+            }
+        }
+        catch { }
+    }
+
+    void StopRelay()
+    {
+        relayRunning = false;
+        try { vpsRelayClient?.Close(); } catch { }
+        vpsRelayClient = null;
+        relayThread = null;
+    }
+
+    // ?€?€?€ Mirror ?¤íŠ¸?Œí¬ ?´ë²¤???€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
 
     public override void OnStartServer()
     {
@@ -61,11 +311,14 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
 
-        // Host(Player 1)ëŠ” í•­ìƒ ì²« ì—°ê²°. Player 2(ì›ê²©)ê°€ ì—°ê²°ë˜ë©´ ì•Œë¦¼.
-        if (playerCount >= 2)
-        {
+        // VPS ë¦´ë ˆ??ëª¨ë“œ(roomCode != null): host client(1) + relay bridge(1) = 2ê°?ê¸°ë³¸
+        //   ???ê²© ?Œë ˆ?´ì–´ ?‘ì† ??3ê°œê? ?˜ë?ë¡?>= 3
+        // ì§ì ‘ LAN ëª¨ë“œ(roomCode == null): host client(1) = 1ê°?ê¸°ë³¸
+        //   ???ê²© ?Œë ˆ?´ì–´ ?‘ì† ??2ê°œê? ?˜ë?ë¡?>= 2
+        bool isRelayMode = roomCode != null;
+        int remoteThreshold = isRelayMode ? 3 : 2;
+        if (playerCount >= remoteThreshold)
             OnRemotePlayerConnected?.Invoke();
-        }
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -74,10 +327,10 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player disconnected. Total: {playerCount}");
 
-        if (playerCount < 2)
-        {
+        bool isRelayMode = roomCode != null;
+        int remoteThreshold = isRelayMode ? 3 : 2;
+        if (playerCount < remoteThreshold)
             OnRemotePlayerDisconnected?.Invoke();
-        }
     }
 
     public override void OnStartClient()
@@ -112,17 +365,16 @@ public class DinoNetworkManager : NetworkManager
         base.OnServerAddPlayer(conn);
     }
 
-    private void OnServerJoinGame(NetworkConnectionToClient conn, JoinGameMessage msg)
+    void OnServerJoinGame(NetworkConnectionToClient conn, JoinGameMessage msg)
     {
         int playerId = nextPlayerId;
         nextPlayerId++;
-
         JoinAcceptedMessage acceptMsg = new JoinAcceptedMessage { assignedPlayerId = playerId };
         conn.Send(acceptMsg);
         Debug.Log($"[DinoNetworkManager] Assigned PlayerId {playerId} to connection {conn.connectionId}");
     }
 
-    private void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
+    void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
     {
         if (!gameStarted) return;
         GameSessionController session = FindFirstObjectByType<GameSessionController>();
@@ -133,139 +385,47 @@ public class DinoNetworkManager : NetworkManager
         }
     }
 
-    private void OnServerRestartRequest(NetworkConnectionToClient conn, RestartRequestMessage msg)
+    void OnServerRestartRequest(NetworkConnectionToClient conn, RestartRequestMessage msg)
     {
         if (!gameStarted) return;
-
-        // ì¬ì‹œì‘ ì¿¨ë‹¤ìš´: ë„ˆë¬´ ë¹ ë¥¸ ì¬ì‹œì‘ ìš”ì²­ ë°©ì§€
         if (Time.time - lastRestartTime < RestartCooldown)
         {
             Debug.LogWarning("[DinoNetworkManager] Restart request ignored (cooldown).");
             return;
         }
         lastRestartTime = Time.time;
-
         gameStarted = false;
-
-        // ì”¬ ë¦¬ë¡œë“œë¡œ ì™„ì „ ì´ˆê¸°í™” â€” DinoNetworkManagerëŠ” DontDestroyOnLoad ìœ ì§€
-        // ëª¨ë“  ê²Œì„ ìƒíƒœê°€ ìƒˆ ì”¬ì—ì„œ ì´ˆê¸°í™”ë¨ (ì¹´ë©”ë¼, ì•Œ, UI, ì´ë²¤íŠ¸ ë“±)
         ServerChangeScene("01_Game");
     }
 
-    private void OnClientJoinAccepted(JoinAcceptedMessage msg)
+    void OnClientJoinAccepted(JoinAcceptedMessage msg)
     {
         GameLaunchContext.SetNetworkClientInfo(msg.assignedPlayerId);
-        // í˜¸ìŠ¤íŠ¸ì˜ ë‚´ë¶€ í´ë¼ì´ì–¸íŠ¸ë„ ì´ ë©”ì‹œì§€ë¥¼ ë°›ìŒ. ëª¨ë“œë¥¼ ë®ì–´ì“°ë©´ ì•ˆ ë¨.
         if (!NetworkServer.active)
-        {
             GameLaunchContext.SetMode(GameMode.NetworkClient);
-        }
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
-        // ì—°ê²° ì„±ê³µ UI ì—…ë°ì´íŠ¸
         var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-        if (mmc != null)
-        {
-            mmc.ShowConnectionStatus($"P{msg.assignedPlayerId}ë¡œ ì ‘ì†ë¨! í˜¸ìŠ¤íŠ¸ê°€ ë§µì„ ì„ íƒ ì¤‘ì…ë‹ˆë‹¤...");
-        }
+        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}ë¡??‘ì†?? ?¸ìŠ¤?¸ê? ë§µì„ ? íƒ ì¤‘ì…?ˆë‹¤...");
     }
 
-    private void OnClientStateSnapshot(StateSnapshotMessage msg)
+    void OnClientStateSnapshot(StateSnapshotMessage msg)
     {
-        NetworkGameStateSync receiver = FindFirstObjectByType<NetworkGameStateSync>();
-        if (receiver != null)
-        {
-            receiver.ApplySnapshot(msg);
-        }
+        var receiver = FindFirstObjectByType<NetworkGameStateSync>();
+        receiver?.ApplySnapshot(msg);
     }
 
-    private void OnClientTurnChange(TurnChangeMessage msg)
-    {
-        GameEvents.TriggerTurnStarted(msg.playerId);
-    }
+    void OnClientTurnChange(TurnChangeMessage msg) => GameEvents.TriggerTurnStarted(msg.playerId);
 
-    private void OnClientGameResult(GameResultMessage msg)
+    void OnClientGameResult(GameResultMessage msg)
     {
         if (NetworkServer.active) return;
-
-        GameResult result = (GameResult)msg.result;
-        GameEvents.TriggerGameEnded(result);
+        GameEvents.TriggerGameEnded((GameResult)msg.result);
     }
 
-    private void OnClientRestartConfirmed(RestartConfirmedMessage msg)
-    {
-        // ServerChangeSceneì´ ì¬ì‹œì‘ì„ ì²˜ë¦¬í•˜ë¯€ë¡œ ì´ í•¸ë“¤ëŸ¬ëŠ” ë” ì´ìƒ ì‚¬ìš©ë˜ì§€ ì•ŠìŒ
-        // (í˜¸í™˜ì„±ì„ ìœ„í•´ ìœ ì§€, ì•„ë¬´ ë™ì‘ë„ í•˜ì§€ ì•ŠìŒ)
-    }
+    void OnClientRestartConfirmed(RestartConfirmedMessage msg) { }
 
-    public void StartNetworkHost()
-    {
-        try
-        {
-            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
-            {
-                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-                return;
-            }
-            GameLaunchContext.SetMode(GameMode.NetworkHost);
-            GameLaunchContext.ServerIP = "0.0.0.0";
-            networkAddress = "localhost";
-            StartHost();
-
-            // ì„œë²„ ì‹œì‘ ì§í›„ ìƒíƒœ ë¡œê¹…
-            if (NetworkServer.active)
-            {
-                Debug.Log($"[DinoNetworkManager] Host started on port 7777 (UDP).");
-            }
-            else
-            {
-                Debug.LogError("[DinoNetworkManager] Host FAILED to start! Port 7777 may be in use by another process.");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[DinoNetworkManager] Host start failed: {ex.Message}");
-        }
-    }
-
-    public void StartNetworkClient(string ip)
-    {
-        try
-        {
-            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
-            {
-                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-                return;
-            }
-            GameLaunchContext.SetMode(GameMode.NetworkClient);
-            GameLaunchContext.ServerIP = ip;
-            networkAddress = ip;
-            StartClient();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[DinoNetworkManager] Client start failed: {ex.Message}");
-        }
-    }
-
-    public override void OnStopServer()
-    {
-        base.OnStopServer();
-        if (gameStarted)
-        {
-            GameEvents.TriggerGameEnded(GameResult.None);
-        }
-        gameStarted = false;
-        GameLaunchContext.ResetToDefault();
-    }
-
-    public override void OnStopClient()
-    {
-        base.OnStopClient();
-        GameLaunchContext.ResetToDefault();
-    }
-
-    private void OnClientMapSelect(MapSelectMessage msg)
+    void OnClientMapSelect(MapSelectMessage msg)
     {
         GameLaunchContext.SelectMap((MapId)msg.mapId);
         Debug.Log($"[DinoNetworkManager] Client received MapSelect: {msg.mapId}");
@@ -274,48 +434,43 @@ public class DinoNetworkManager : NetworkManager
     public override void OnClientDisconnect()
     {
         base.OnClientDisconnect();
-
         if (disconnectIntended)
         {
-            Debug.Log($"[DinoNetworkManager] Client disconnected from '{networkAddress}:7777'.");
+            Debug.Log($"[DinoNetworkManager] Client disconnected.");
         }
         else
         {
-            Debug.LogError($"[DinoNetworkManager] Client disconnected. Server at '{networkAddress}:7777' may be unreachable or connection rejected.");
-            Debug.LogError($"[DinoNetworkManager] Check: (1) Host PC ë°©í™”ë²½ì—ì„œ í¬íŠ¸ 7777(UDP) í—ˆìš© (2) ì˜¬ë°”ë¥¸ IP ì£¼ì†Œ ì…ë ¥ (3) Hostê°€ ë¨¼ì € ì‹¤í–‰ ì¤‘ì¸ì§€ í™•ì¸");
-
+            Debug.LogError("[DinoNetworkManager] VPS relay connection lost.");
             var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-            if (mmc != null)
-            {
-                mmc.ShowConnectionStatus($"ì—°ê²° ì‹¤íŒ¨: {networkAddress}:7777\në°©í™”ë²½ ë° IPë¥¼ í™•ì¸í•˜ì„¸ìš”.");
-            }
+            mmc?.ShowConnectionStatus("VPS ë¦´ë ˆ???°ê²° ?¤íŒ¨");
         }
-
         disconnectIntended = false;
     }
 
-    private void OnClientLoadScene(LoadSceneMessage msg)
+    void OnClientLoadScene(LoadSceneMessage msg)
     {
         Debug.Log($"[DinoNetworkManager] Client received LoadScene: {msg.sceneName}");
-        UnityEngine.SceneManagement.SceneManager.LoadScene(msg.sceneName);
+        SceneManager.LoadScene(msg.sceneName);
     }
 
-    public void NotifyGameStarted()
+    public override void OnStopServer()
     {
-        gameStarted = true;
+        base.OnStopServer();
+        if (gameStarted)
+            GameEvents.TriggerGameEnded(GameResult.None);
+        gameStarted = false;
+        GameLaunchContext.ResetToDefault();
     }
 
-    /// <summary>ì˜ë„ì  í´ë¼ì´ì–¸íŠ¸ ì¢…ë£Œ â€” OnClientDisconnectì—ì„œ Error ëŒ€ì‹  Info ë¡œê·¸</summary>
-    public void StopClientSafe()
+    public override void OnStopClient()
     {
-        disconnectIntended = true;
-        StopClient();
+        base.OnStopClient();
+        StopRelay();
+        GameLaunchContext.ResetToDefault();
     }
 
-    /// <summary>ì˜ë„ì  í˜¸ìŠ¤íŠ¸ ì¢…ë£Œ â€” ë‚´ë¶€ StopClient í˜¸ì¶œ ì‹œì—ë„ Info ë¡œê·¸</summary>
-    public void StopHostSafe()
-    {
-        disconnectIntended = true;
-        StopHost();
-    }
+    public void NotifyGameStarted() { gameStarted = true; }
+
+    public void StopClientSafe() { disconnectIntended = true; StopClient(); }
+    public void StopHostSafe() { disconnectIntended = true; StopHost(); }
 }
