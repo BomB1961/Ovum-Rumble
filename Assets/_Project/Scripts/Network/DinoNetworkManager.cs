@@ -23,9 +23,22 @@ public class DinoNetworkManager : NetworkManager
     private const float RestartCooldown = 2f;
     private bool disconnectIntended;
 
-    [Header("VPS Relay")]
-    [SerializeField] private string vpsRelayAddress = "45.59.101.155";
-    [SerializeField] private int vpsRelayPort = 7777;
+    // VPS 릴레이 (난독화, 인스펙터 미노출)
+    private const int VpsRelayPort = 7777;
+    private const byte _xorKey = 0xAB;
+    private static byte[] _vpsAddr = { 0x9f, 0x9e, 0x85, 0x9e, 0x92, 0x85, 0x9a, 0x9b, 0x9a, 0x85, 0x9a, 0x9e, 0x9e };
+    private static byte[] _vpsToken = { 0xd2, 0xda, 0x9a, 0xc1, 0xc4, 0x99, 0xdb, 0xcf, 0xc7, 0x99, 0xd2, 0xc2 };
+    private static string VpsAddress => Deobfuscate(_vpsAddr);
+    private static string VpsAuthToken => Deobfuscate(_vpsToken);
+
+    private static string Deobfuscate(byte[] data)
+    {
+        char[] chars = new char[data.Length];
+        for (int i = 0; i < data.Length; i++)
+            chars[i] = (char)(data[i] ^ _xorKey);
+        return new string(chars);
+    }
+
     private string roomCode;
     private Thread relayThread;
     private volatile bool relayRunning;
@@ -65,7 +78,7 @@ public class DinoNetworkManager : NetworkManager
         {
             using (var tcp = new TcpClient())
             {
-                tcp.Connect(vpsRelayAddress, vpsRelayPort + 1);
+                tcp.Connect(VpsAddress, VpsRelayPort + 1);
                 tcp.ReceiveTimeout = 5000;
                 var stream = tcp.GetStream();
                 byte[] req = Encoding.UTF8.GetBytes(command + "\n");
@@ -106,7 +119,7 @@ public class DinoNetworkManager : NetworkManager
 
             // 2. 로컬 Mirror 서버 시작 (TelepathyTransport, 127.0.0.1:7777)
             GameLaunchContext.SetMode(GameMode.NetworkHost);
-            GameLaunchContext.ServerIP = vpsRelayAddress;
+            GameLaunchContext.ServerIP = VpsAddress;
             networkAddress = "127.0.0.1";
             StartServer();
 
@@ -141,11 +154,11 @@ public class DinoNetworkManager : NetworkManager
             try
             {
                 vpsRelayClient = new TcpClient();
-                vpsRelayClient.Connect(vpsRelayAddress, vpsRelayPort);
+                vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
 
                 // 방 코드로 호스트 식별
-                byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}\n");
+                byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}:{VpsAuthToken}\n");
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
@@ -196,7 +209,7 @@ public class DinoNetworkManager : NetworkManager
 
             roomCode = code;
             GameLaunchContext.SetMode(GameMode.NetworkClient);
-            GameLaunchContext.ServerIP = vpsRelayAddress;
+            GameLaunchContext.ServerIP = VpsAddress;
 
             // 2. 클라이언트 릴레이 시작 (로컬에서 Mirror 접속 대기)
             StartClientRelay();
@@ -220,10 +233,10 @@ public class DinoNetworkManager : NetworkManager
             {
                 // VPS에 먼저 연결 + 방 코드 전송
                 vpsRelayClient = new TcpClient();
-                vpsRelayClient.Connect(vpsRelayAddress, vpsRelayPort);
+                vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
 
-                byte[] ident = Encoding.UTF8.GetBytes($"CLNT:{roomCode}\n");
+                byte[] ident = Encoding.UTF8.GetBytes($"CLNT:{roomCode}:{VpsAuthToken}\n");
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
