@@ -345,15 +345,6 @@ public class DinoNetworkManager : NetworkManager
         base.OnServerConnect(conn);
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
-
-        // VPS 릴레??모드(roomCode != null): host client(1) + relay bridge(1) = 2�?기본
-        //   ???�격 ?�레?�어 ?�속 ??3개�? ?��?�?>= 3
-        // 직접 LAN 모드(roomCode == null): host client(1) = 1�?기본
-        //   ???�격 ?�레?�어 ?�속 ??2개�? ?��?�?>= 2
-        bool isRelayMode = roomCode != null;
-        int remoteThreshold = isRelayMode ? 3 : 2;
-        if (playerCount >= remoteThreshold)
-            OnRemotePlayerConnected?.Invoke();
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -362,9 +353,8 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player disconnected. Total: {playerCount}");
 
-        bool isRelayMode = roomCode != null;
-        int remoteThreshold = isRelayMode ? 3 : 2;
-        if (playerCount < remoteThreshold)
+        // 2 미만이면 원격 플레이어 연결 해제 (릴레이/직접 LAN 모두 동일)
+        if (playerCount < 2)
             OnRemotePlayerDisconnected?.Invoke();
     }
 
@@ -407,6 +397,10 @@ public class DinoNetworkManager : NetworkManager
         JoinAcceptedMessage acceptMsg = new JoinAcceptedMessage { assignedPlayerId = playerId };
         conn.Send(acceptMsg);
         Debug.Log($"[DinoNetworkManager] Assigned PlayerId {playerId} to connection {conn.connectionId}");
+
+        // PlayerId 2가 할당되면 원격 플레이어 접속 완료 (릴레이/직접 LAN 모두)
+        if (playerId >= 2)
+            OnRemotePlayerConnected?.Invoke();
     }
 
     void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
