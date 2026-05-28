@@ -14,6 +14,8 @@ namespace DinoAlkkagi.Core
         public static event Action<float> OnEggCollision;
         public static event Action<EggController> OnEggFell;
         public static event Action OnAllEggsStopped;
+        public static event Action OnBetweenTurns;
+        public static event Action OnBetweenTurnsEnded;
         public static event Action<GameResult> OnGameEnded;
 
         public static void TriggerGameStarted() => OnGameStarted?.Invoke();
@@ -22,6 +24,8 @@ namespace DinoAlkkagi.Core
         public static void TriggerEggCollision(float impact) => OnEggCollision?.Invoke(impact);
         public static void TriggerEggFell(EggController egg) => OnEggFell?.Invoke(egg);
         public static void TriggerAllEggsStopped() => OnAllEggsStopped?.Invoke();
+        public static void TriggerBetweenTurns() => OnBetweenTurns?.Invoke();
+        public static void TriggerBetweenTurnsEnded() => OnBetweenTurnsEnded?.Invoke();
         public static void TriggerGameEnded(GameResult result) => OnGameEnded?.Invoke(result);
     }
 }

@@ -15,7 +15,7 @@ MonoBehaviour:
   enableBomb: 0
   enableWind: 0
   enableEarthquake: 0
-  enableDinosaurNpc: 0
+  enableDinosaurNpc: 1
   enableHpSystem: 0
   enableAbilityEggs: 0
   enableHatching: 0

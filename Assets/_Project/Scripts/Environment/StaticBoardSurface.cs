@@ -94,6 +94,11 @@ namespace DinoAlkkagi.Environment
             return bounds;
         }
 
+        public Bounds GetPlayableBounds()
+        {
+            return bounds;
+        }
+
         private bool TryCreateSpawnPoint(Vector3 candidate, out Vector3 spawnPoint)
         {
             if (TrySampleSurface(candidate, out RaycastHit hit))

@@ -375,7 +375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ef71194fbd4a7ea48aa3027c48be2f7b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -28.3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ef71194fbd4a7ea48aa3027c48be2f7b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1150,6 +1150,7 @@ MonoBehaviour:
   maxDragDistance: 2
   activePlayerId: 1
   inputEnabled: 1
+  useNetworkRelay: 0
 --- !u!4 &996057605
 Transform:
   m_ObjectHideFlags: 0
@@ -2348,6 +2349,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1638954699}
   m_CullTransparentMesh: 1
+--- !u!1 &1668236670
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1668236672}
+  - component: {fileID: 1668236671}
+  m_Layer: 0
+  m_Name: DinosaurEventManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1668236671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668236670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57d55ce8c27fcef499c7486908639e2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DinoAlkkagi.Environment.DinosaurEventController
+  featureFlags: {fileID: 11400000, guid: 1645cf63f80834b4dadae5c4dd35d7a6, type: 2}
+  turnController: {fileID: 1847179132}
+  boardLoader: {fileID: 639607064}
+  dinoPrefabs:
+  - {fileID: 2655976908894025373, guid: 3277627e83348564cad0dd0b74d7b201, type: 3}
+  - {fileID: 1321351439467989611, guid: 05943e5eae81971408262222e398bca9, type: 3}
+  spawnChance: 14
+  spawnHeight: 1
+  edgePadding: 1
+  walkSpeed: 10
+  correctionGain: 5
+  maxWalkDuration: 5
+  dinoLayerName: Dinosaur
+--- !u!4 &1668236672
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668236670}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.22126, y: 0.60686, z: 2.072}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1713468698
 GameObject:
   m_ObjectHideFlags: 0
@@ -2757,6 +2815,7 @@ MonoBehaviour:
   boardFallZone: {fileID: 960822259}
   aiInputController: {fileID: 1847179135}
   staticBoardLoader: {fileID: 0}
+  networkManager: {fileID: 0}
 --- !u!4 &1847179134
 Transform:
   m_ObjectHideFlags: 0
@@ -3167,6 +3226,96 @@ MonoBehaviour:
   gameSessionController: {fileID: 1847179133}
   winConditionChecker: {fileID: 1847179130}
   turnDurationSeconds: 25
+--- !u!1 &2200000060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2200000061}
+  - component: {fileID: 2200000062}
+  m_Layer: 0
+  m_Name: NetworkGameStateSync
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2200000061
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2200000060}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2200000062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2200000060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a05a1c71d0bd3347a7451d6591873a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkGameStateSync
+  settings: {fileID: 0}
+  snapshotInterval: 0.1
+--- !u!1 &2200000070
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2200000071}
+  - component: {fileID: 2200000072}
+  m_Layer: 0
+  m_Name: NetworkInputRelay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2200000071
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2200000070}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2200000072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2200000070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aadbb2b893fdef468340c7491a7b93d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkInputRelay
 --- !u!1 &7100000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -5682,96 +5831,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: "\uC885\uB8CC"
---- !u!1 &2200000060
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2200000061}
-  - component: {fileID: 2200000062}
-  m_Layer: 0
-  m_Name: NetworkGameStateSync
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2200000061
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2200000060}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2200000062
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2200000060}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a05a1c71d0bd3347a7451d6591873a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkGameStateSync
-  settings: {fileID: 0}
-  snapshotInterval: 0.1
---- !u!1 &2200000070
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2200000071}
-  - component: {fileID: 2200000072}
-  m_Layer: 0
-  m_Name: NetworkInputRelay
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2200000071
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2200000070}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2200000072
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2200000070}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8aadbb2b893fdef468340c7491a7b93d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkInputRelay
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5791,5 +5850,6 @@ SceneRoots:
   - {fileID: 2101000002}
   - {fileID: 639607067}
   - {fileID: 1874041762}
-  - {fileID: 2200000060}
-  - {fileID: 2200000070}
+  - {fileID: 2200000061}
+  - {fileID: 2200000071}
+  - {fileID: 1668236672}

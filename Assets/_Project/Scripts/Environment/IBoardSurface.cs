@@ -10,5 +10,6 @@ namespace DinoAlkkagi.Environment
         bool IsInsidePlayableArea(Vector3 xz);
         IReadOnlyList<Vector3> GetSpawnPoints(int playerId);
         Bounds GetCameraBounds();
+        Bounds GetPlayableBounds();
     }
 }

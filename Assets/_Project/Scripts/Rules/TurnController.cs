@@ -32,7 +32,7 @@ namespace DinoAlkkagi.Rules
         {
             GameEvents.OnGameStarted += HandleOnGameStarted;
             GameEvents.OnEggLaunched += HandleOnEggLaunched;
-            GameEvents.OnAllEggsStopped += HandleOnAllEggsStopped;
+            GameEvents.OnBetweenTurnsEnded += HandleOnBetweenTurnsEnded;
             GameEvents.OnGameEnded += HandleOnGameEnded;
         }
 
@@ -40,7 +40,7 @@ namespace DinoAlkkagi.Rules
         {
             GameEvents.OnGameStarted -= HandleOnGameStarted;
             GameEvents.OnEggLaunched -= HandleOnEggLaunched;
-            GameEvents.OnAllEggsStopped -= HandleOnAllEggsStopped;
+            GameEvents.OnBetweenTurnsEnded -= HandleOnBetweenTurnsEnded;
             GameEvents.OnGameEnded -= HandleOnGameEnded;
         }
 
@@ -60,7 +60,7 @@ namespace DinoAlkkagi.Rules
             LockInput();
         }
 
-        private void HandleOnAllEggsStopped()
+        private void HandleOnBetweenTurnsEnded()
         {
             if (isClientOnly) return;
             if (isGameEnded) return;
