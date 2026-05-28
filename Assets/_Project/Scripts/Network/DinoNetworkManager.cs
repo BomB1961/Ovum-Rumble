@@ -183,19 +183,37 @@ public class DinoNetworkManager : NetworkManager
                 vpsRelayClient.Connect(VpsAddress, VpsRelayPort);
                 var vpsStream = vpsRelayClient.GetStream();
 
-                // �?코드�??�스???�별
+                // 방 코드로 자신 식별
                 byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}:{VpsAuthToken}\n");
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // 로컬 Mirror ?�버???�결 (Virtual Client ??��)
+                // ⭐ Client가 접속해서 데이터를 보낼 때까지 무기한 대기
+                // VPS 브릿지는 Client 접속 시에만 시작되므로, Read()는 Client의
+                // 첫 번째 Mirror 메시지(JoinGameMessage 등)가 도착할 때까지 블로킹됨
+                // 타임아웃 없음 — 접속은 언제든 될 수 있으므로 계속 기다림
+                Debug.Log("[DinoNetworkManager] Waiting for remote client...");
+                byte[] initialBuf = new byte[65536];
+                vpsRelayClient.ReceiveTimeout = 0; // 무기한 대기
+                int initialBytes = vpsStream.Read(initialBuf, 0, initialBuf.Length);
+                if (initialBytes <= 0)
+                {
+                    Debug.LogWarning("[DinoNetworkManager] Remote client disconnected before relay established.");
+                    return;
+                }
+
+                // ⭐ Client가 접속한 후에만 Mirror 서버 연결
                 var localClient = new TcpClient();
                 localClient.Connect("127.0.0.1", 7777);
                 var localStream = localClient.GetStream();
 
+                // 이미 읽은 첫 데이터를 Mirror 서버로 전달
+                localStream.Write(initialBuf, 0, initialBytes);
+                localStream.Flush();
+
                 Debug.Log("[DinoNetworkManager] VPS relay bridged.");
 
-                // ?�방???�워??
+                // 양방향 포워딩 (나머지 데이터)
                 var t1 = new Thread(() => Forward(localStream, vpsStream)) { IsBackground = true };
                 var t2 = new Thread(() => Forward(vpsStream, localStream)) { IsBackground = true };
                 t1.Start(); t2.Start();
