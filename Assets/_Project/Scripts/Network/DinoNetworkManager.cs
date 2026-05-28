@@ -66,6 +66,10 @@ public class DinoNetworkManager : NetworkManager
         if (featureFlags == null)
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
         Application.quitting += () => disconnectIntended = true;
+
+        // KcpTransport(UDP) ??TelepathyTransport(TCP) ?�동 변??
+        // VPS TCP 릴레?��????�환?�을 ?�해 (kcp2k??UDP 기반?�라 릴레?��? 불일�?
+        EnsureTelepathyTransport();
     }
 
     void OnDestroy() { StopRelay(); }
@@ -372,6 +376,10 @@ public class DinoNetworkManager : NetworkManager
         JoinAcceptedMessage acceptMsg = new JoinAcceptedMessage { assignedPlayerId = playerId };
         conn.Send(acceptMsg);
         Debug.Log($"[DinoNetworkManager] Assigned PlayerId {playerId} to connection {conn.connectionId}");
+
+        // PlayerId 2가 할당되면 원격 플레이어 접속 완료 (릴레이/직접 LAN 모두)
+        if (playerId >= 2)
+            OnRemotePlayerConnected?.Invoke();
     }
 
     void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
@@ -474,3 +482,4 @@ public class DinoNetworkManager : NetworkManager
     public void StopClientSafe() { disconnectIntended = true; StopClient(); }
     public void StopHostSafe() { disconnectIntended = true; StopHost(); }
 }
+

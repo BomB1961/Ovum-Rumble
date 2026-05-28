@@ -90,8 +90,14 @@ namespace DinoAlkkagi.Rules
             var enemyEggs = GetAliveEggs(GetOpponentId(aiPlayerId));
             if (myEggs.Count == 0 || enemyEggs.Count == 0) return;
 
+            // 안전한 타겟 우선 (가장자리 위험한 알은 오버슈트 위험)
+            var safeEnemies = enemyEggs
+                .Where(e => EdgeDanger(e.transform.position) < 0.75f)
+                .ToList();
+            var targets = safeEnemies.Count > 0 ? safeEnemies : enemyEggs;
+
             // 모든 (내 알, 적) 쌍을 평가해서 최적의 샷 선택
-            ShotEvaluation best = FindBestShot(myEggs, enemyEggs);
+            ShotEvaluation best = FindBestShot(myEggs, targets);
             if (best.egg == null) return;
 
             Vector3 direction = ComputeDirection(best.egg, best.targetPos);
@@ -148,11 +154,14 @@ namespace DinoAlkkagi.Rules
             float attackScore = (targetVuln * 0.7f + targetIsolation * 0.3f) * 0.40f;
 
             // ──── 안전성 (0~0.35) ────
-            // 내 알이 가장자리에서 멀고, 발사 경로에 아군이 없을수록 높음
+            // 내 알이 가장자리에서 멀고, 발사 경로에 아군이 없고, 오버슈트 위험이 적을수록 높음
             float eggSafety = 1f - EdgeDanger(eggPos);
             int friendliesInLine = CountFriendliesInLineOfFire(egg, targetPos, myEggs);
             float friendlyPenalty = Mathf.Clamp01(friendliesInLine * 0.35f);
-            float safetyScore = (eggSafety * 0.6f + (1f - friendlyPenalty) * 0.4f) * 0.35f;
+            float overshootRisk = EdgeDanger(targetPos); // 타겟이 가장자리면 오버슈트 위험
+            float safetyScore = (eggSafety * 0.5f
+                               + (1f - friendlyPenalty) * 0.3f
+                               + (1f - overshootRisk) * 0.2f) * 0.35f;
 
             // ──── 사질 (0~0.25) ────
             // 정면(적진 방향)을 향하고, 너무 멀지도 가깝지도 않아야 높음
@@ -209,9 +218,9 @@ namespace DinoAlkkagi.Rules
             float dist = Vector3.Distance(egg.transform.position, target.transform.position);
             float baseForce = dist * 1.5f;
 
-            // 타겟이 가장자리에 가까울수록 강하게 밀어냄 (적 제거 우선)
+            // 타겟이 가장자리에 가까울수록 약하게 (오버슈트 방지)
             float targetEdge = EdgeDanger(target.transform.position);
-            baseForce *= Mathf.Lerp(1.0f, 1.6f, targetEdge);
+            baseForce *= Mathf.Lerp(1.0f, 0.7f, targetEdge);
 
             // 내 알이 위험하면 약하게 (자살 방지)
             float myEdge = EdgeDanger(egg.transform.position);
