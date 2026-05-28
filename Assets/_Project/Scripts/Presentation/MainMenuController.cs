@@ -196,14 +196,31 @@ public class MainMenuController : MonoBehaviour
         string input = hostIpInput != null ? hostIpInput.text.Trim() : "";
         if (string.IsNullOrEmpty(input))
         {
-            ShowConnectionStatus("IP 주소를 입력하세요.");
+            ShowConnectionStatus("방 코드(4자리) 또는 IP 주소를 입력하세요.");
             return;
         }
 
-        ShowConnectionStatus($"서버 {input}에 연결 중...");
-        DinoNetworkManager netMan = FindDinoNetworkManager();
-        if (netMan != null)
-            netMan.StartNetworkClient(input);
+        // IP 주소 감지 → 직접 접속 (fallback)
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
+        {
+            ShowConnectionStatus($"서버 {input}에 직접 연결 중...");
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+                netMan.StartNetworkClient(input);
+            return;
+        }
+
+        // 4자리 방 코드 → VPS 릴레이 접속
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{4}$"))
+        {
+            ShowConnectionStatus($"방 {input}에 VPS 릴레이로 연결 중...");
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+                netMan.StartNetworkClient(input);
+            return;
+        }
+
+        ShowConnectionStatus("4자리 숫자(방 코드) 또는 IP 주소를 입력하세요.");
     }
 
     public void OnClickCancelJoin()

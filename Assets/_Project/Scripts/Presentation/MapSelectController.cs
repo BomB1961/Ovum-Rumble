@@ -34,6 +34,7 @@ public class MapSelectController : MonoBehaviour
 
             netMan.OnRemotePlayerConnected += HandleRemotePlayerConnected;
             netMan.OnRemotePlayerDisconnected += HandleRemotePlayerDisconnected;
+            netMan.OnRoomCreated += HandleRoomCreated;
 
             if (!NetworkServer.active && !NetworkClient.active)
             {
@@ -51,7 +52,6 @@ public class MapSelectController : MonoBehaviour
             }
             else
             {
-                // 이미 서버가 실행 중인 경우: 현재 접속자 수 확인
                 if (NetworkServer.connections.Count >= 2)
                 {
                     HandleRemotePlayerConnected();
@@ -59,18 +59,8 @@ public class MapSelectController : MonoBehaviour
                 }
             }
 
-            // 서버가 정상 시작되었는지 확인
-            if (NetworkServer.active)
-            {
-                string localIp = GetLocalIp();
-                SetMapButtonsEnabled(false);
-                SetStatusText($"호스트 IP: {localIp}\n상대방이 이 IP를 입력하면 연결됩니다.\n(같은 PC: 127.0.0.1)");
-                Debug.Log($"[MapSelectController] Network host started. IP: {localIp}:7777. Waiting for player 2.");
-            }
-            else
-            {
-                FallbackToLocalMode();
-            }
+            SetMapButtonsEnabled(false);
+            SetStatusText("VPS 릴레이에 연결 중...");
         }
         else if (GameLaunchContext.IsNetworkClient)
         {
@@ -78,6 +68,12 @@ public class MapSelectController : MonoBehaviour
             SetStatusText("호스트가 맵을 선택 중입니다...");
             Debug.Log("[MapSelectController] Client waiting for host map selection.");
         }
+    }
+
+    private void HandleRoomCreated(string code)
+    {
+        SetStatusText($"🏠 방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.");
+        Debug.Log($"[MapSelectController] Room code: {code}");
     }
 
     private string GetLocalIp()
@@ -106,6 +102,7 @@ public class MapSelectController : MonoBehaviour
         {
             netMan.OnRemotePlayerConnected -= HandleRemotePlayerConnected;
             netMan.OnRemotePlayerDisconnected -= HandleRemotePlayerDisconnected;
+            netMan.OnRoomCreated -= HandleRoomCreated;
         }
     }
 
