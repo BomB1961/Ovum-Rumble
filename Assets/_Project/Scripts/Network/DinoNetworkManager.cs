@@ -4,6 +4,10 @@ using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
 using DinoAlkkagi.Presentation;
 using UnityEngine.SceneManagement;
+using System.Net.Sockets;
+using System.Threading;
+using System.Text;
+using System.IO;
 
 public class DinoNetworkManager : NetworkManager
 {
@@ -19,29 +23,262 @@ public class DinoNetworkManager : NetworkManager
     private const float RestartCooldown = 2f;
     private bool disconnectIntended;
 
+    [Header("VPS Relay")]
+    [SerializeField] private string vpsRelayAddress = "45.59.101.155";
+    [SerializeField] private int vpsRelayPort = 7777;
+    private string roomCode;
+    private Thread relayThread;
+    private volatile bool relayRunning;
+    private TcpClient vpsRelayClient;
+
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
     public int PlayerCount => playerCount;
     public bool IsRemotePlayerConnected => playerCount >= 2;
+    public string RoomCode => roomCode;
 
     public event System.Action OnRemotePlayerConnected;
     public event System.Action OnRemotePlayerDisconnected;
+    public event System.Action<string> OnRoomCreated;
 
     public override void Awake()
     {
-        // 중복 인스턴스 방지: 이미 singleton이 있으면 파괴
         if (singleton != null && singleton != this)
         {
             Debug.Log("[DinoNetworkManager] Duplicate detected. Destroying self.");
             Destroy(gameObject);
             return;
         }
-
         base.Awake();
         if (featureFlags == null)
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
         Application.quitting += () => disconnectIntended = true;
     }
+
+    void OnDestroy() { StopRelay(); }
+
+    // ─── VPS TCP 제어 ───────────────────────────────────────
+
+    string TcpCommand(string command)
+    {
+        try
+        {
+            using (var tcp = new TcpClient())
+            {
+                tcp.Connect(vpsRelayAddress, vpsRelayPort + 1);
+                tcp.ReceiveTimeout = 5000;
+                var stream = tcp.GetStream();
+                byte[] req = Encoding.UTF8.GetBytes(command + "\n");
+                stream.Write(req, 0, req.Length);
+                byte[] buf = new byte[256];
+                int len = stream.Read(buf, 0, buf.Length);
+                return Encoding.UTF8.GetString(buf, 0, len).Trim();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] VPS command failed ({command}): {ex.Message}");
+            return null;
+        }
+    }
+
+    // ─── 호스트 시작 (VPS 릴레이) ───────────────────────────
+
+    public void StartNetworkHost()
+    {
+        try
+        {
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+
+            // 1. VPS에 방 생성
+            string resp = TcpCommand("CREATE_ROOM");
+            if (resp == null || !resp.StartsWith("CODE:"))
+            {
+                Debug.LogError("[DinoNetworkManager] Failed to create room on VPS.");
+                return;
+            }
+            roomCode = resp.Substring(5).Trim();
+            Debug.Log($"[DinoNetworkManager] Room created: {roomCode}");
+
+            // 2. 로컬 Mirror 서버 시작 (TelepathyTransport, 127.0.0.1:7777)
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
+            GameLaunchContext.ServerIP = vpsRelayAddress;
+            networkAddress = "127.0.0.1";
+            StartServer();
+
+            if (!NetworkServer.active)
+            {
+                Debug.LogError("[DinoNetworkManager] Server failed to start.");
+                return;
+            }
+
+            // 3. VPS TCP 릴레이 시작 (VPS↔로컬서버 브릿징)
+            StartHostRelay();
+
+            // 4. 로컬 클라이언트 접속 (호스트 플레이어)
+            networkAddress = "127.0.0.1";
+            StartClient();
+
+            // 5. 방 코드 알림
+            OnRoomCreated?.Invoke(roomCode);
+            Debug.Log($"[DinoNetworkManager] Host ready. Room: {roomCode}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] Host start failed: {ex.Message}");
+        }
+    }
+
+    void StartHostRelay()
+    {
+        relayRunning = true;
+        relayThread = new Thread(() =>
+        {
+            try
+            {
+                vpsRelayClient = new TcpClient();
+                vpsRelayClient.Connect(vpsRelayAddress, vpsRelayPort);
+                var vpsStream = vpsRelayClient.GetStream();
+
+                // 방 코드로 호스트 식별
+                byte[] ident = Encoding.UTF8.GetBytes($"HOST:{roomCode}\n");
+                vpsStream.Write(ident, 0, ident.Length);
+                vpsStream.Flush();
+
+                // 로컬 Mirror 서버에 연결 (Virtual Client 역할)
+                var localClient = new TcpClient();
+                localClient.Connect("127.0.0.1", 7777);
+                var localStream = localClient.GetStream();
+
+                Debug.Log("[DinoNetworkManager] VPS relay bridged.");
+
+                // 양방향 포워딩
+                var t1 = new Thread(() => Forward(localStream, vpsStream)) { IsBackground = true };
+                var t2 = new Thread(() => Forward(vpsStream, localStream)) { IsBackground = true };
+                t1.Start(); t2.Start();
+                t1.Join(); t2.Join();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DinoNetworkManager] Host relay error: {ex.Message}");
+            }
+            finally { relayRunning = false; }
+        })
+        { IsBackground = true };
+        relayThread.Start();
+    }
+
+    // ─── 클라이언트 시작 (VPS 릴레이) ───────────────────────
+
+    public void StartNetworkClient(string code)
+    {
+        try
+        {
+            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
+            {
+                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
+                return;
+            }
+
+            // 1. VPS에 방 참여 요청
+            string resp = TcpCommand($"JOIN:{code}");
+            if (resp == null || !resp.StartsWith("OK"))
+            {
+                Debug.LogError($"[DinoNetworkManager] Failed to join room {code}.");
+                var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
+                mmc?.ShowConnectionStatus($"방 {code}를 찾을 수 없습니다.");
+                return;
+            }
+
+            roomCode = code;
+            GameLaunchContext.SetMode(GameMode.NetworkClient);
+            GameLaunchContext.ServerIP = vpsRelayAddress;
+
+            // 2. 클라이언트 릴레이 시작 (로컬에서 Mirror 접속 대기)
+            StartClientRelay();
+
+            // 3. 로컬 릴레이로 Mirror 접속
+            networkAddress = "127.0.0.1";
+            StartClient();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[DinoNetworkManager] Client start failed: {ex.Message}");
+        }
+    }
+
+    void StartClientRelay()
+    {
+        relayRunning = true;
+        relayThread = new Thread(() =>
+        {
+            try
+            {
+                // VPS에 먼저 연결 + 방 코드 전송
+                vpsRelayClient = new TcpClient();
+                vpsRelayClient.Connect(vpsRelayAddress, vpsRelayPort);
+                var vpsStream = vpsRelayClient.GetStream();
+
+                byte[] ident = Encoding.UTF8.GetBytes($"CLNT:{roomCode}\n");
+                vpsStream.Write(ident, 0, ident.Length);
+                vpsStream.Flush();
+
+                // 로컬에서 Mirror 접속 대기
+                var listener = new TcpListener(System.Net.IPAddress.Loopback, 7777);
+                listener.Start();
+                var mirrorConn = listener.AcceptTcpClient();
+                listener.Stop();
+                var mirrorStream = mirrorConn.GetStream();
+
+                Debug.Log("[DinoNetworkManager] Client relay bridged.");
+
+                var t1 = new Thread(() => Forward(mirrorStream, vpsStream)) { IsBackground = true };
+                var t2 = new Thread(() => Forward(vpsStream, mirrorStream)) { IsBackground = true };
+                t1.Start(); t2.Start();
+                t1.Join(); t2.Join();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[DinoNetworkManager] Client relay error: {ex.Message}");
+            }
+            finally { relayRunning = false; }
+        })
+        { IsBackground = true };
+        relayThread.Start();
+
+        Thread.Sleep(100); // 릴레이 리스너 준비 대기
+    }
+
+    // ─── TCP 포워딩 ─────────────────────────────────────────
+
+    static void Forward(Stream src, Stream dst)
+    {
+        try
+        {
+            byte[] buffer = new byte[65536];
+            int bytesRead;
+            while ((bytesRead = src.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                dst.Write(buffer, 0, bytesRead);
+                dst.Flush();
+            }
+        }
+        catch { }
+    }
+
+    void StopRelay()
+    {
+        relayRunning = false;
+        try { vpsRelayClient?.Close(); } catch { }
+        vpsRelayClient = null;
+        relayThread = null;
+    }
+
+    // ─── Mirror 네트워크 이벤트 ────────────────────────────
 
     public override void OnStartServer()
     {
@@ -61,11 +298,8 @@ public class DinoNetworkManager : NetworkManager
         playerCount = NetworkServer.connections.Count;
         Debug.Log($"[DinoNetworkManager] Player connected. Total: {playerCount}");
 
-        // Host(Player 1)는 항상 첫 연결. Player 2(원격)가 연결되면 알림.
         if (playerCount >= 2)
-        {
             OnRemotePlayerConnected?.Invoke();
-        }
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -75,9 +309,7 @@ public class DinoNetworkManager : NetworkManager
         Debug.Log($"[DinoNetworkManager] Player disconnected. Total: {playerCount}");
 
         if (playerCount < 2)
-        {
             OnRemotePlayerDisconnected?.Invoke();
-        }
     }
 
     public override void OnStartClient()
@@ -112,17 +344,16 @@ public class DinoNetworkManager : NetworkManager
         base.OnServerAddPlayer(conn);
     }
 
-    private void OnServerJoinGame(NetworkConnectionToClient conn, JoinGameMessage msg)
+    void OnServerJoinGame(NetworkConnectionToClient conn, JoinGameMessage msg)
     {
         int playerId = nextPlayerId;
         nextPlayerId++;
-
         JoinAcceptedMessage acceptMsg = new JoinAcceptedMessage { assignedPlayerId = playerId };
         conn.Send(acceptMsg);
         Debug.Log($"[DinoNetworkManager] Assigned PlayerId {playerId} to connection {conn.connectionId}");
     }
 
-    private void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
+    void OnServerLaunchInput(NetworkConnectionToClient conn, LaunchInputMessage msg)
     {
         if (!gameStarted) return;
         GameSessionController session = FindFirstObjectByType<GameSessionController>();
@@ -133,139 +364,47 @@ public class DinoNetworkManager : NetworkManager
         }
     }
 
-    private void OnServerRestartRequest(NetworkConnectionToClient conn, RestartRequestMessage msg)
+    void OnServerRestartRequest(NetworkConnectionToClient conn, RestartRequestMessage msg)
     {
         if (!gameStarted) return;
-
-        // 재시작 쿨다운: 너무 빠른 재시작 요청 방지
         if (Time.time - lastRestartTime < RestartCooldown)
         {
             Debug.LogWarning("[DinoNetworkManager] Restart request ignored (cooldown).");
             return;
         }
         lastRestartTime = Time.time;
-
         gameStarted = false;
-
-        // 씬 리로드로 완전 초기화 — DinoNetworkManager는 DontDestroyOnLoad 유지
-        // 모든 게임 상태가 새 씬에서 초기화됨 (카메라, 알, UI, 이벤트 등)
         ServerChangeScene("01_Game");
     }
 
-    private void OnClientJoinAccepted(JoinAcceptedMessage msg)
+    void OnClientJoinAccepted(JoinAcceptedMessage msg)
     {
         GameLaunchContext.SetNetworkClientInfo(msg.assignedPlayerId);
-        // 호스트의 내부 클라이언트도 이 메시지를 받음. 모드를 덮어쓰면 안 됨.
         if (!NetworkServer.active)
-        {
             GameLaunchContext.SetMode(GameMode.NetworkClient);
-        }
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
-        // 연결 성공 UI 업데이트
         var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-        if (mmc != null)
-        {
-            mmc.ShowConnectionStatus($"P{msg.assignedPlayerId}로 접속됨! 호스트가 맵을 선택 중입니다...");
-        }
+        mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}로 접속됨! 호스트가 맵을 선택 중입니다...");
     }
 
-    private void OnClientStateSnapshot(StateSnapshotMessage msg)
+    void OnClientStateSnapshot(StateSnapshotMessage msg)
     {
-        NetworkGameStateSync receiver = FindFirstObjectByType<NetworkGameStateSync>();
-        if (receiver != null)
-        {
-            receiver.ApplySnapshot(msg);
-        }
+        var receiver = FindFirstObjectByType<NetworkGameStateSync>();
+        receiver?.ApplySnapshot(msg);
     }
 
-    private void OnClientTurnChange(TurnChangeMessage msg)
-    {
-        GameEvents.TriggerTurnStarted(msg.playerId);
-    }
+    void OnClientTurnChange(TurnChangeMessage msg) => GameEvents.TriggerTurnStarted(msg.playerId);
 
-    private void OnClientGameResult(GameResultMessage msg)
+    void OnClientGameResult(GameResultMessage msg)
     {
         if (NetworkServer.active) return;
-
-        GameResult result = (GameResult)msg.result;
-        GameEvents.TriggerGameEnded(result);
+        GameEvents.TriggerGameEnded((GameResult)msg.result);
     }
 
-    private void OnClientRestartConfirmed(RestartConfirmedMessage msg)
-    {
-        // ServerChangeScene이 재시작을 처리하므로 이 핸들러는 더 이상 사용되지 않음
-        // (호환성을 위해 유지, 아무 동작도 하지 않음)
-    }
+    void OnClientRestartConfirmed(RestartConfirmedMessage msg) { }
 
-    public void StartNetworkHost()
-    {
-        try
-        {
-            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
-            {
-                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-                return;
-            }
-            GameLaunchContext.SetMode(GameMode.NetworkHost);
-            GameLaunchContext.ServerIP = "0.0.0.0";
-            networkAddress = "localhost";
-            StartHost();
-
-            // 서버 시작 직후 상태 로깅
-            if (NetworkServer.active)
-            {
-                Debug.Log($"[DinoNetworkManager] Host started on port 7777 (UDP).");
-            }
-            else
-            {
-                Debug.LogError("[DinoNetworkManager] Host FAILED to start! Port 7777 may be in use by another process.");
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[DinoNetworkManager] Host start failed: {ex.Message}");
-        }
-    }
-
-    public void StartNetworkClient(string ip)
-    {
-        try
-        {
-            if (featureFlags != null && !featureFlags.enableLanMultiplayer)
-            {
-                Debug.LogWarning("[DinoNetworkManager] LAN multiplayer disabled by FeatureFlags.");
-                return;
-            }
-            GameLaunchContext.SetMode(GameMode.NetworkClient);
-            GameLaunchContext.ServerIP = ip;
-            networkAddress = ip;
-            StartClient();
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[DinoNetworkManager] Client start failed: {ex.Message}");
-        }
-    }
-
-    public override void OnStopServer()
-    {
-        base.OnStopServer();
-        if (gameStarted)
-        {
-            GameEvents.TriggerGameEnded(GameResult.None);
-        }
-        gameStarted = false;
-        GameLaunchContext.ResetToDefault();
-    }
-
-    public override void OnStopClient()
-    {
-        base.OnStopClient();
-        GameLaunchContext.ResetToDefault();
-    }
-
-    private void OnClientMapSelect(MapSelectMessage msg)
+    void OnClientMapSelect(MapSelectMessage msg)
     {
         GameLaunchContext.SelectMap((MapId)msg.mapId);
         Debug.Log($"[DinoNetworkManager] Client received MapSelect: {msg.mapId}");
@@ -274,48 +413,43 @@ public class DinoNetworkManager : NetworkManager
     public override void OnClientDisconnect()
     {
         base.OnClientDisconnect();
-
         if (disconnectIntended)
         {
-            Debug.Log($"[DinoNetworkManager] Client disconnected from '{networkAddress}:7777'.");
+            Debug.Log($"[DinoNetworkManager] Client disconnected.");
         }
         else
         {
-            Debug.LogError($"[DinoNetworkManager] Client disconnected. Server at '{networkAddress}:7777' may be unreachable or connection rejected.");
-            Debug.LogError($"[DinoNetworkManager] Check: (1) Host PC 방화벽에서 포트 7777(UDP) 허용 (2) 올바른 IP 주소 입력 (3) Host가 먼저 실행 중인지 확인");
-
+            Debug.LogError("[DinoNetworkManager] VPS relay connection lost.");
             var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
-            if (mmc != null)
-            {
-                mmc.ShowConnectionStatus($"연결 실패: {networkAddress}:7777\n방화벽 및 IP를 확인하세요.");
-            }
+            mmc?.ShowConnectionStatus("VPS 릴레이 연결 실패");
         }
-
         disconnectIntended = false;
     }
 
-    private void OnClientLoadScene(LoadSceneMessage msg)
+    void OnClientLoadScene(LoadSceneMessage msg)
     {
         Debug.Log($"[DinoNetworkManager] Client received LoadScene: {msg.sceneName}");
-        UnityEngine.SceneManagement.SceneManager.LoadScene(msg.sceneName);
+        SceneManager.LoadScene(msg.sceneName);
     }
 
-    public void NotifyGameStarted()
+    public override void OnStopServer()
     {
-        gameStarted = true;
+        base.OnStopServer();
+        if (gameStarted)
+            GameEvents.TriggerGameEnded(GameResult.None);
+        gameStarted = false;
+        GameLaunchContext.ResetToDefault();
     }
 
-    /// <summary>의도적 클라이언트 종료 — OnClientDisconnect에서 Error 대신 Info 로그</summary>
-    public void StopClientSafe()
+    public override void OnStopClient()
     {
-        disconnectIntended = true;
-        StopClient();
+        base.OnStopClient();
+        StopRelay();
+        GameLaunchContext.ResetToDefault();
     }
 
-    /// <summary>의도적 호스트 종료 — 내부 StopClient 호출 시에도 Info 로그</summary>
-    public void StopHostSafe()
-    {
-        disconnectIntended = true;
-        StopHost();
-    }
+    public void NotifyGameStarted() { gameStarted = true; }
+
+    public void StopClientSafe() { disconnectIntended = true; StopClient(); }
+    public void StopHostSafe() { disconnectIntended = true; StopHost(); }
 }
