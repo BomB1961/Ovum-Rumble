@@ -188,15 +188,14 @@ public class DinoNetworkManager : NetworkManager
                 vpsStream.Write(ident, 0, ident.Length);
                 vpsStream.Flush();
 
-                // ⭐ VPS 브릿지가 시작될 때까지 기다림 (Client 접속 시까지 블로킹)
-                // VPS는 Client가 접속해야 브릿지를 시작하므로, 여기서 Read()가 블로킹됨
+                // ⭐ Client가 접속해서 데이터를 보낼 때까지 무기한 대기
+                // VPS 브릿지는 Client 접속 시에만 시작되므로, Read()는 Client의
+                // 첫 번째 Mirror 메시지(JoinGameMessage 등)가 도착할 때까지 블로킹됨
+                // 타임아웃 없음 — 접속은 언제든 될 수 있으므로 계속 기다림
                 Debug.Log("[DinoNetworkManager] Waiting for remote client...");
                 byte[] initialBuf = new byte[65536];
-                int initialBytes = 0;
-
-                // 최대 120초 대기 (timeout)
-                vpsRelayClient.ReceiveTimeout = 120000;
-                initialBytes = vpsStream.Read(initialBuf, 0, initialBuf.Length);
+                vpsRelayClient.ReceiveTimeout = 0; // 무기한 대기
+                int initialBytes = vpsStream.Read(initialBuf, 0, initialBuf.Length);
                 if (initialBytes <= 0)
                 {
                     Debug.LogWarning("[DinoNetworkManager] Remote client disconnected before relay established.");
