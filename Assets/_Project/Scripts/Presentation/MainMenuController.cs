@@ -149,7 +149,7 @@ public class MainMenuController : MonoBehaviour
 
     private void ShowJoinPanel()
     {
-        SetPanelState(mainMenuPanel, false);
+        SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, true);
         SetPanelState(settingsPanel, false);
     }
@@ -174,7 +174,7 @@ public class MainMenuController : MonoBehaviour
 
     private void ShowSettingsPanel()
     {
-        SetPanelState(mainMenuPanel, false);
+        SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, true);
     }
