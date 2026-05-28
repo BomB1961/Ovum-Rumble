@@ -1,8 +1,11 @@
 using TMPro;
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Data;
+using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+// ReSharper disable once RedundantUsingDirective
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -19,8 +22,7 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject joinPanel;
     [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private GameObject createRoomDetailPanel;
-    [SerializeField] private GameObject joinIpPopupPanel;
+    [SerializeField] private GameObject connectionStatusPanel;
 
     [Header("Main Menu")]
     [SerializeField] private Button hostGameButton;
@@ -32,14 +34,12 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Join")]
     [SerializeField] private TMP_InputField hostIpInput;
-    [SerializeField] private TMP_InputField joinIpInput;
     [SerializeField] private TMP_Text controlsGuideText;
     [SerializeField] private Button joinGameButton;
     [SerializeField] private Button cancelJoinButton;
-    [SerializeField] private Button directConnectButton;
-    [SerializeField] private Button inviteCodeButton;
-    [SerializeField] private Button serverJoinButton;
-    [SerializeField] private Button cancelJoinIpPopupButton;
+
+    [Header("Connection Status")]
+    [SerializeField] private TMP_Text connectionStatusText;
 
     [Header("Settings")]
     [SerializeField] private Slider bgmSlider;
@@ -47,22 +47,103 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private Button closeSettingsButton;
     [SerializeField] private AudioManager audioManager;
 
+    [Header("Feature Flags")]
+    [SerializeField] private FeatureFlags featureFlags;
+
+    private string pendingAutoJoinIp;
+
     private void Awake()
     {
+        // 이전 네트워크 세션 정리 (재시작/재진입 대비)
+        CleanupPreviousSession();
+
         GameLaunchContext.ResetToDefault();
         ResolveMissingReferences();
-        EnsureJoinIpInputTextComponent();
         EnsureVsComputerButton();
+        EnsureJoinButton();
         audioManager ??= FindFirstObjectByType<AudioManager>();
+        featureFlags ??= Resources.Load<FeatureFlags>("FeatureFlags");
         InitializeVolumeSliders();
         RegisterButtonListeners();
         ShowMainMenu();
+        UpdateNetworkButtons();
+
+        // 커맨드라인 자동 접속: --auto-join 127.0.0.1
+        string[] args = System.Environment.GetCommandLineArgs();
+        bool hasAutoHost = false;
+        bool hasAutoJoin = false;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i].ToLower() == "--auto-host" && !hasAutoJoin)
+            {
+                hasAutoHost = true;
+                Debug.Log($"[MainMenu] Auto-host requested");
+            }
+            else if (args[i].ToLower() == "--auto-join" && i + 1 < args.Length && !hasAutoHost)
+            {
+                pendingAutoJoinIp = args[i + 1];
+                hasAutoJoin = true;
+                Debug.Log($"[MainMenu] Auto-join requested: {pendingAutoJoinIp}");
+            }
+        }
+        if (hasAutoHost)
+            Invoke(nameof(DoAutoHost), 1f);
+        else if (hasAutoJoin)
+            Invoke(nameof(DoAutoJoin), 1f);
+    }
+
+    private void DoAutoHost()
+    {
+        DinoNetworkManager netMan = FindDinoNetworkManager();
+        if (netMan != null)
+        {
+            Debug.Log("[MainMenu] Auto-hosting...");
+            GameLaunchContext.SetMode(GameMode.NetworkHost);
+            SceneManager.LoadScene(MapSelectSceneName);
+        }
+    }
+
+    private void DoAutoJoin()
+    {
+        string ip = string.IsNullOrEmpty(pendingAutoJoinIp) ? "127.0.0.1" : pendingAutoJoinIp;
+        DinoNetworkManager netMan = FindDinoNetworkManager();
+        if (netMan != null)
+        {
+            ShowConnectionStatus($"자동 접속 중: {ip}");
+            netMan.StartNetworkClient(ip);
+        }
+    }
+
+    private void UpdateNetworkButtons()
+    {
+        if (featureFlags == null) return;
+        bool lanEnabled = featureFlags.enableLanMultiplayer;
+        if (hostGameButton != null) hostGameButton.interactable = lanEnabled;
+        if (showJoinPanelButton != null) showJoinPanelButton.interactable = lanEnabled;
+        if (testJoinButton != null) testJoinButton.interactable = lanEnabled;
     }
 
     public void OnClickHostGame()
     {
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
-        SceneManager.LoadScene(MapSelectSceneName);
+        try
+        {
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+            {
+                GameLaunchContext.SetMode(GameMode.NetworkHost);
+                ShowConnectionStatus("호스트 시작 중...");
+                SceneManager.LoadScene(MapSelectSceneName);
+                return;
+            }
+
+            GameLaunchContext.SetMode(GameMode.LocalHotseat);
+            SceneManager.LoadScene(MapSelectSceneName);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[MainMenu] OnClickHostGame failed: {ex.Message}");
+            ShowMainMenu();
+        }
     }
 
     public void OnClickStartGame()
@@ -72,7 +153,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickCreateRoom()
     {
-        ShowCreateRoomDetailPanel();
+        OnClickHostGame();
     }
 
     public void OnClickCreateAiRoom()
@@ -83,18 +164,25 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickShowJoinPanel()
     {
-        ShowControlsPanel();
+        ShowJoinPanel();
     }
 
     public void OnClickJoinRoom()
     {
-        ShowControlsPanel();
+        ShowJoinPanel();
     }
 
     public void OnClickTestJoin()
     {
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
+#if UNITY_EDITOR
+        Debug.LogWarning("[MainMenu] TestJoin: 서버 없이 클라이언트 모드 진입 (Editor 디버깅 전용)");
+        GameLaunchContext.SetMode(GameMode.NetworkClient);
+        GameLaunchContext.SetNetworkClientInfo(2);
         SceneManager.LoadScene(GameSceneName);
+#else
+        Debug.Log("[MainMenu] TestJoin is only available in Editor.");
+        ShowMainMenu();
+#endif
     }
 
     public void OnClickVsComputer()
@@ -105,40 +193,39 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickJoinGame()
     {
-        ShowJoinIpPopupPanel();
-    }
-
-    public void OnClickJoinIpSubmit()
-    {
-        string serverAddress = joinIpInput != null ? joinIpInput.text.Trim() : string.Empty;
-        if (string.IsNullOrWhiteSpace(serverAddress))
+        string input = hostIpInput != null ? hostIpInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(input))
         {
-            ShowJoinIpPopupPanel();
-            joinIpInput?.Select();
-            joinIpInput?.ActivateInputField();
+            ShowConnectionStatus("방 코드(4자리) 또는 IP 주소를 입력하세요.");
             return;
         }
 
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
-        GameLaunchContext.SetServerAddress(serverAddress);
-        SceneManager.LoadScene(MapSelectSceneName);
+        // IP 주소 감지 → 직접 접속 (fallback)
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
+        {
+            ShowConnectionStatus($"서버 {input}에 직접 연결 중...");
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+                netMan.StartNetworkClient(input);
+            return;
+        }
+
+        // 4자리 방 코드 → VPS 릴레이 접속
+        if (System.Text.RegularExpressions.Regex.IsMatch(input, @"^\d{4}$"))
+        {
+            ShowConnectionStatus($"방 {input}에 VPS 릴레이로 연결 중...");
+            DinoNetworkManager netMan = FindDinoNetworkManager();
+            if (netMan != null)
+                netMan.StartNetworkClient(input);
+            return;
+        }
+
+        ShowConnectionStatus("4자리 숫자(방 코드) 또는 IP 주소를 입력하세요.");
     }
 
     public void OnClickCancelJoin()
     {
         ShowMainMenu();
-    }
-
-    public void OnClickDirectConnect()
-    {
-        GameLaunchContext.SetMode(GameMode.LocalHotseat);
-        GameLaunchContext.SetServerAddress("127.0.0.1");
-        SceneManager.LoadScene(MapSelectSceneName);
-    }
-
-    public void OnClickInviteCode()
-    {
-        ShowJoinIpPopupPanel();
     }
 
     public void OnClickSettings()
@@ -181,64 +268,113 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
-        SetPanelState(createRoomDetailPanel, false);
-        SetPanelState(joinIpPopupPanel, false);
+        SetPanelState(connectionStatusPanel, false);
     }
 
     private void ShowJoinPanel()
     {
-        SetPanelState(mainMenuPanel, true);
+        SetPanelState(mainMenuPanel, false);
         SetPanelState(joinPanel, true);
         SetPanelState(settingsPanel, false);
-        SetPanelState(createRoomDetailPanel, false);
-        SetPanelState(joinIpPopupPanel, false);
+        SetPanelState(connectionStatusPanel, false);
+
+        if (controlsGuideText != null)
+            controlsGuideText.gameObject.SetActive(false);
+        if (hostIpInput != null)
+            hostIpInput.gameObject.SetActive(true);
+        if (joinGameButton != null)
+            joinGameButton.gameObject.SetActive(true);
+    }
+
+    public void OnClickManual()
+    {
+        ShowControlsPanel();
     }
 
     private void ShowControlsPanel()
     {
+        SetPanelState(mainMenuPanel, false);
+        SetPanelState(joinPanel, true);
+        SetPanelState(settingsPanel, false);
+        SetPanelState(connectionStatusPanel, false);
         SetPanelState(hostIpInput != null ? hostIpInput.gameObject : null, false);
         SetPanelState(joinGameButton != null ? joinGameButton.gameObject : null, false);
-        SetPanelState(controlsGuideText != null ? controlsGuideText.gameObject : null, true);
 
         if (controlsGuideText != null)
         {
-            controlsGuideText.text = "1. \uB0B4 \uC54C\uC744 \uC120\uD0DD\uD569\uB2C8\uB2E4.\n"
-                + "2. \uB9C8\uC6B0\uC2A4\uB85C \uB4DC\uB798\uADF8\uD574 \uBC29\uD5A5\uACFC \uD798\uC744 \uC815\uD569\uB2C8\uB2E4.\n"
-                + "3. \uB9C8\uC6B0\uC2A4\uB97C \uB193\uC73C\uBA74 \uC54C\uC774 \uBC1C\uC0AC\uB429\uB2C8\uB2E4.\n"
-                + "4. \uC54C\uC774 \uC6C0\uC9C1\uC774\uB294 \uB3D9\uC548\uC5D0\uB294 \uAE30\uB2E4\uB9BD\uB2C8\uB2E4.\n"
-                + "5. \uC0C1\uB300 \uC54C\uC744 \uBAA8\uB450 \uB5A8\uC5B4\uB728\uB9AC\uBA74 \uC2B9\uB9AC\uD569\uB2C8\uB2E4.";
+            controlsGuideText.gameObject.SetActive(true);
+            controlsGuideText.text = "1. 내 알을 선택합니다.\n"
+                + "2. 마우스로 드래그해 방향과 힘을 정합니다.\n"
+                + "3. 마우스를 놓으면 알이 발사됩니다.\n"
+                + "4. 알이 움직이는 동안에는 기다립니다.\n"
+                + "5. 상대 알을 모두 떨어뜨리면 승리합니다.\n\n"
+                + "[되돌아가기] 화면 아무 곳이나 클릭";
         }
 
-        ShowJoinPanel();
+        Invoke(nameof(ShowMainMenu), 8f);
+    }
+
+    public void ShowConnectionStatus(string message)
+    {
+        if (connectionStatusPanel != null)
+            connectionStatusPanel.SetActive(true);
+        if (connectionStatusText != null)
+            connectionStatusText.text = message;
+        SetPanelState(mainMenuPanel, false);
+        SetPanelState(joinPanel, false);
+        SetPanelState(settingsPanel, false);
+
+        // 연결 상태에서 빠져나올 '취소' 버튼 보장
+        EnsureConnectionCancelButton();
+    }
+
+    public void OnClientDisconnected()
+    {
+        ShowConnectionStatus("연결이 끊어졌습니다.");
+        Invoke(nameof(ShowMainMenu), 2f);
+    }
+
+    private void EnsureConnectionCancelButton()
+    {
+        if (connectionStatusPanel == null) return;
+        // 이미 취소 버튼이 있으면 스킵
+        if (cancelJoinButton != null && cancelJoinButton.gameObject.activeInHierarchy
+            && cancelJoinButton.transform.IsChildOf(connectionStatusPanel.transform))
+            return;
+
+        Button template = cancelJoinButton ?? joinGameButton ?? hostGameButton;
+        if (template == null) return;
+
+        GameObject cancelObj = Instantiate(template.gameObject, connectionStatusPanel.transform);
+        cancelObj.name = "Button_CancelConnection";
+        Button cancelBtn = cancelObj.GetComponent<Button>();
+        if (cancelBtn != null)
+        {
+            cancelBtn.onClick = new Button.ButtonClickedEvent();
+            cancelBtn.onClick.AddListener(() =>
+            {
+                var netMan = FindDinoNetworkManager();
+                if (netMan != null && NetworkClient.active)
+                    netMan.StopClientSafe();
+                ShowMainMenu();
+            });
+        }
+
+        RectTransform rt = cancelObj.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0);
+        rt.anchorMax = new Vector2(0.5f, 0);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0, 60);
+        rt.sizeDelta = new Vector2(200, 50);
+
+        SetButtonText(cancelObj, "취소");
     }
 
     private void ShowSettingsPanel()
     {
-        SetPanelState(mainMenuPanel, true);
+        SetPanelState(mainMenuPanel, false);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, true);
-        SetPanelState(createRoomDetailPanel, false);
-        SetPanelState(joinIpPopupPanel, false);
-    }
-
-    private void ShowCreateRoomDetailPanel()
-    {
-        SetPanelState(mainMenuPanel, true);
-        SetPanelState(joinPanel, false);
-        SetPanelState(settingsPanel, false);
-        SetPanelState(createRoomDetailPanel, true);
-        SetPanelState(joinIpPopupPanel, false);
-    }
-
-    private void ShowJoinIpPopupPanel()
-    {
-        SetPanelState(mainMenuPanel, true);
-        SetPanelState(joinPanel, false);
-        SetPanelState(settingsPanel, false);
-        SetPanelState(createRoomDetailPanel, false);
-        SetPanelState(joinIpPopupPanel, true);
-        joinIpInput?.Select();
-        joinIpInput?.ActivateInputField();
     }
 
     private static void SetPanelState(GameObject panel, bool active)
@@ -251,7 +387,7 @@ public class MainMenuController : MonoBehaviour
 
     private void RegisterButtonListeners()
     {
-        AddClickListener(hostGameButton, hostGameButton != null && hostGameButton.name == "Button_CreateRoom" ? OnClickCreateRoom : OnClickHostGame);
+        AddClickListener(hostGameButton, OnClickHostGame);
         AddClickListener(showJoinPanelButton, OnClickJoinRoom);
         AddClickListener(testJoinButton, OnClickTestJoin);
         AddClickListener(vsComputerButton, OnClickVsComputer);
@@ -259,10 +395,6 @@ public class MainMenuController : MonoBehaviour
         AddClickListener(quitGameButton, OnClickQuitGame);
         AddClickListener(joinGameButton, OnClickJoinGame);
         AddClickListener(cancelJoinButton, OnClickCancelJoin);
-        AddClickListener(directConnectButton, OnClickDirectConnect);
-        AddClickListener(inviteCodeButton, OnClickInviteCode);
-        AddClickListener(serverJoinButton, OnClickJoinIpSubmit);
-        AddClickListener(cancelJoinIpPopupButton, OnClickCancelJoin);
         AddClickListener(closeSettingsButton, OnClickCloseSettings);
 
         if (bgmSlider != null)
@@ -275,6 +407,14 @@ public class MainMenuController : MonoBehaviour
         {
             sfxSlider.onValueChanged.RemoveListener(OnSfxVolumeChanged);
             sfxSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+        }
+
+        // Button_Menual이 씬에 있으면 자동 연결
+        var manualBtn = FindInactiveComponent<Button>("Button_Menual");
+        if (manualBtn != null)
+        {
+            manualBtn.onClick = new Button.ButtonClickedEvent();
+            manualBtn.onClick.AddListener(OnClickManual);
         }
     }
 
@@ -289,66 +429,62 @@ public class MainMenuController : MonoBehaviour
         button.onClick.AddListener(action);
     }
 
+    // DinoNetworkManager가 DontDestroyOnLoad 씬에 있어서 FindObjectOfType 검색 안 됨
+    private static DinoNetworkManager FindDinoNetworkManager()
+    {
+        var go = UnityEngine.GameObject.Find("DinoNetworkManager");
+        return go != null ? go.GetComponent<DinoNetworkManager>() : null;
+    }
+
+    private void CleanupPreviousSession()
+    {
+        try
+        {
+            // 이전 네트워크 세션이 남아있으면 정리 (재시작/재진입 대비)
+            DinoNetworkManager dnm = FindDinoNetworkManager();
+            if (dnm != null)
+            {
+                if (Mirror.NetworkServer.active)
+                {
+                    Debug.Log("[MainMenu] Cleaning up previous server session.");
+                    dnm.StopHostSafe();
+                }
+                else if (Mirror.NetworkClient.active)
+                {
+                    Debug.Log("[MainMenu] Cleaning up previous client session.");
+                    dnm.StopClientSafe();
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[MainMenu] Cleanup warning: {ex.Message}");
+        }
+    }
+
     private void ResolveMissingReferences()
     {
         mainMenuPanel ??= FindInactiveGameObject("UI_MainMenuPanel");
         joinPanel ??= FindInactiveGameObject("UI_JoinRoomPanel", "Panel_join", "Panel_Join");
         settingsPanel ??= FindInactiveGameObject("UI_SettingsPanel");
-        createRoomDetailPanel ??= FindInactiveGameObject("CreateRoom_detail");
-        joinIpPopupPanel ??= FindInactiveGameObject("Popup_Panel_JoinIP");
 
         hostGameButton ??= FindInactiveComponent<Button>("Button_HostGame", "Button_CreateRoom");
         showJoinPanelButton ??= FindInactiveComponent<Button>("Button_ShowJoinPanel", "Button_JoinRoom");
         testJoinButton ??= FindInactiveComponent<Button>("Button_TestJoin");
-        vsComputerButton ??= FindInactiveComponent<Button>("Button_VsComputer");
+        vsComputerButton ??= FindInactiveComponent<Button>("Button_VsComputer", "Button_AI Create");
         settingsButton ??= FindInactiveComponent<Button>("Button_Settings");
         quitGameButton ??= FindInactiveComponent<Button>("Button_QuitGame");
 
-        hostIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_HostIP");
-        joinIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_JoinIP");
+        hostIpInput ??= FindInactiveComponent<TMP_InputField>("Input Field_HostIP", "Input Field_JoinIP");
         controlsGuideText ??= FindInactiveComponent<TMP_Text>("Text_InputField_IP");
+        connectionStatusPanel ??= FindInactiveGameObject("UI_ConnectionStatusPanel", "ConnectionStatusPanel", "CreateRoom_detail");
+        connectionStatusText ??= FindInactiveComponent<TMP_Text>("Text_ConnectionStatus", "Text_InputField_IP");
         joinGameButton ??= FindInactiveComponent<Button>("Button_JoinGame", "Button_JoinRoom (1)");
         cancelJoinButton ??= FindInactiveComponent<Button>("Button_CancelJoin", "Button_JoinRoom (2)");
-        directConnectButton ??= FindInactiveButtonInParent("CreateRoom_detail", "Button_Host");
-        inviteCodeButton ??= FindInactiveButtonInParent("CreateRoom_detail", "Button_Join");
-        serverJoinButton ??= FindInactiveButtonInParent("Popup_Panel_JoinIP", "Button_Join");
-        cancelJoinIpPopupButton ??= FindInactiveButtonInParent("Popup_Panel_JoinIP", "Button_Cancel");
 
         bgmSlider ??= FindInactiveComponent<Slider>("Slider_BGM");
         sfxSlider ??= FindInactiveComponent<Slider>("Slider_SFX");
         closeSettingsButton ??= FindInactiveComponent<Button>("Button_CloseSettings");
-    }
-
-    private void EnsureJoinIpInputTextComponent()
-    {
-        if (joinIpInput == null || joinIpInput.textComponent != null)
-        {
-            return;
-        }
-
-        Transform viewport = joinIpInput.textViewport != null ? joinIpInput.textViewport : joinIpInput.transform;
-        GameObject textObject = new GameObject("Text (TMP)", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-        textObject.transform.SetParent(viewport, false);
-
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI inputText = textObject.GetComponent<TextMeshProUGUI>();
-        TMP_Text templateText = joinIpInput.placeholder as TMP_Text;
-        if (templateText != null)
-        {
-            inputText.font = templateText.font;
-            inputText.fontSize = templateText.fontSize;
-            inputText.alignment = templateText.alignment;
-        }
-
-        inputText.color = new Color(0.196f, 0.196f, 0.196f, 1f);
-        inputText.raycastTarget = false;
-        joinIpInput.textComponent = inputText;
-        joinIpInput.ForceLabelUpdate();
     }
 
     private void EnsureVsComputerButton()
@@ -388,15 +524,154 @@ public class MainMenuController : MonoBehaviour
         TMP_Text tmpLabel = buttonObject.GetComponentInChildren<TMP_Text>(true);
         if (tmpLabel != null)
         {
-            tmpLabel.text = "AI와 플레이";
+            tmpLabel.text = "컴퓨터와 대결";
             return;
         }
 
         Text legacyLabel = buttonObject.GetComponentInChildren<Text>(true);
         if (legacyLabel != null)
         {
-            legacyLabel.text = "AI와 플레이";
+            legacyLabel.text = "컴퓨터와 대결";
         }
+    }
+
+    private void EnsureJoinButton()
+    {
+        if (showJoinPanelButton != null)
+            return;
+
+        Button templateButton = vsComputerButton ?? hostGameButton;
+        if (templateButton == null || templateButton.transform.parent == null)
+            return;
+
+        // Join 버튼 생성
+        GameObject buttonObj = Instantiate(templateButton.gameObject, templateButton.transform.parent);
+        buttonObj.name = "Button_ShowJoinPanel";
+        buttonObj.transform.SetSiblingIndex(templateButton.transform.GetSiblingIndex());
+
+        showJoinPanelButton = buttonObj.GetComponent<Button>();
+        if (showJoinPanelButton != null)
+        {
+            showJoinPanelButton.onClick = new Button.ButtonClickedEvent();
+            showJoinPanelButton.onClick.AddListener(OnClickShowJoinPanel);
+        }
+
+        RectTransform btnRect = buttonObj.GetComponent<RectTransform>();
+        RectTransform tmpRect = templateButton.GetComponent<RectTransform>();
+        if (btnRect != null && tmpRect != null)
+        {
+            btnRect.anchorMin = tmpRect.anchorMin;
+            btnRect.anchorMax = tmpRect.anchorMax;
+            btnRect.pivot = tmpRect.pivot;
+            btnRect.sizeDelta = tmpRect.sizeDelta;
+            btnRect.anchoredPosition = tmpRect.anchoredPosition + new Vector2(0f, 132f);
+        }
+
+        SetButtonText(buttonObj, "IP로 접속");
+
+        // Join 패널도 없으면 동적 생성
+        if (joinPanel == null)
+        {
+            CreateJoinPanel();
+        }
+    }
+
+    private static void SetButtonText(GameObject buttonObj, string text)
+    {
+        TMP_Text tmp = buttonObj.GetComponentInChildren<TMP_Text>(true);
+        if (tmp != null) { tmp.text = text; return; }
+        Text legacy = buttonObj.GetComponentInChildren<Text>(true);
+        if (legacy != null) { legacy.text = text; }
+    }
+
+    private void CreateJoinPanel()
+    {
+        if (mainMenuPanel == null) return;
+
+        // Join 패널 컨테이너
+        GameObject panel = new GameObject("UI_JoinRoomPanel", typeof(RectTransform), typeof(CanvasRenderer));
+        panel.transform.SetParent(mainMenuPanel.transform.parent, false);
+        panel.SetActive(false);
+        joinPanel = panel;
+
+        RectTransform panelRt = panel.GetComponent<RectTransform>();
+        panelRt.anchorMin = Vector2.zero;
+        panelRt.anchorMax = Vector2.one;
+        panelRt.sizeDelta = Vector2.zero;
+        panelRt.offsetMin = Vector2.zero;
+        panelRt.offsetMax = Vector2.zero;
+
+        // IP 입력 필드
+        GameObject inputObj = new GameObject("InputField_HostIP", typeof(RectTransform));
+        inputObj.transform.SetParent(panel.transform, false);
+        TMP_InputField inputField = inputObj.AddComponent<TMP_InputField>();
+        hostIpInput = inputField;
+
+        RectTransform inputRt = inputObj.GetComponent<RectTransform>();
+        inputRt.anchorMin = new Vector2(0.5f, 0.5f);
+        inputRt.anchorMax = new Vector2(0.5f, 0.5f);
+        inputRt.sizeDelta = new Vector2(300, 40);
+        inputRt.anchoredPosition = new Vector2(0, 20);
+
+        // 접속 버튼
+        GameObject joinBtnObj = Instantiate(hostGameButton.gameObject, panel.transform);
+        joinBtnObj.name = "Button_JoinGame";
+        Button joinBtn = joinBtnObj.GetComponent<Button>();
+        if (joinBtn != null)
+        {
+            joinBtn.onClick = new Button.ButtonClickedEvent();
+            joinBtn.onClick.AddListener(OnClickJoinGame);
+        }
+        joinGameButton = joinBtn;
+
+        RectTransform joinBtnRt = joinBtnObj.GetComponent<RectTransform>();
+        joinBtnRt.anchorMin = new Vector2(0.5f, 0.5f);
+        joinBtnRt.anchorMax = new Vector2(0.5f, 0.5f);
+        joinBtnRt.anchoredPosition = new Vector2(0, -40);
+        joinBtnRt.sizeDelta = new Vector2(200, 50);
+        SetButtonText(joinBtnObj, "접속");
+
+        // 취소 버튼
+        GameObject cancelBtnObj = Instantiate(hostGameButton.gameObject, panel.transform);
+        cancelBtnObj.name = "Button_CancelJoin";
+        Button cancelBtn = cancelBtnObj.GetComponent<Button>();
+        if (cancelBtn != null)
+        {
+            cancelBtn.onClick = new Button.ButtonClickedEvent();
+            cancelBtn.onClick.AddListener(OnClickCancelJoin);
+        }
+        cancelJoinButton = cancelBtn;
+
+        RectTransform cancelBtnRt = cancelBtnObj.GetComponent<RectTransform>();
+        cancelBtnRt.anchorMin = new Vector2(0.5f, 0.5f);
+        cancelBtnRt.anchorMax = new Vector2(0.5f, 0.5f);
+        cancelBtnRt.anchoredPosition = new Vector2(0, -100);
+        cancelBtnRt.sizeDelta = new Vector2(200, 50);
+        SetButtonText(cancelBtnObj, "취소");
+
+        // Placeholder text for input (간략 처리)
+        GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform));
+        placeholder.transform.SetParent(inputObj.transform, false);
+        TMP_Text placeText = placeholder.AddComponent<TextMeshProUGUI>();
+        placeText.text = "호스트 IP 입력 (예: 192.168.0.10)";
+        placeText.fontSize = 18;
+        placeText.color = Color.gray;
+        placeText.alignment = TextAlignmentOptions.Center;
+
+        // 실제 입력 텍스트
+        GameObject textArea = new GameObject("Text", typeof(RectTransform));
+        textArea.transform.SetParent(inputObj.transform, false);
+        TMP_Text textComp = textArea.AddComponent<TextMeshProUGUI>();
+        textComp.fontSize = 24;
+        textComp.color = Color.white;
+        textComp.alignment = TextAlignmentOptions.Center;
+
+        // TextMeshPro InputField 설정
+        inputField.textViewport = inputRt;
+        inputField.textComponent = textComp;
+        inputField.placeholder = placeText;
+        inputField.contentType = TMP_InputField.ContentType.Standard;
+        inputField.characterLimit = 30;
     }
 
     private void InitializeVolumeSliders()
@@ -432,25 +707,6 @@ public class MainMenuController : MonoBehaviour
     {
         GameObject gameObject = FindInactiveGameObject(names);
         return gameObject != null ? gameObject.GetComponent<T>() : null;
-    }
-
-    private static Button FindInactiveButtonInParent(string parentName, string buttonName)
-    {
-        GameObject parent = FindInactiveGameObject(parentName);
-        if (parent == null)
-        {
-            return null;
-        }
-
-        foreach (Button button in Resources.FindObjectsOfTypeAll<Button>())
-        {
-            if (button.name == buttonName && button.hideFlags == HideFlags.None && button.transform.IsChildOf(parent.transform))
-            {
-                return button;
-            }
-        }
-
-        return null;
     }
 }
 }

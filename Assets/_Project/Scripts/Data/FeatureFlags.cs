@@ -26,7 +26,7 @@ namespace DinoAlkkagi.Data
         public bool enableAI = false;
 
         [Header("--- v0.4 네트워크 ---")]
-        public bool enableLanMultiplayer = false;
+        public bool enableLanMultiplayer = true;
         public bool enableLobby = false;
 
         /// <summary>

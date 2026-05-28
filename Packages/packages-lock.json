@@ -13,6 +13,13 @@
       },
       "hash": "66aa58252bafe6f7f48031f4906f807f95a3f396"
     },
+    "com.mirrornetworking.mirror": {
+      "version": "96.6.4",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

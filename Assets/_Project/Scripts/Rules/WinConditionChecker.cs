@@ -17,6 +17,8 @@ namespace DinoAlkkagi.Rules
         private List<EggController> trackedEggs = new List<EggController>();
         private bool gameEnded = false;
 
+        private bool isClientOnly => GameLaunchContext.IsNetworkClient;
+
         public bool GameEnded => gameEnded;
 
         private void OnEnable()
@@ -40,13 +42,13 @@ namespace DinoAlkkagi.Rules
 
         private void HandleOnEggFell(EggController egg)
         {
-            // 알이 떨어질 때마다 승패 체크 (바로 반응)
+            if (isClientOnly) return;
             CheckWinCondition();
         }
 
         private void HandleOnAllEggsStopped()
         {
-            // 모든 알이 멈췄을 때도 한 번 더 체크 (안전장치)
+            if (isClientOnly) return;
             if (!gameEnded)
                 CheckWinCondition();
         }

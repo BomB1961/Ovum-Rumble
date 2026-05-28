@@ -82,135 +82,111 @@ namespace DinoAlkkagi.Rules
             }
         }
 
-        // ─── Level 2 AI 코어 ─────────────────────────────────
+        // ─── AI 코어 ─────────────────────────────────────
 
         private void ExecuteAITurn()
         {
-            var myEggs   = GetAliveEggs(aiPlayerId);
+            var myEggs = GetAliveEggs(aiPlayerId);
             var enemyEggs = GetAliveEggs(GetOpponentId(aiPlayerId));
-            if (myEggs.Count == 0) return;
+            if (myEggs.Count == 0 || enemyEggs.Count == 0) return;
 
-            // 1. 알 선택
-            EggController selectedEgg = PickEgg(myEggs, enemyEggs);
+            // 안전한 타겟 우선 (가장자리 위험한 알은 오버슈트 위험)
+            var safeEnemies = enemyEggs
+                .Where(e => EdgeDanger(e.transform.position) < 0.75f)
+                .ToList();
+            var targets = safeEnemies.Count > 0 ? safeEnemies : enemyEggs;
 
-            // 2. 타겟 위치 결정
-            Vector3 targetPos = PickTarget(selectedEgg, enemyEggs);
+            // 모든 (내 알, 적) 쌍을 평가해서 최적의 샷 선택
+            ShotEvaluation best = FindBestShot(myEggs, targets);
+            if (best.egg == null) return;
 
-            // 3. 발사 방향
-            Vector3 direction = ComputeDirection(selectedEgg, targetPos);
-
-            // 4. 발사 힘
-            float force = ComputeForce(selectedEgg, targetPos, enemyEggs);
-
-            // 5. 발사
-            selectedEgg.Launch(direction * force);
-            Debug.Log($"[AI][{strategy}] P{aiPlayerId} → {targetPos} (force: {force:F1})");
+            Vector3 direction = ComputeDirection(best.egg, best.targetPos);
+            best.egg.Launch(direction * best.force);
+            Debug.Log($"[AI][{strategy}] P{aiPlayerId} score={best.score:F2} force={best.force:F1}");
         }
 
-        // ─── 알 선택 ──────────────────────────────────────────
-
-        private EggController PickEgg(List<EggController> myEggs, List<EggController> enemyEggs)
+        /// <summary>하나의 샷(발사할 알 + 타겟 + 힘) 평가 결과</summary>
+        private struct ShotEvaluation
         {
-            return strategy switch
+            public EggController egg;
+            public Vector3 targetPos;
+            public float force;
+            public float score;
+        }
+
+        /// <summary>모든 가능한 샷을 평가하여 최고 점수 샷 반환</summary>
+        private ShotEvaluation FindBestShot(List<EggController> myEggs, List<EggController> enemyEggs)
+        {
+            ShotEvaluation best = new ShotEvaluation { score = float.MinValue };
+
+            foreach (var egg in myEggs)
             {
-                AIStrategy.Basic => PickBasicEgg(myEggs),
-                AIStrategy.Defensive => PickDefensiveEgg(myEggs, enemyEggs),
-                AIStrategy.Aggressive => PickAggressiveEgg(myEggs, enemyEggs),
-                AIStrategy.Smart => PickSmartEgg(myEggs, enemyEggs),
-                _ => PickBasicEgg(myEggs)
-            };
-        }
-
-        private EggController PickBasicEgg(List<EggController> myEggs)
-        {
-            // 중앙에 가장 가까운 알 (안전)
-            return myEggs.OrderBy(e => e.transform.position.magnitude).First();
-        }
-
-        private EggController PickDefensiveEdgeEgg(List<EggController> myEggs)
-        {
-            // 가장자리 위험도가 높은 알 우선 (위험한 알 먼저 보호)
-            return myEggs.OrderByDescending(e => EdgeDanger(e.transform.position)).First();
-        }
-
-        private EggController PickDefensiveEgg(List<EggController> myEggs, List<EggController> enemyEggs)
-        {
-            if (enemyEggs.Count == 0) return PickBasicEgg(myEggs);
-
-            // 가장자리에 있으면서 적과 가까운 알 우선
-            return myEggs
-                .OrderByDescending(e => EdgeDanger(e.transform.position) * 0.7f
-                                      + ClosestEnemyDist(e, enemyEggs) * 0.3f)
-                .First();
-        }
-
-        private EggController PickAggressiveEgg(List<EggController> myEggs, List<EggController> enemyEggs)
-        {
-            if (enemyEggs.Count == 0) return PickBasicEgg(myEggs);
-
-            // 중앙에 있으면서 적과 일직선상에 있는 알
-            return myEggs
-                .OrderBy(e => e.transform.position.magnitude) // 중앙 우선
-                .ThenByDescending(e => CountEnemiesInLine(e, enemyEggs)) // 일직선 적 많을수록
-                .First();
-        }
-
-        private EggController PickSmartEgg(List<EggController> myEggs, List<EggController> enemyEggs)
-        {
-            if (enemyEggs.Count == 0) return PickBasicEgg(myEggs);
-
-            // 점수 기반: 안전함 + 공격 기회
-            return myEggs
-                .OrderByDescending(e =>
+                foreach (var enemy in enemyEggs)
                 {
-                    float edgeScore = 1f - EdgeDanger(e.transform.position); // 0~1, 1=안전
-                    float attackScore = CountEnemiesInLine(e, enemyEggs) * 0.2f; // 공격 기회
-                    float dangerScore = EdgeDanger(e.transform.position) * 0.5f; // 위험할수록 먼저
+                    float score = EvaluateShot(egg, enemy, myEggs, enemyEggs);
+                    if (score <= best.score) continue;
 
-                    return edgeScore + attackScore + dangerScore;
-                })
-                .First();
+                    best.egg = egg;
+                    best.targetPos = enemy.transform.position;
+                    best.force = ComputeForce(egg, enemy, myEggs, enemyEggs);
+                    best.score = score;
+                }
+            }
+
+            return best;
         }
 
-        // ─── 타겟팅 ──────────────────────────────────────────
-
-        private Vector3 PickTarget(EggController selectedEgg, List<EggController> enemyEggs)
+        /// <summary>특정 (내 알 → 적 타겟) 샷의 점수 계산 (0~1)</summary>
+        private float EvaluateShot(EggController egg, EggController target,
+            List<EggController> myEggs, List<EggController> enemyEggs)
         {
-            if (enemyEggs.Count == 0) return Vector3.zero; // 중앙
+            Vector3 eggPos = egg.transform.position;
+            Vector3 targetPos = target.transform.position;
+            Vector3 forwardDir = (aiPlayerId == 1) ? Vector3.forward : Vector3.back;
+            Vector3 shotDir = (targetPos - eggPos).normalized;
+            shotDir.y = 0f;
 
-            return strategy switch
+            // ──── 공격 가치 (0~0.40) ────
+            // 타겟이 가장자리에 가깝고(=밀어내기 쉬움), 주변에 다른 적이 없어야(=산란 방지)
+            float targetVuln = EdgeDanger(targetPos);
+            int nearbyEnemies = CountNearbyAllies(target, enemyEggs);
+            float targetIsolation = 1f - Mathf.Clamp01(nearbyEnemies * 0.2f);
+            float attackScore = (targetVuln * 0.7f + targetIsolation * 0.3f) * 0.40f;
+
+            // ──── 안전성 (0~0.35) ────
+            // 내 알이 가장자리에서 멀고, 발사 경로에 아군이 없고, 오버슈트 위험이 적을수록 높음
+            float eggSafety = 1f - EdgeDanger(eggPos);
+            int friendliesInLine = CountFriendliesInLineOfFire(egg, targetPos, myEggs);
+            float friendlyPenalty = Mathf.Clamp01(friendliesInLine * 0.35f);
+            float overshootRisk = EdgeDanger(targetPos); // 타겟이 가장자리면 오버슈트 위험
+            float safetyScore = (eggSafety * 0.5f
+                               + (1f - friendlyPenalty) * 0.3f
+                               + (1f - overshootRisk) * 0.2f) * 0.35f;
+
+            // ──── 사질 (0~0.25) ────
+            // 정면(적진 방향)을 향하고, 너무 멀지도 가깝지도 않아야 높음
+            float aimQuality = Mathf.Clamp01(Vector3.Dot(forwardDir, shotDir));
+            float distFactor = Mathf.Clamp01(
+                Vector3.Distance(eggPos, targetPos) / (boardHalfSize * 2f));
+            float qualityScore = (aimQuality * 0.6f + distFactor * 0.4f) * 0.25f;
+
+            return attackScore + safetyScore + qualityScore;
+        }
+
+        /// <summary>발사 경로상에 있는 아군 알 수 (자해 방지)</summary>
+        private int CountFriendliesInLineOfFire(EggController from, Vector3 targetPos, List<EggController> friendlies)
+        {
+            Vector3 fireDir = (targetPos - from.transform.position).normalized;
+            fireDir.y = 0f;
+            float threshold = 0.85f; // 좁은 각도로 정밀 검사
+
+            return friendlies.Count(e =>
             {
-                AIStrategy.Basic => TargetNearest(selectedEgg, enemyEggs),
-                AIStrategy.Defensive => TargetNearest(selectedEgg, enemyEggs),
-                AIStrategy.Aggressive => TargetMostVulnerable(selectedEgg, enemyEggs),
-                AIStrategy.Smart => TargetSmart(selectedEgg, enemyEggs),
-                _ => TargetNearest(selectedEgg, enemyEggs)
-            };
-        }
-
-        private Vector3 TargetNearest(EggController from, List<EggController> enemies)
-        {
-            return enemies
-                .OrderBy(e => Vector3.Distance(from.transform.position, e.transform.position))
-                .First().transform.position;
-        }
-
-        private Vector3 TargetMostVulnerable(EggController from, List<EggController> enemies)
-        {
-            // 가장자리에 가깝고, 밀어내기 쉬운 적 우선
-            return enemies
-                .OrderByDescending(e => EdgeDanger(e.transform.position))
-                .First().transform.position;
-        }
-
-        private Vector3 TargetSmart(EggController from, List<EggController> enemies)
-        {
-            // 밀집 지역 우선 + 가장자리 적 우선
-            return enemies
-                .OrderByDescending(e => EdgeDanger(e.transform.position) * 0.6f
-                                       + CountNearbyAllies(e, enemies) * 0.1f
-                                       + CountNearbyAllies(e, GetAliveEggs(aiPlayerId)) * 0.1f) // 내 알도 많으면 위험
-                .First().transform.position;
+                if (e == from) return false;
+                Vector3 toFriendly = (e.transform.position - from.transform.position).normalized;
+                toFriendly.y = 0f;
+                return Vector3.Dot(fireDir, toFriendly) > threshold;
+            });
         }
 
         // ─── 방향 계산 ────────────────────────────────────────
@@ -235,34 +211,30 @@ namespace DinoAlkkagi.Rules
 
         // ─── 힘 계산 ──────────────────────────────────────────
 
-        private float ComputeForce(EggController selectedEgg, Vector3 targetPos, List<EggController> enemyEggs)
+        /// <summary>목표에 맞는 최적의 발사 힘 계산</summary>
+        private float ComputeForce(EggController egg, EggController target,
+            List<EggController> myEggs, List<EggController> enemyEggs)
         {
-            float dist = Vector3.Distance(selectedEgg.transform.position, targetPos);
-            float myEdgeDanger = EdgeDanger(selectedEgg.transform.position);
+            float dist = Vector3.Distance(egg.transform.position, target.transform.position);
             float baseForce = dist * 1.5f;
 
-            // 전략별 힘 조정
-            switch (strategy)
-            {
-                case AIStrategy.Defensive:
-                    // 내가 위험하면 약하게 (자살 방지)
-                    baseForce *= Mathf.Lerp(1.2f, 0.6f, myEdgeDanger);
-                    break;
+            // 타겟이 가장자리에 가까울수록 약하게 (오버슈트 방지)
+            float targetEdge = EdgeDanger(target.transform.position);
+            baseForce *= Mathf.Lerp(1.0f, 0.7f, targetEdge);
 
-                case AIStrategy.Aggressive:
-                    // 무조건 강하게
-                    baseForce *= 1.3f;
-                    break;
+            // 내 알이 위험하면 약하게 (자살 방지)
+            float myEdge = EdgeDanger(egg.transform.position);
+            baseForce *= Mathf.Lerp(1.0f, 0.7f, myEdge);
 
-                case AIStrategy.Smart:
-                    // 적이 위험하면 강하게, 내가 위험하면 약하게
-                    float enemyEdge = enemyEggs.Count > 0
-                        ? enemyEggs.Max(e => EdgeDanger(e.transform.position))
-                        : 0f;
-                    float powerRatio = Mathf.Lerp(0.8f, 1.4f, enemyEdge) * Mathf.Lerp(1.0f, 0.7f, myEdgeDanger);
-                    baseForce *= powerRatio;
-                    break;
-            }
+            // 발사 경로에 아군이 있으면 감소 (자해 방지)
+            int friendliesInLine = CountFriendliesInLineOfFire(egg, target.transform.position, myEggs);
+            baseForce *= Mathf.Lerp(1.0f, 0.6f, Mathf.Clamp01(friendliesInLine * 0.3f));
+
+            // [Power 알 호환] EggController.Launch()에서 powerMultiplier를 곱하므로
+            // AI는 나누기로 보정하여 의도한 force 유지 (기본 1.0, 없으면 무시)
+            float powerMult = egg.PowerMultiplier;
+            if (powerMult > 1.01f)
+                baseForce /= powerMult;
 
             return Mathf.Clamp(baseForce * Random.Range(0.85f, 1.15f), minForce, maxForce);
         }
@@ -284,33 +256,12 @@ namespace DinoAlkkagi.Rules
             return 1f - Mathf.Min(dangerX, dangerZ);
         }
 
-        /// <summary>특정 알에서 가장 가까운 적까지의 거리 (0~1 정규화)</summary>
-        private float ClosestEnemyDist(EggController egg, List<EggController> enemies)
-        {
-            if (enemies.Count == 0) return 1f;
-            float minDist = enemies.Min(e => Vector3.Distance(egg.transform.position, e.transform.position));
-            return 1f - Mathf.Clamp01(minDist / (boardHalfSize * 2f));
-        }
-
         /// <summary>특정 위치 주변에 있는 아군/적군 알 수</summary>
         private int CountNearbyAllies(EggController center, List<EggController> allies)
         {
             float radius = boardHalfSize * 0.4f;
             return allies.Count(e => e != center
                                   && Vector3.Distance(center.transform.position, e.transform.position) < radius);
-        }
-
-        /// <summary>선택한 알의 발사 방향에 있는 적 수 (일직선 판단)</summary>
-        private int CountEnemiesInLine(EggController egg, List<EggController> enemies)
-        {
-            Vector3 toCenter = (Vector3.zero - egg.transform.position).normalized;
-            float threshold = 0.7f; // 방향 일치 임계값
-
-            return enemies.Count(e =>
-            {
-                Vector3 toEnemy = (e.transform.position - egg.transform.position).normalized;
-                return Vector3.Dot(toCenter, toEnemy) > threshold;
-            });
         }
 
         // ─── 외부 등록 ────────────────────────────────────────

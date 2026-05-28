@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using DinoAlkkagi.Core;
 using DinoAlkkagi.Environment;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -15,6 +16,7 @@ public class FlickInputController : MonoBehaviour
     [SerializeField] private float maxDragDistance = 2f;
     [SerializeField] private int activePlayerId = 1;
     [SerializeField] private bool inputEnabled = true;
+    [SerializeField] private bool useNetworkRelay;
     // [AIM_TRAJECTORY_ADDED] begin
     [SerializeField] private AimTrajectoryVisual aimTrajectoryVisual;
     [SerializeField] private float minAimDragDistance = 0.15f;
@@ -28,6 +30,12 @@ public class FlickInputController : MonoBehaviour
 
     public event Action<EggController> EggSelected;
     public event Action<EggController> EggLaunched;
+
+    public bool UseNetworkRelay
+    {
+        get => useNetworkRelay;
+        set => useNetworkRelay = value;
+    }
 
     public void SetBoardSurface(IBoardSurface surface)
     {
@@ -155,7 +163,25 @@ public class FlickInputController : MonoBehaviour
 
         Vector3 direction = dragVector.normalized;
         float force = Mathf.Clamp(dragDistance * forceMultiplier, minForce, maxForce);
-        selectedEgg.Launch(direction * force);
+
+        if (useNetworkRelay)
+        {
+            uint eggNetId = (uint)selectedEgg.NetworkEggId;
+            NetworkInputRelay relay = NetworkInputRelay.Instance;
+            if (relay != null)
+            {
+                relay.SendLaunchInput(eggNetId, direction, force);
+            }
+
+            // 서버가 처리할 때까지 self-lock: 재발사 방지
+            // HandleOnTurnStarted에서 서버의 다음 턴 신호를 받으면 재개됨
+            inputEnabled = false;
+        }
+        else
+        {
+            selectedEgg.Launch(direction * force);
+        }
+
         EggLaunched?.Invoke(selectedEgg);
         ClearSelection();
     }

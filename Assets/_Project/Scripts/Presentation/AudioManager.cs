@@ -17,6 +17,8 @@ namespace DinoAlkkagi.Presentation
         [SerializeField] private UnityEngine.Audio.AudioMixerGroup masterGroup;
         [SerializeField] private UnityEngine.Audio.AudioMixerGroup bgmGroup;
         [SerializeField] private UnityEngine.Audio.AudioMixerGroup sfxGroup;
+        [SerializeField] private string bgmVolumeParameter = "BGMVolume";
+        [SerializeField] private string sfxVolumeParameter = "SFXVolume";
 
         [Header("BGM")]
         [SerializeField] private AudioClip bgmClip;
@@ -32,6 +34,8 @@ namespace DinoAlkkagi.Presentation
         private AudioSource bgmSource;
         private readonly List<AudioSource> sfxPool = new List<AudioSource>();
         private int sfxPoolIndex;
+        private float bgmBaseVolume;
+        private float sfxFallbackVolumeMultiplier = 1f;
 
         private void Awake()
         {
@@ -67,7 +71,8 @@ namespace DinoAlkkagi.Presentation
             bgmSource.loop = true;
             bgmSource.playOnAwake = false;
             bgmSource.outputAudioMixerGroup = bgmGroup;
-            bgmSource.volume = settings != null ? settings.bgmVolume : 0.4f;
+            bgmBaseVolume = settings != null ? settings.bgmVolume : 0.4f;
+            bgmSource.volume = bgmBaseVolume;
         }
 
         private void SetupSfxPool()
@@ -88,7 +93,7 @@ namespace DinoAlkkagi.Presentation
 
             AudioSource source = GetNextSfxSource();
             source.clip = clip;
-            source.volume = volume;
+            source.volume = GetSfxSourceVolume(volume);
             source.pitch = 1f;
             source.Play();
         }
@@ -99,21 +104,42 @@ namespace DinoAlkkagi.Presentation
 
             AudioSource source = GetNextSfxSource();
             source.clip = clip;
-            source.volume = volume;
+            source.volume = GetSfxSourceVolume(volume);
             source.pitch = Random.Range(pitchMin, pitchMax);
             source.Play();
         }
 
         private AudioSource GetNextSfxSource()
         {
-            AudioSource source = sfxPool[sfxPoolIndex];
+            for (int i = 0; i < sfxPool.Count; i++)
+            {
+                int index = (sfxPoolIndex + i) % sfxPool.Count;
+                AudioSource availableSource = sfxPool[index];
+                if (!availableSource.isPlaying)
+                {
+                    sfxPoolIndex = (index + 1) % sfxPool.Count;
+                    return availableSource;
+                }
+            }
+
+            AudioSource sourceToReplace = sfxPool[sfxPoolIndex];
             sfxPoolIndex = (sfxPoolIndex + 1) % sfxPool.Count;
-            return source;
+            return sourceToReplace;
+        }
+
+        private float GetSfxSourceVolume(float clipVolume)
+        {
+            return UsesSfxMixer() ? clipVolume : clipVolume * sfxFallbackVolumeMultiplier;
+        }
+
+        private bool UsesSfxMixer()
+        {
+            return sfxGroup != null && sfxGroup.audioMixer != null;
         }
 
         private void HandleGameStarted()
         {
-            if (bgmClip != null)
+            if (bgmClip != null && !bgmSource.isPlaying)
             {
                 bgmSource.Play();
             }
@@ -177,20 +203,19 @@ namespace DinoAlkkagi.Presentation
             PlayerPrefs.SetFloat(BgmVolumePrefsKey, normalizedVolume);
             PlayerPrefs.Save();
 
-            if (bgmSource != null)
-            {
-                bgmSource.volume = normalizedVolume;
-            }
-
             if (bgmGroup == null || bgmGroup.audioMixer == null)
             {
+                if (bgmSource != null)
+                {
+                    bgmSource.volume = bgmBaseVolume * normalizedVolume;
+                }
                 return;
             }
 
             float db = normalizedVolume > 0.0001f
                 ? 20f * Mathf.Log10(normalizedVolume)
                 : -80f;
-            bgmGroup.audioMixer.SetFloat("BGMVolume", db);
+            bgmGroup.audioMixer.SetFloat(bgmVolumeParameter, db);
         }
 
         public void SetSFXVolume(float normalizedVolume)
@@ -199,15 +224,9 @@ namespace DinoAlkkagi.Presentation
             PlayerPrefs.SetFloat(SfxVolumePrefsKey, normalizedVolume);
             PlayerPrefs.Save();
 
-            foreach (AudioSource source in sfxPool)
-            {
-                if (source != null)
-                {
-                    source.volume = normalizedVolume;
-                }
-            }
+            sfxFallbackVolumeMultiplier = normalizedVolume;
 
-            if (sfxGroup == null || sfxGroup.audioMixer == null)
+            if (!UsesSfxMixer())
             {
                 return;
             }
@@ -215,7 +234,7 @@ namespace DinoAlkkagi.Presentation
             float db = normalizedVolume > 0.0001f
                 ? 20f * Mathf.Log10(normalizedVolume)
                 : -80f;
-            sfxGroup.audioMixer.SetFloat("SFXVolume", db);
+            sfxGroup.audioMixer.SetFloat(sfxVolumeParameter, db);
         }
 
         private void ApplySavedVolumes()

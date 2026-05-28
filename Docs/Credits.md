@@ -105,7 +105,12 @@
 
 ## Code / Libraries
 
-*아직 없음*
+- Mirror Networking:
+  - Author: Mirror Networking Contributors
+  - Source URL: https://github.com/MirrorNetworking/Mirror
+  - License: MIT License
+  - Version: 96.6.4
+  - Used For: LAN 멀티플레이어 네트워킹
 
 ---
 

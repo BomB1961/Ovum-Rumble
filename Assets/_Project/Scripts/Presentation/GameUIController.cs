@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using DinoAlkkagi.Core;
+using DinoAlkkagi.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -198,6 +199,19 @@ public class GameUIController : MonoBehaviour
     public void OnClickRetry()
     {
         Debug.Log("Result Retry button clicked.");
+
+        if (GameLaunchContext.IsNetwork)
+        {
+            // 네트워크 모드: ServerChangeScene이 전체 리셋 담당
+            var relay = NetworkInputRelay.Instance;
+            if (relay != null)
+            {
+                relay.SendRestartRequest(true);
+            }
+            return;
+        }
+
+        // 로컬 핫시트: RestartGame()으로 인플레이스 리셋
         ResetGameUI();
         gameSessionController ??= FindFirstObjectByType<GameSessionController>();
         gameSessionController?.RestartGame();

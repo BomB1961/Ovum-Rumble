@@ -614,6 +614,9 @@ MonoBehaviour:
   topDownDistance: 15
   topDownPivot: {x: 0, y: 0, z: 0}
   transitionDuration: 0.5
+  panLimitRadius: 30
+  panLimitSoftMargin: 10
+  panReturnSmoothTime: 0.15
   minImpactForShake: 2
   maxImpactForShake: 15
   minShakeIntensity: 0.05
@@ -1705,7 +1708,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &600876340
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1857,6 +1860,7 @@ MonoBehaviour:
   terrianMapPrefab: {fileID: 3258265017178192629, guid: fdc6b13af1080d64a8456f859dbdd8c3, type: 3}
   iceMapPrefab: {fileID: 1000000000000000000, guid: b36d34a0db5a41b4a9df42df7f41f801, type: 3}
   desertMapPrefab: {fileID: 2000000000000000000, guid: 8ddf705e6b6df284baa1a864501ee7b9, type: 3}
+  skyboxManager: {fileID: 0}
 --- !u!64 &639607065
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2502,6 +2506,7 @@ MonoBehaviour:
   maxDragDistance: 2
   activePlayerId: 1
   inputEnabled: 1
+  useNetworkRelay: 0
   aimTrajectoryVisual: {fileID: 805300043}
   minAimDragDistance: 0.15
   maxAimDragDistance: 2.5
@@ -3921,6 +3926,8 @@ MonoBehaviour:
   masterGroup: {fileID: 24300002, guid: 69f5bbdb95cc23241909024327ad8e93, type: 2}
   bgmGroup: {fileID: 8587325368381398065, guid: 69f5bbdb95cc23241909024327ad8e93, type: 2}
   sfxGroup: {fileID: -652825567889499937, guid: 69f5bbdb95cc23241909024327ad8e93, type: 2}
+  bgmVolumeParameter: BGMVolume
+  sfxVolumeParameter: SFXVolume
   bgmClip: {fileID: 8300000, guid: b442123a67071894ca2beeb4a6185aae, type: 3}
   launchClip: {fileID: 8300000, guid: d46323e22e74e46baa241cbf48c85671, type: 3}
   collisionClip: {fileID: 8300000, guid: b99da9a57308d4ba1bee1cf1d9038376, type: 3}
@@ -4805,6 +4812,7 @@ MonoBehaviour:
   boardFallZone: {fileID: 960822259}
   aiInputController: {fileID: 1847179135}
   staticBoardLoader: {fileID: 0}
+  networkManager: {fileID: 0}
 --- !u!4 &1847179134
 Transform:
   m_ObjectHideFlags: 0
@@ -5747,7 +5755,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &9100000002
 GameObject:
   m_ObjectHideFlags: 0
@@ -6394,7 +6402,7 @@ RectTransform:
   m_Father: {fileID: 9100000032}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6472,7 +6480,7 @@ RectTransform:
   m_Father: {fileID: 9100000036}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 130, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6736,7 +6744,7 @@ RectTransform:
   m_Father: {fileID: 9100000051}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6814,7 +6822,7 @@ RectTransform:
   m_Father: {fileID: 9100000055}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 130, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}

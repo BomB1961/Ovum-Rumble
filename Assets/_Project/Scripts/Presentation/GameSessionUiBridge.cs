@@ -22,6 +22,12 @@ public class GameSessionUiBridge : MonoBehaviour
     private bool isPlaying;
     private bool hasGameEnded;
 
+    // 네트워크 타이머 동기화 (스냅샷 수신 시 갱신)
+    private float serverGameElapsed;
+    private float serverTurnElapsed;
+    private bool useServerTime;
+    private float serverTimeReceivedAt; // 로컬 Time.time when snapshot arrived
+
     private void Awake()
     {
         hudPresenter ??= FindFirstObjectByType<HudPresenter>();
@@ -55,7 +61,7 @@ public class GameSessionUiBridge : MonoBehaviour
         isPlaying = true;
         hasGameEnded = false;
         resultScreen?.Hide();
-        hudPresenter?.ShowGuide("\uc54c\uc744 \uc870\uc900\ud558\uc138\uc694.");
+        hudPresenter?.ShowGuide("알을 조준하세요.");
         RefreshHud();
     }
 
@@ -63,12 +69,13 @@ public class GameSessionUiBridge : MonoBehaviour
     {
         currentPlayerId = playerId;
         turnStartedAt = Time.time;
+        hudPresenter?.ShowGuide("알을 조준하세요.");
         RefreshHud();
     }
 
     private void HandleEggLaunched(EggController egg)
     {
-        hudPresenter?.ShowGuide("\uc54c\uc774 \uc6c0\uc9c1\uc774\ub294 \uc911\uc785\ub2c8\ub2e4.\n\uc785\ub825\uc774 \uc7a0\uc2dc \uc7a0\uae41\ub2c8\ub2e4.");
+        hudPresenter?.ShowGuide("알이 움직이는 중입니다.\n입력이 잠시 잠깁니다.");
         RefreshHud();
     }
 
@@ -97,7 +104,7 @@ public class GameSessionUiBridge : MonoBehaviour
 
         int p1EggCount = GetAliveCount(1);
         int p2EggCount = GetAliveCount(2);
-        hudPresenter?.ShowGuide("\uac8c\uc784 \uc885\ub8cc\n\ud55c \ud310 \ub354 \ud558\uac70\ub098 \uba54\uc778 \uba54\ub274\ub85c \ub3cc\uc544\uac00\uc138\uc694.");
+        hudPresenter?.ShowGuide("게임 종료\n한 판 더 하거나 메인 메뉴로 돌아가세요.");
 
         switch (result)
         {
@@ -119,14 +126,62 @@ public class GameSessionUiBridge : MonoBehaviour
         gameSessionController?.RestartGame();
     }
 
+    /// <summary>
+    /// 클라이언트에서 발사 해결 중임을 표시 (스냅샷의 isResolving 플래그로 트리거).
+    /// </summary>
+    public void ShowResolvingGuide()
+    {
+        hudPresenter?.ShowGuide("알이 움직이는 중입니다.\n입력이 잠시 잠깁니다.");
+    }
+
     private void RefreshHud()
     {
-        float gameElapsedSeconds = isPlaying ? Time.time - gameStartedAt : 0f;
-        float turnRemainingSeconds = isPlaying
-            ? Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt))
-            : turnDurationSeconds;
+        float gameElapsedSeconds;
+        float turnRemainingSeconds;
+
+        if (useServerTime)
+        {
+            // 스냅샷 수신 시각 이후 경과 시간을 더해 부드럽게 카운트
+            float localElapsed = Time.time - serverTimeReceivedAt;
+            gameElapsedSeconds = serverGameElapsed + localElapsed;
+            turnRemainingSeconds = Mathf.Max(0f, turnDurationSeconds - (serverTurnElapsed + localElapsed));
+        }
+        else
+        {
+            gameElapsedSeconds = isPlaying ? Time.time - gameStartedAt : 0f;
+            turnRemainingSeconds = isPlaying
+                ? Mathf.Max(0f, turnDurationSeconds - (Time.time - turnStartedAt))
+                : turnDurationSeconds;
+        }
 
         hudPresenter?.ShowHud(GetCurrentPlayerName(), GetAliveCount(1), GetAliveCount(2), turnRemainingSeconds, gameElapsedSeconds);
+    }
+
+    /// <summary>
+    /// 서버에서 받은 타이머 값을 클라이언트 HUD에 적용한다.
+    /// 스냅샷 도착 시각을 기록하여 다음 스냅샷까지 부드럽게 보간한다.
+    /// </summary>
+    public void ApplyServerTime(float gameElapsed, float turnElapsed)
+    {
+        if (!GameLaunchContext.IsNetworkClient) return;
+
+        serverGameElapsed = gameElapsed;
+        serverTurnElapsed = turnElapsed;
+        serverTimeReceivedAt = Time.time;
+        useServerTime = true;
+    }
+
+    /// <summary>
+    /// 서버가 스냅샷에 보낼 현재 게임/턴 경과 시간 반환.
+    /// </summary>
+    public float GetGameElapsedTime()
+    {
+        return isPlaying ? Time.time - gameStartedAt : 0f;
+    }
+
+    public float GetTurnElapsedTime()
+    {
+        return isPlaying ? Time.time - turnStartedAt : 0f;
     }
 
     private void Update()
