@@ -44,6 +44,7 @@ public class DinoNetworkManager : NetworkManager
     private Thread relayThread;
     private volatile bool relayRunning;
     private TcpClient vpsRelayClient;
+    private readonly ManualResetEventSlim relayReadySignal = new ManualResetEventSlim(false);
 
     public int HostPlayerId => hostPlayerId;
     public int ClientPlayerId => clientPlayerId;
@@ -67,6 +68,29 @@ public class DinoNetworkManager : NetworkManager
         if (featureFlags == null)
             featureFlags = Resources.Load<FeatureFlags>("FeatureFlags");
         Application.quitting += () => disconnectIntended = true;
+
+        // KcpTransport(UDP) → TelepathyTransport(TCP) 자동 변환
+        // VPS TCP 릴레이와의 호환성을 위해 (kcp2k는 UDP 기반이라 릴레이와 불일치)
+        EnsureTelepathyTransport();
+    }
+
+    private void EnsureTelepathyTransport()
+    {
+        var cur = transport;
+        if (cur == null) return;
+        if (cur.GetType().Name != "KcpTransport") return;
+
+        ushort port = 7777;
+        if (cur is PortTransport pt)
+            port = pt.Port;
+
+        var telepathy = gameObject.AddComponent<TelepathyTransport>();
+        telepathy.port = port;
+        telepathy.NoDelay = true;
+        transport = telepathy;
+        DestroyImmediate(cur);
+
+        Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport → TelepathyTransport (port {port})");
     }
 
     void OnDestroy() { StopRelay(); }
@@ -246,6 +270,7 @@ public class DinoNetworkManager : NetworkManager
                 // 로컬에서 Mirror 접속 대기
                 var listener = new TcpListener(System.Net.IPAddress.Loopback, ClientRelayPort);
                 listener.Start();
+                relayReadySignal.Set();
                 var mirrorConn = listener.AcceptTcpClient();
                 listener.Stop();
                 var mirrorStream = mirrorConn.GetStream();
@@ -266,7 +291,12 @@ public class DinoNetworkManager : NetworkManager
         { IsBackground = true };
         relayThread.Start();
 
-        Thread.Sleep(100); // 릴레??리스??준�??��?
+        // 릴레이 리스너 준비 완료를 기다림 (최대 5초)
+        if (!relayReadySignal.Wait(5000))
+        {
+            Debug.LogWarning("[DinoNetworkManager] Client relay listener not ready within 5s, proceeding anyway.");
+        }
+        relayReadySignal.Reset();
     }
 
     // ?�?�?� TCP ?�워???�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
