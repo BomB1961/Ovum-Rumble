@@ -282,3 +282,9 @@ main              ← 항상 실행 가능해야 함
 
 *이 문서는 AI가 작업을 수행할 때 참조하는 범용 규칙 템플릿입니다.*
 *새 프로젝트 시작 시 이 템플릿을 복사하여 AGENTS.md로 저장하고, 프로젝트별 섹션을 채워서 사용하세요.*
+
+## Copyable Text / Markdown Response Rule
+
+- When the user asks for text or Markdown (`.md`) content, provide it as one single copyable block.
+- Wrap the full requested text in one fenced code block unless the user explicitly asks for a different format.
+- Do not split copyable text or Markdown across multiple separate blocks.
