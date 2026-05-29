@@ -12,13 +12,7 @@ public class EggController : MonoBehaviour
     [Header("Ability Egg")]
     [SerializeField] private float powerMultiplier = 1f; // Power 알: >1.0
 
-    private const float MinRigidbodyMass = 0.0001f;
-
     private int networkEggId = -1;
-    private bool hasCachedBasePhysics;
-    private float baseMass;
-    private float baseLinearDamping;
-    private float baseAngularDamping;
 
     public event Action<EggController> Launched;
     public event Action<EggController, float> CollisionOccurred;
@@ -46,32 +40,24 @@ public class EggController : MonoBehaviour
         if (cachedRigidbody == null)
         {
             Debug.LogError($"{nameof(EggController)} requires a Rigidbody.", this);
-            return;
         }
-
-        CacheBasePhysicsValues();
-        ApplyDefinitionPhysics();
     }
 
     public void Initialize(int ownerId)
     {
         ownerPlayerId = ownerId;
         isAlive = true;
-        ApplyDefinitionPhysics();
     }
 
     public void Initialize(int ownerId, EggDefinition definition)
     {
-        ownerPlayerId = ownerId;
-        isAlive = true;
+        Initialize(ownerId);
         eggDefinition = definition;
-        ApplyDefinitionPhysics();
     }
 
     public void SetDefinition(EggDefinition definition)
     {
         eggDefinition = definition;
-        ApplyDefinitionPhysics();
     }
 
     public void Launch(Vector3 impulse)
@@ -124,55 +110,5 @@ public class EggController : MonoBehaviour
 
         float impact = collision.relativeVelocity.magnitude;
         CollisionOccurred?.Invoke(this, impact);
-    }
-
-    private void CacheBasePhysicsValues()
-    {
-        if (cachedRigidbody == null || hasCachedBasePhysics)
-        {
-            return;
-        }
-
-        baseMass = cachedRigidbody.mass;
-        baseLinearDamping = cachedRigidbody.linearDamping;
-        baseAngularDamping = cachedRigidbody.angularDamping;
-        hasCachedBasePhysics = true;
-    }
-
-    private void ApplyDefinitionPhysics()
-    {
-        if (cachedRigidbody == null)
-        {
-            return;
-        }
-
-        CacheBasePhysicsValues();
-
-        if (!hasCachedBasePhysics)
-        {
-            return;
-        }
-
-        if (eggDefinition == null)
-        {
-            RestoreBasePhysicsValues();
-            return;
-        }
-
-        cachedRigidbody.mass = Mathf.Max(MinRigidbodyMass, baseMass * Mathf.Max(0f, eggDefinition.massMultiplier));
-        cachedRigidbody.linearDamping = Mathf.Max(0f, baseLinearDamping * Mathf.Max(0f, eggDefinition.linearDampingMultiplier));
-        cachedRigidbody.angularDamping = Mathf.Max(0f, baseAngularDamping * Mathf.Max(0f, eggDefinition.angularDampingMultiplier));
-    }
-
-    private void RestoreBasePhysicsValues()
-    {
-        if (cachedRigidbody == null || !hasCachedBasePhysics)
-        {
-            return;
-        }
-
-        cachedRigidbody.mass = Mathf.Max(MinRigidbodyMass, baseMass);
-        cachedRigidbody.linearDamping = Mathf.Max(0f, baseLinearDamping);
-        cachedRigidbody.angularDamping = Mathf.Max(0f, baseAngularDamping);
     }
 }
