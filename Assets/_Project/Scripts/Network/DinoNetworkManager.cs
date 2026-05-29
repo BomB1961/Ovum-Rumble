@@ -433,6 +433,9 @@ public class DinoNetworkManager : NetworkManager
             GameLaunchContext.SetMode(GameMode.NetworkClient);
         Debug.Log($"[DinoNetworkManager] Client received PlayerId: {msg.assignedPlayerId}");
 
+        if (!NetworkServer.active && SceneManager.GetActiveScene().name != "02_MapSelect")
+            SceneManager.LoadScene("02_MapSelect");
+
         var mmc = FindFirstObjectByType<DinoAlkkagi.Presentation.MainMenuController>();
         mmc?.ShowConnectionStatus($"P{msg.assignedPlayerId}�??�속?? ?�스?��? 맵을 ?�택 중입?�다...");
     }
@@ -457,6 +460,9 @@ public class DinoNetworkManager : NetworkManager
     {
         GameLaunchContext.SelectMap((MapId)msg.mapId);
         Debug.Log($"[DinoNetworkManager] Client received MapSelect: {msg.mapId}");
+
+        if (!NetworkServer.active && SceneManager.GetActiveScene().name != "01_Game")
+            SceneManager.LoadScene("01_Game");
     }
 
     public override void OnClientDisconnect()

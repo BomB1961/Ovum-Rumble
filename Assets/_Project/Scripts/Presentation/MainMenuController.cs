@@ -3,6 +3,7 @@ using DinoAlkkagi.Core;
 using DinoAlkkagi.Data;
 using Mirror;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 // ReSharper disable once RedundantUsingDirective
@@ -153,7 +154,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickCreateRoom()
     {
-        OnClickHostGame();
+        ShowCreateRoomDetail();
     }
 
     public void OnClickCreateAiRoom()
@@ -170,6 +171,21 @@ public class MainMenuController : MonoBehaviour
     public void OnClickJoinRoom()
     {
         ShowJoinPanel();
+    }
+
+    public void OnClickDirectConnect()
+    {
+        OnClickHostGame();
+    }
+
+    public void OnClickInviteCode()
+    {
+        ShowJoinPanel();
+    }
+
+    public void OnClickJoinIpSubmit()
+    {
+        OnClickJoinGame();
     }
 
     public void OnClickTestJoin()
@@ -269,21 +285,96 @@ public class MainMenuController : MonoBehaviour
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
         SetPanelState(connectionStatusPanel, false);
+        SetPanelState(FindInactiveGameObject("Popup_Panel_how to", "Image_how to"), false);
+        SetPanelState(FindInactiveGameObject("CreateRoom_detail"), false);
     }
 
     private void ShowJoinPanel()
     {
-        SetPanelState(mainMenuPanel, false);
+        joinPanel = FindInactiveGameObject("Popup_Panel_JoinIP") ?? joinPanel;
+
+        SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, true);
         SetPanelState(settingsPanel, false);
         SetPanelState(connectionStatusPanel, false);
+        SetPanelState(FindInactiveGameObject("Popup_Panel_how to"), false);
+        SetPanelState(FindInactiveGameObject("CreateRoom_detail"), false);
+        SetPanelState(FindInactiveGameObject("unused-1"), false);
+        joinPanel?.transform.SetAsLastSibling();
 
         if (controlsGuideText != null)
             controlsGuideText.gameObject.SetActive(false);
         if (hostIpInput != null)
+        {
             hostIpInput.gameObject.SetActive(true);
-        if (joinGameButton != null)
+            RepairJoinInputField(hostIpInput);
+            EventSystem.current?.SetSelectedGameObject(hostIpInput.gameObject);
+            hostIpInput.ActivateInputField();
+        }
+        if (joinGameButton != null && joinGameButton.gameObject.name != "unused-1")
             joinGameButton.gameObject.SetActive(true);
+    }
+
+    private static void RepairJoinInputField(TMP_InputField inputField)
+    {
+        if (inputField == null)
+            return;
+
+        if (inputField.textComponent == null)
+        {
+            TMP_Text[] texts = inputField.GetComponentsInChildren<TMP_Text>(true);
+            foreach (TMP_Text text in texts)
+            {
+                if (inputField.placeholder != text)
+                {
+                    inputField.textComponent = text;
+                    break;
+                }
+            }
+        }
+
+        if (inputField.textComponent == null)
+        {
+            RectTransform parent = inputField.textViewport != null
+                ? inputField.textViewport
+                : inputField.GetComponent<RectTransform>();
+            GameObject textObject = new GameObject("InputText_Runtime", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(parent, false);
+
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            TMP_Text text = textObject.GetComponent<TMP_Text>();
+            if (inputField.placeholder is TMP_Text placeholder)
+            {
+                text.font = placeholder.font;
+                text.fontSize = placeholder.fontSize;
+                text.alignment = placeholder.alignment;
+            }
+            text.color = Color.black;
+            text.text = string.Empty;
+            inputField.textComponent = text;
+        }
+
+        inputField.interactable = true;
+        inputField.readOnly = false;
+        inputField.contentType = TMP_InputField.ContentType.Standard;
+        inputField.characterValidation = TMP_InputField.CharacterValidation.None;
+    }
+
+    private void ShowCreateRoomDetail()
+    {
+        SetPanelState(mainMenuPanel, true);
+        SetPanelState(joinPanel, false);
+        SetPanelState(settingsPanel, false);
+
+        GameObject createRoomDetail = FindInactiveGameObject("CreateRoom_detail");
+        SetPanelState(createRoomDetail, true);
+        SetPanelState(FindInactiveGameObject("unused-1"), false);
+        createRoomDetail?.transform.SetAsLastSibling();
     }
 
     public void OnClickManual()
@@ -293,16 +384,21 @@ public class MainMenuController : MonoBehaviour
 
     private void ShowControlsPanel()
     {
-        SetPanelState(mainMenuPanel, false);
-        SetPanelState(joinPanel, true);
+        GameObject howToPopup = FindInactiveGameObject("Popup_Panel_how to", "Image_how to");
+
+        SetPanelState(mainMenuPanel, true);
+        SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, false);
         SetPanelState(connectionStatusPanel, false);
+        SetPanelState(FindInactiveGameObject("CreateRoom_detail"), false);
+        SetPanelState(howToPopup, true);
         SetPanelState(hostIpInput != null ? hostIpInput.gameObject : null, false);
         SetPanelState(joinGameButton != null ? joinGameButton.gameObject : null, false);
+        howToPopup?.transform.SetAsLastSibling();
 
         if (controlsGuideText != null)
         {
-            controlsGuideText.gameObject.SetActive(true);
+            controlsGuideText.gameObject.SetActive(false);
             controlsGuideText.text = "1. 내 알을 선택합니다.\n"
                 + "2. 마우스로 드래그해 방향과 힘을 정합니다.\n"
                 + "3. 마우스를 놓으면 알이 발사됩니다.\n"
@@ -310,8 +406,6 @@ public class MainMenuController : MonoBehaviour
                 + "5. 상대 알을 모두 떨어뜨리면 승리합니다.\n\n"
                 + "[되돌아가기] 화면 아무 곳이나 클릭";
         }
-
-        Invoke(nameof(ShowMainMenu), 8f);
     }
 
     public void ShowConnectionStatus(string message)
@@ -372,9 +466,15 @@ public class MainMenuController : MonoBehaviour
 
     private void ShowSettingsPanel()
     {
-        SetPanelState(mainMenuPanel, false);
+        settingsPanel = FindInactiveGameObject("Popup_UI_SettingsPanel", "UI_SettingsPanel") ?? settingsPanel;
+
+        SetPanelState(mainMenuPanel, true);
         SetPanelState(joinPanel, false);
         SetPanelState(settingsPanel, true);
+        SetPanelState(connectionStatusPanel, false);
+        SetPanelState(FindInactiveGameObject("Popup_Panel_how to", "Image_how to"), false);
+        SetPanelState(FindInactiveGameObject("CreateRoom_detail"), false);
+        settingsPanel?.transform.SetAsLastSibling();
     }
 
     private static void SetPanelState(GameObject panel, bool active)
@@ -387,7 +487,6 @@ public class MainMenuController : MonoBehaviour
 
     private void RegisterButtonListeners()
     {
-        AddClickListener(hostGameButton, OnClickHostGame);
         AddClickListener(showJoinPanelButton, OnClickJoinRoom);
         AddClickListener(testJoinButton, OnClickTestJoin);
         AddClickListener(vsComputerButton, OnClickVsComputer);
@@ -410,7 +509,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         // Button_Menual이 씬에 있으면 자동 연결
-        var manualBtn = FindInactiveComponent<Button>("Button_Menual");
+        var manualBtn = FindInactiveComponent<Button>("Button_Menual", "Button_how to");
         if (manualBtn != null)
         {
             manualBtn.onClick = new Button.ButtonClickedEvent();
@@ -465,8 +564,8 @@ public class MainMenuController : MonoBehaviour
     private void ResolveMissingReferences()
     {
         mainMenuPanel ??= FindInactiveGameObject("UI_MainMenuPanel");
-        joinPanel ??= FindInactiveGameObject("UI_JoinRoomPanel", "Panel_join", "Panel_Join");
-        settingsPanel ??= FindInactiveGameObject("UI_SettingsPanel");
+        joinPanel ??= FindInactiveGameObject("Popup_Panel_JoinIP", "UI_JoinRoomPanel", "Panel_join", "Panel_Join");
+        settingsPanel ??= FindInactiveGameObject("Popup_UI_SettingsPanel", "UI_SettingsPanel");
 
         hostGameButton ??= FindInactiveComponent<Button>("Button_HostGame", "Button_CreateRoom");
         showJoinPanelButton ??= FindInactiveComponent<Button>("Button_ShowJoinPanel", "Button_JoinRoom");

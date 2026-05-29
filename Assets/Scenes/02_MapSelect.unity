@@ -634,8 +634,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 235}
-  m_SizeDelta: {x: 1000, y: 500}
+  m_AnchoredPosition: {x: 0, y: 190}
+  m_SizeDelta: {x: 800, y: 500}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &541597864
 MonoBehaviour:
@@ -657,7 +657,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 92d3fed9137ce814683e4749f7181b8c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6df80d46baf7fa2488ccddb4041b52ea, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1714,6 +1714,7 @@ MonoBehaviour:
   terrianButton: {fileID: 961238345}
   iceButton: {fileID: 1337165265}
   desertButton: {fileID: 1866405009}
+  connectionStatusText: {fileID: 0}
   serverAddressText: {fileID: 2100000102}
 --- !u!1 &2100000100
 GameObject:

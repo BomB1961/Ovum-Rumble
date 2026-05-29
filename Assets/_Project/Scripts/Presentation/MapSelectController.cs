@@ -183,6 +183,7 @@ public class MapSelectController : MonoBehaviour
             {
                 MapSelectMessage mapMsg = new MapSelectMessage { mapId = (int)mapId };
                 NetworkServer.SendToAll(mapMsg);
+                NetworkServer.SendToAll(new LoadSceneMessage { sceneName = GameSceneName });
                 Debug.Log($"[MapSelectController] Sent MapSelectMessage: {mapId}");
 
                 nMan.ServerChangeScene(GameSceneName);
