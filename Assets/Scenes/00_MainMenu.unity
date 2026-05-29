@@ -3678,6 +3678,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1335610543}
   m_CullTransparentMesh: 1
+--- !u!1001 &1362338861
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1000000000000000000, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_Name
+      value: DinoNetworkManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000000000000000001, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9168f7f53c108c041874b22e0c35850c, type: 3}
 --- !u!1 &1369446695
 GameObject:
   m_ObjectHideFlags: 0
@@ -6087,8 +6144,7 @@ MonoBehaviour:
   mainMenuPanel: {fileID: 91931984}
   joinPanel: {fileID: 465250403}
   settingsPanel: {fileID: 2011819218}
-  createRoomDetailPanel: {fileID: 1297129263}
-  joinIpPopupPanel: {fileID: 1769736298}
+  connectionStatusPanel: {fileID: 0}
   hostGameButton: {fileID: 830354797}
   showJoinPanelButton: {fileID: 1335610545}
   testJoinButton: {fileID: 2100001005}
@@ -6096,18 +6152,15 @@ MonoBehaviour:
   settingsButton: {fileID: 898472871}
   quitGameButton: {fileID: 779873530}
   hostIpInput: {fileID: 1534611366}
-  joinIpInput: {fileID: 1534611366}
   controlsGuideText: {fileID: 0}
   joinGameButton: {fileID: 1486871734}
   cancelJoinButton: {fileID: 1925177964}
-  directConnectButton: {fileID: 1470752532}
-  inviteCodeButton: {fileID: 1042335945}
-  serverJoinButton: {fileID: 488865960}
-  cancelJoinIpPopupButton: {fileID: 582512554}
+  connectionStatusText: {fileID: 0}
   bgmSlider: {fileID: 2012459758}
   sfxSlider: {fileID: 250975860}
   closeSettingsButton: {fileID: 227953153}
   audioManager: {fileID: 0}
+  featureFlags: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -6117,3 +6170,4 @@ SceneRoots:
   - {fileID: 700778408}
   - {fileID: 61036304}
   - {fileID: 2127947310}
+  - {fileID: 1362338861}

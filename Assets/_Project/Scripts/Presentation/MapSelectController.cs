@@ -16,6 +16,7 @@ public class MapSelectController : MonoBehaviour
     [SerializeField] private Button iceButton;
     [SerializeField] private Button desertButton;
     [SerializeField] private TMP_Text connectionStatusText;
+    [SerializeField] private TMP_Text serverAddressText;
 
     private DinoNetworkManager netMan;
     private bool hadRemotePlayer; // 실제 원격 플레이어 접속 여부 (릴레이 브릿지 가짜 이벤트 구분)
@@ -76,7 +77,7 @@ public class MapSelectController : MonoBehaviour
 
     private void HandleRoomCreated(string code)
     {
-        string msg = $"방 코드: {code}\n상대방이 이 코드를 입력하면 연결됩니다.";
+        string msg = $"상대방이 이 코드를 입력하면 연결됩니다.";
         if (connectionStatusText == null)
             connectionStatusText = CreateStatusText();
 
@@ -91,6 +92,14 @@ public class MapSelectController : MonoBehaviour
             TMPro.TMP_FontAsset font = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/BlackHanSans-Regular SDF");
             if (font != null)
                 connectionStatusText.font = font;
+        }
+
+        // Text_ServerAddress에 서버 주소 표시
+        if (serverAddressText != null)
+        {
+            serverAddressText.text = $"서버 주소 : {code}";
+            serverAddressText.gameObject.SetActive(true);
+            serverAddressText.transform.SetAsLastSibling();
         }
 
         Debug.Log($"[MapSelectController] ★★★ 방 코드: {code} ★★★");
@@ -201,6 +210,7 @@ public class MapSelectController : MonoBehaviour
         {
             connectionStatusText = CreateStatusText();
         }
+        serverAddressText ??= FindText("Text_ServerAddress");
     }
 
     private TMP_Text CreateStatusText()
