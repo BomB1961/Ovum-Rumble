@@ -285,6 +285,7 @@ main              ← 항상 실행 가능해야 함
 
 ## Copyable Text / Markdown Response Rule
 
-- When the user asks for text or Markdown (`.md`) content, provide it as one single copyable block.
-- Wrap the full requested text in one fenced code block unless the user explicitly asks for a different format.
+- Apply this rule only when the user explicitly asks for copyable text, Markdown (`.md`) file content, a handoff/context summary, or wording meant to be pasted elsewhere.
+- Do not wrap ordinary conversational answers, status updates, explanations, or code-review findings in a copyable block just because they are text.
+- For applicable copyable text or Markdown requests, provide the full requested content as one single fenced code block unless the user explicitly asks for a different format.
 - Do not split copyable text or Markdown across multiple separate blocks.
