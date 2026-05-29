@@ -86,6 +86,7 @@ public class DinoNetworkManager : NetworkManager
         telepathy.port = port;
         telepathy.NoDelay = true;
         transport = telepathy;
+        Mirror.Transport.active = telepathy;
         DestroyImmediate(cur);
 
         Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport → TelepathyTransport (port {port})");
