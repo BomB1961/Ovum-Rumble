@@ -41,7 +41,6 @@ public class DinoNetworkManager : NetworkManager
 
     private string roomCode;
     private Thread relayThread;
-    private volatile bool relayRunning;
     private TcpClient vpsRelayClient;
 
     public int HostPlayerId => hostPlayerId;
@@ -92,7 +91,11 @@ public class DinoNetworkManager : NetworkManager
         Debug.Log($"[DinoNetworkManager] Transport swapped: KcpTransport → TelepathyTransport (port {port})");
     }
 
-    void OnDestroy() { StopRelay(); }
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        StopRelay();
+    }
 
     // ?�?�?� VPS TCP ?�어 ?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�?�
 
@@ -172,7 +175,6 @@ public class DinoNetworkManager : NetworkManager
 
     void StartHostRelay()
     {
-        relayRunning = true;
         relayThread = new Thread(() =>
         {
             try
@@ -203,7 +205,6 @@ public class DinoNetworkManager : NetworkManager
             {
                 Debug.LogError($"[DinoNetworkManager] Host relay error: {ex.Message}");
             }
-            finally { relayRunning = false; }
         })
         { IsBackground = true };
         relayThread.Start();
@@ -250,7 +251,6 @@ public class DinoNetworkManager : NetworkManager
 
     void StartClientRelay()
     {
-        relayRunning = true;
         relayThread = new Thread(() =>
         {
             try
@@ -282,7 +282,6 @@ public class DinoNetworkManager : NetworkManager
             {
                 Debug.LogError($"[DinoNetworkManager] Client relay error: {ex.Message}");
             }
-            finally { relayRunning = false; }
         })
         { IsBackground = true };
         relayThread.Start();
@@ -309,7 +308,6 @@ public class DinoNetworkManager : NetworkManager
 
     void StopRelay()
     {
-        relayRunning = false;
         try { vpsRelayClient?.Close(); } catch { }
         vpsRelayClient = null;
         relayThread = null;
