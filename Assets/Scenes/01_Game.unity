@@ -2386,10 +2386,9 @@ MonoBehaviour:
   - {fileID: 1321351439467989611, guid: 05943e5eae81971408262222e398bca9, type: 3}
   spawnChance: 14
   spawnHeight: 1
-  edgePadding: 1
+  spawnInset: 3
   walkSpeed: 10
-  correctionGain: 5
-  maxWalkDuration: 5
+  maxWalkDuration: 3
   dinoLayerName: Dinosaur
 --- !u!4 &1668236672
 Transform:

@@ -29,6 +29,7 @@ namespace DinoAlkkagi.Environment
         [SerializeField] private string dinoLayerName = "Dinosaur";
 
         private IBoardSurface boardSurface;
+        private bool isBetweenTurnsActive;
 
         private void Awake()
         {
@@ -52,22 +53,41 @@ namespace DinoAlkkagi.Environment
 
         private void HandleAllEggsStopped()
         {
+            if (isBetweenTurnsActive) return;
             StartCoroutine(HandleBetweenTurns());
         }
 
         private IEnumerator HandleBetweenTurns()
         {
-            yield return null;
+            isBetweenTurnsActive = true;
 
-            GameEvents.TriggerBetweenTurns();
-
-            if (featureFlags != null && featureFlags.enableDinosaurNpc && Random.value < spawnChance)
+            try
             {
-                turnController?.LockInput();
-                yield return StartCoroutine(SpawnAndWalk());
-            }
+                yield return null;
 
-            GameEvents.TriggerBetweenTurnsEnded();
+                GameEvents.TriggerBetweenTurns();
+
+                if (featureFlags != null && featureFlags.enableDinosaurNpc && Random.value < spawnChance)
+                {
+                    turnController?.LockInput();
+                    try
+                    {
+                        yield return StartCoroutine(SpawnAndWalk());
+                    }
+                    finally
+                    {
+                        turnController?.UnlockInput();
+                    }
+
+                    yield return StartCoroutine(WaitForEggsToSettle());
+                }
+
+                GameEvents.TriggerBetweenTurnsEnded();
+            }
+            finally
+            {
+                isBetweenTurnsActive = false;
+            }
         }
 
         private IEnumerator SpawnAndWalk()
@@ -135,8 +155,6 @@ namespace DinoAlkkagi.Environment
             float elapsed = 0f;
             while (dino != null && elapsed < maxWalkDuration)
             {
-                if (dino == null) yield break;
-
                 Vector3 targetVelXZ = direction * dinoWalkSpeed;
                 Vector3 currentVelXZ = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
                 rb.AddForce(targetVelXZ - currentVelXZ, ForceMode.VelocityChange);
@@ -146,6 +164,29 @@ namespace DinoAlkkagi.Environment
             }
 
             if (dino != null) Destroy(dino);
+        }
+
+        private IEnumerator WaitForEggsToSettle()
+        {
+            bool settled = false;
+            float timeout = 5f;
+            float elapsed = 0f;
+
+            System.Action handler = () => settled = true;
+            GameEvents.OnAllEggsStopped += handler;
+
+            try
+            {
+                while (!settled && elapsed < timeout)
+                {
+                    yield return null;
+                    elapsed += Time.deltaTime;
+                }
+            }
+            finally
+            {
+                GameEvents.OnAllEggsStopped -= handler;
+            }
         }
     }
 }
