@@ -1,16 +1,14 @@
 using System;
 using UnityEngine;
-using DinoAlkkagi.Data;
 
 public class EggController : MonoBehaviour
 {
     [SerializeField] private int ownerPlayerId;
     [SerializeField] private bool isAlive = true;
     [SerializeField] private Rigidbody cachedRigidbody;
-    [SerializeField] private EggDefinition eggDefinition;
 
     [Header("Ability Egg")]
-    [SerializeField] private float powerMultiplier = 1f; // Power 알: >1.0
+    [SerializeField] private float powerMultiplier = 1f;
 
     private int networkEggId = -1;
 
@@ -24,9 +22,6 @@ public class EggController : MonoBehaviour
     public bool CanLaunch => isAlive && cachedRigidbody != null;
     public int NetworkEggId => networkEggId;
     public float PowerMultiplier => powerMultiplier;
-    public EggDefinition Definition => eggDefinition;
-    public EggType EggType => eggDefinition != null ? eggDefinition.eggType : EggType.Default;
-    public float LaunchImpulseMultiplier => eggDefinition != null ? eggDefinition.launchImpulseMultiplier : 1f;
 
     public void SetNetworkEggId(int id) { networkEggId = id; }
 
@@ -49,17 +44,6 @@ public class EggController : MonoBehaviour
         isAlive = true;
     }
 
-    public void Initialize(int ownerId, EggDefinition definition)
-    {
-        Initialize(ownerId);
-        eggDefinition = definition;
-    }
-
-    public void SetDefinition(EggDefinition definition)
-    {
-        eggDefinition = definition;
-    }
-
     public void Launch(Vector3 impulse)
     {
         if (!CanLaunch)
@@ -67,9 +51,7 @@ public class EggController : MonoBehaviour
             return;
         }
 
-        // EggDefinition 배율 우선, 없으면 Prefab powerMultiplier 사용
-        float multiplier = eggDefinition != null ? eggDefinition.launchImpulseMultiplier : powerMultiplier;
-        cachedRigidbody.AddForce(impulse * multiplier, ForceMode.Impulse);
+        cachedRigidbody.AddForce(impulse * powerMultiplier, ForceMode.Impulse);
         Launched?.Invoke(this);
     }
 
